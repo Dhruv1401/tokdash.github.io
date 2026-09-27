@@ -55,8 +55,9 @@
        Regenerate after class changes: see README ("Rebuilding the landing CSS"). -->
   <link rel="stylesheet" href="/static/landing.css" />
   <link rel="stylesheet" href="/static/lenis.css" />
+  <script src="/static/anime.min.js"></script>
 
-  <!-- Avoid theme flash: set the class before paint -->
+  <!-- Avoid theme and lander flash: set classes before paint -->
   <script>
     (function () {
       // Mark the document as JS-capable up front: reveal animations are opt-in
@@ -67,6 +68,9 @@
         var dark = saved ? saved === 'dark'
           : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) document.documentElement.classList.add('dark');
+        var landerSeen = sessionStorage.getItem('tokdash_lander_seen');
+        var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (landerSeen || reducedMotion) document.documentElement.classList.add('lander-skipped');
       } catch (e) {}
     })();
   </script>
@@ -824,55 +828,356 @@
     .comp-mock .sl-red { color: #E06C75; }
     .comp-mock .sl-claude { color: #FF8700; }
     .comp-mock .sl-codex { color: #00AF87; }
-    /* ---- Liquid Glass Cursor Follower on Setup section ---- */
-    .liquid-glass-follower {
+    /* ---- Lander Intro Dialog (Anime.js) ---- */
+    html.lander-skipped #landerOverlay,
+    html.lander-skipped .lander-overlay {
+      display: none !important;
+    }
+    body.lander-locked {
+      overflow: hidden !important;
+      touch-action: none;
+    }
+    .lander-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: radial-gradient(circle at 50% 45%, rgba(15, 23, 42, 0.98) 0%, rgba(8, 14, 26, 0.99) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: opacity 0.5s ease;
+    }
+
+    /* Top Left: Language Row & Switcher */
+    .lander-lang-wrap {
+      position: fixed;
+      top: 22px;
+      left: 28px;
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+    }
+    .lander-lang-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(148, 163, 184, 0.55);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      transition: color 0.2s ease;
+      outline: none;
+    }
+    .lander-lang-btn:hover {
+      color: rgba(226, 232, 240, 0.9);
+    }
+    .lander-lang-tokens {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lander-lang-tokens .lt {
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .lander-lang-tokens .lt:hover, .lander-lang-tokens .lt.active {
+      color: #60A5FA;
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .lander-lang-sep {
+      opacity: 0.35;
+    }
+
+    /* Language Switcher Modal */
+    .lander-lang-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10010;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .lander-lang-dialog {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+      width: 330px;
+      max-width: 90vw;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+    .lander-lang-dialog.open {
+      transform: scale(1);
+    }
+    .lander-lang-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .lander-lang-head h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #E2E8F0;
+      letter-spacing: 0.02em;
+    }
+    .lander-lang-close {
+      background: transparent;
+      border: none;
+      color: rgba(148, 163, 184, 0.6);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .lander-lang-close:hover {
+      color: #FFF;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .lander-lang-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .lander-lang-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      color: #CBD5E1;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .lander-lang-opt:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(96, 165, 250, 0.4);
+      color: #FFFFFF;
+    }
+
+    /* Bottom Right: Skip Button */
+    .lander-skip-btn {
+      position: fixed;
+      bottom: 22px;
+      right: 28px;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(148, 163, 184, 0.45);
+      background: transparent;
+      border: none;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: color 0.2s ease;
+      z-index: 10001;
+      padding: 4px 6px;
+    }
+    .lander-skip-btn:hover {
+      color: rgba(226, 232, 240, 0.9);
+    }
+
+    /* Centered "Hi." Wrapper & Typography */
+    .lander-hi-wrap {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10000;
+    }
+    .lander-hi {
+      font-size: clamp(3rem, 7.5vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: none;
+      opacity: 0;
+      pointer-events: none;
+      letter-spacing: -0.03em;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      white-space: nowrap;
+      will-change: clip-path, opacity, transform;
+      transform-origin: center center;
+    }
+
+    /* Gliding Glowing Cursor: Thin White Rectangular Line */
+    .lander-cursor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10005;
+      width: 2px;
+      min-width: 2px;
+      border-radius: 1px;
+      background: #FFFFFF;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.85), 0 0 12px rgba(255, 255, 255, 0.4);
+      transform: translateY(-50%);
+      opacity: 0;
+      will-change: left, top, height, opacity;
+    }
+
+    /* Center Narrative Stage */
+    .lander-stage {
+      max-width: 820px;
+      width: 92%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      position: relative;
+      z-index: 10000;
+      padding: 20px;
+      max-height: 92vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .lander-stage::-webkit-scrollbar {
+      display: none;
+    }
+    .lander-query-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .lander-query {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #F8FAFC;
+      line-height: 1.15;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+      clip-path: polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%);
+      will-change: clip-path;
+      white-space: nowrap;
+    }
+    .lander-desc {
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+      font-size: clamp(0.95rem, 1.85vw, 1.15rem);
+      line-height: 1.65;
+      color: #CBD5E1;
+      font-weight: 450;
+      position: relative;
+      text-align: center;
+    }
+    .lander-desc-line {
+      display: block;
+      margin: 6px 0;
+      clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%);
+      will-change: clip-path;
+      white-space: nowrap;
+    }
+    .lander-desc .m-word {
+      display: inline-block;
+      margin-right: 0.28em;
+      transition: color 0.3s ease;
+    }
+    .lander-desc .m-word[data-target] {
+      color: #FFFFFF;
+      font-weight: 500;
+    }
+    .lander-chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 22px;
+      max-width: 720px;
+    }
+    .lander-story-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 15px;
+      border-radius: 9999px; /* circular pill box */
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #93C5FD;
+      background: rgba(30, 58, 138, 0.22);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transform: translateY(14px) scale(0.92);
+      will-change: transform, opacity;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .lander-story-chip:hover {
+      background: rgba(37, 99, 235, 0.32);
+      border-color: rgba(147, 197, 253, 0.65);
+      color: #FFFFFF;
+      transform: translateY(-2px) scale(1.02);
+    }
+    .lander-story-chip .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #38BDF8;
+      box-shadow: 0 0 8px #38BDF8, 0 0 14px rgba(56, 189, 248, 0.6);
+      flex-shrink: 0;
+    }
+    .lander-explore-wrap {
+      margin-top: 26px;
+      opacity: 0;
+      transform: translateY(-18px);
+    }
+    .lander-explore-btn {
+      padding: 14px 28px;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* Liquid Glass Burst Lens */
+    .lander-glass-lens {
       position: fixed;
       top: 0;
       left: 0;
-      width: 78px;
-      height: 78px;
+      width: 190px;
+      height: 190px;
       border-radius: 50%;
       pointer-events: none;
-      z-index: 60;
+      z-index: 10002;
       opacity: 0;
-      transform: translate3d(-100px, -100px, 0);
-      will-change: transform, opacity;
-      transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
-      backdrop-filter: blur(10px) saturate(190%) brightness(1.1) contrast(1.12);
-      -webkit-backdrop-filter: blur(10px) saturate(190%) brightness(1.1) contrast(1.12);
-      background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.15) 35%, rgba(255, 255, 255, 0.03) 65%, rgba(255, 255, 255, 0) 100%);
+      transform: translate3d(-50%, -50%, 0) scale(0.5);
+      backdrop-filter: blur(14px) saturate(220%) contrast(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(220%) contrast(1.2);
+      background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.12) 36%, rgba(59, 130, 246, 0.08) 60%, rgba(255, 255, 255, 0) 100%);
       box-shadow:
-        inset 0 1.5px 2px rgba(255, 255, 255, 0.85),
-        inset 0 -1.5px 2px rgba(0, 0, 0, 0.08),
-        inset 0 0 12px rgba(255, 255, 255, 0.35),
-        inset 2px 2px 5px rgba(59, 130, 246, 0.35),
-        inset -2px -2px 5px rgba(245, 158, 11, 0.3),
-        0 8px 30px rgba(15, 23, 42, 0.22),
-        0 0 0 1px rgba(255, 255, 255, 0.3);
-    }
-    .liquid-glass-follower::after {
-      content: '';
-      position: absolute;
-      top: 13px;
-      left: 17px;
-      width: 14px;
-      height: 9px;
-      border-radius: 50%;
-      transform: rotate(-35deg);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.2));
-      filter: blur(0.5px);
-    }
-    html.dark .liquid-glass-follower {
-      backdrop-filter: blur(12px) saturate(210%) brightness(1.2) contrast(1.15);
-      -webkit-backdrop-filter: blur(12px) saturate(210%) brightness(1.2) contrast(1.15);
-      background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 35%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0) 100%);
-      box-shadow:
-        inset 0 1.5px 2px rgba(255, 255, 255, 0.7),
-        inset 0 0 14px rgba(255, 255, 255, 0.25),
-        inset 2.5px 2.5px 6px rgba(96, 165, 250, 0.45),
-        inset -2.5px -2.5px 6px rgba(251, 191, 36, 0.35),
-        0 12px 36px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.25);
+        inset 0 2px 4px rgba(255, 255, 255, 0.8),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+        0 12px 40px rgba(15, 23, 42, 0.35),
+        0 0 24px rgba(59, 130, 246, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.4);
     }
     /* ---- end companion mock ---- */
   </style>
@@ -882,10 +1187,157 @@
   <!-- Ambient moving lines and dots background canvas -->
   <canvas id="ambientNetworkCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;" aria-hidden="true"></canvas>
 
+  <!-- ============ LANDER INTRO SEQUENCE (Anime.js) ============ -->
+  <div id="landerOverlay" class="lander-overlay" aria-label="Welcome to Tokdash" role="dialog" aria-modal="true">
+    <!-- Top-Left: Borderless Language Indicators & Switcher -->
+    <div id="landerLangWrap" class="lander-lang-wrap">
+      <button id="landerLangBtn" class="lander-lang-btn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Switch language">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="lander-lang-tokens">
+          <span class="lt" data-lang="en">eng</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="fr">français</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="zh">中文</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="ja">日本語</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="ko">한국어</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="es">español</span><span class="lander-lang-sep">·</span>
+          <span class="lt" data-lang="pt">português</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Language Selector Modal (Pop-up upon click) -->
+    <div id="landerLangModal" class="lander-lang-modal" style="display:none;" aria-modal="true" role="dialog">
+      <div class="lander-lang-dialog" id="landerLangDialog">
+        <div class="lander-lang-head">
+          <h3>Select Language</h3>
+          <button id="landerLangClose" type="button" class="lander-lang-close" aria-label="Close language selector">&times;</button>
+        </div>
+        <div class="lander-lang-grid">
+          <button type="button" class="lander-lang-opt" data-lang="en"><span>🇺🇸</span> <span>English</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="fr"><span>🇫🇷</span> <span>Français</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="zh"><span>🇨🇳</span> <span>中文</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="ja"><span>🇯🇵</span> <span>日本語</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="ko"><span>🇰🇷</span> <span>한국어</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="es"><span>🇪🇸</span> <span>Español</span></button>
+          <button type="button" class="lander-lang-opt" data-lang="pt"><span>🇧🇷</span> <span>Português</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom-Right: Underlined borderless skip button -->
+    <button id="landerSkipBtn" class="lander-skip-btn" type="button" aria-label="Skip introduction">skip</button>
+
+    <!-- Stage 1 & 2: Centered "Hi." with flexbox wrapper -->
+    <div id="landerHiWrap" class="lander-hi-wrap">
+      <div id="landerHi" class="lander-hi" aria-hidden="true">Hi.</div>
+    </div>
+
+    <!-- Gliding typing cursor -->
+    <div id="landerCursor" class="lander-cursor" aria-hidden="true"></div>
+
+    <!-- Center Narrative Stage -->
+    <div id="landerStage" class="lander-stage">
+      <!-- Stage 3: What is Tokdash? Heading -->
+      <div id="landerQueryWrap" class="lander-query-wrap">
+        <h2 id="landerQuery" class="lander-query">What is Tokdash?</h2>
+      </div>
+
+      <!-- Stage 4: Detailed Description with Morphable Word Spans (Line-by-Line) -->
+      <div id="landerDesc" class="lander-desc">
+        <div class="lander-desc-line" id="descLine1">
+          <span class="m-word" data-w="tokdash" data-target="hero-sub">Tokdash</span>
+          <span class="m-word" data-w="is">is</span>
+          <span class="m-word" data-w="a">a</span>
+          <span class="m-word" data-w="token" data-target="hero-h1">token</span>
+          <span class="m-word" data-w="and" data-target="hero-h1">and</span>
+          <span class="m-word" data-w="cost" data-target="hero-h1">cost</span>
+          <span class="m-word" data-w="tracker">tracker</span>
+          <span class="m-word" data-w="dashboard" data-target="hero-h1">dashboard,</span>
+          <span class="m-word" data-w="that">that</span>
+          <span class="m-word" data-w="reads" data-target="hero-sub">reads</span>
+          <span class="m-word" data-w="the" data-target="hero-sub">the</span>
+          <span class="m-word" data-w="logs" data-target="hero-sub">logs</span>
+        </div>
+        <div class="lander-desc-line" id="descLine2">
+          <span class="m-word" data-w="already" data-target="hero-sub">already</span>
+          <span class="m-word" data-w="present">present</span>
+          <span class="m-word" data-w="in">in</span>
+          <span class="m-word" data-w="your" data-target="hero-h1">your</span>
+          <span class="m-word" data-w="machine" data-target="hero-sub">machine</span>
+          <span class="m-word" data-w="and" data-target="hero-sub">and</span>
+          <span class="m-word" data-w="shows" data-target="hero-sub">shows</span>
+          <span class="m-word" data-w="you">you</span>
+          <span class="m-word" data-w="exactly">exactly</span>
+          <span class="m-word" data-w="where">where</span>
+          <span class="m-word" data-w="your" data-target="hero-h1">your</span>
+          <span class="m-word" data-w="tokens" data-target="hero-sub">tokens</span>
+          <span class="m-word" data-w="go">go</span>
+        </div>
+        <div class="lander-desc-line" id="descLine3">
+          <span class="m-word" data-w="and" data-target="hero-sub">and</span>
+          <span class="m-word" data-w="how">how</span>
+          <span class="m-word" data-w="much">much</span>
+          <span class="m-word" data-w="you" data-target="hero-sub">you</span>
+          <span class="m-word" data-w="burn" data-target="hero-sub">burn,</span>
+          <span class="m-word" data-w="what" data-target="hero-sub">what</span>
+          <span class="m-word" data-w="they" data-target="hero-sub">they</span>
+          <span class="m-word" data-w="cost" data-target="hero-sub">cost,</span>
+          <span class="m-word" data-w="no" data-target="hero-sub">no</span>
+          <span class="m-word" data-w="account" data-target="hero-sub">account,</span>
+          <span class="m-word" data-w="no" data-target="hero-sub">no</span>
+          <span class="m-word" data-w="telemetry" data-target="hero-sub">telemetry</span>
+          <span class="m-word" data-w="and" data-target="hero-sub">and</span>
+          <span class="m-word" data-w="no">no</span>
+          <span class="m-word" data-w="upload" data-target="hero-sub">upload.</span>
+          
+        </div>
+      </div>
+
+      <!-- Stage 6: Circular Feature Pill Boxes -->
+      <div id="landerChipsGrid" class="lander-chips-grid">
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Twenty-four agents, one dashboard</span>
+        </div>
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Local-first &amp; 100% private</span>
+        </div>
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Open source &amp; MIT licensed</span>
+        </div>
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Zero telemetry &middot; Nothing leaves your PC</span>
+        </div>
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Reads logs already on disk</span>
+        </div>
+        <div class="lander-story-chip">
+          <span class="chip-dot"></span>
+          <span>Real-time cost &amp; cache tracking</span>
+        </div>
+      </div>
+
+      <!-- Stage 7: "Explore" Button -->
+      <div id="landerExploreWrap" class="lander-explore-wrap">
+        <button id="landerExploreBtn" class="btn btn-primary lander-explore-btn" type="button">
+          <span>Explore Tokdash</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Liquid Glass Transition Burst Lens -->
+    <div id="landerGlassLens" class="lander-glass-lens" aria-hidden="true"></div>
+  </div>
+
   <!-- ============ NAV ============ -->
   <header class="site-nav">
     <div class="max-w-[1180px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-      <a href="/" class="flex items-center gap-2.5 shrink-0">
+      <a href="/" class="flex items-center gap-2.5 shrink-0" id="brandLogoLink">
         <img src="/static/icons/logo.png" alt="Tokdash logo" width="32" height="32" style="width:32px;height:32px;object-fit:contain;" />
         <span class="mono text-lg font-extrabold tracking-tight">Tokdash</span>
       </a>
@@ -929,20 +1381,20 @@
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
         <!-- Copy -->
         <div>
-          <span class="chip reveal" data-i18n="hero.eyebrow"><span class="dot"></span> Open source · Local-first · MIT</span>
+          <span class="chip reveal" data-i18n="hero.eyebrow" id="heroEyebrow"><span class="dot"></span> Open source · Local-first · MIT</span>
 
-          <h1 class="reveal text-[2.4rem] leading-[1.08] sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight mt-5" data-i18n="hero.h1">
+          <h1 id="heroHeading" class="reveal text-[2.4rem] leading-[1.08] sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight mt-5" data-i18n="hero.h1">
             Local token &amp; cost dashboard <span class="grad-text">for your AI coding tools</span>
           </h1>
 
-          <p class="reveal text-base sm:text-lg text-muted mt-5 max-w-xl" data-i18n="hero.sub">
+          <p id="heroParagraph" class="reveal text-base sm:text-lg text-muted mt-5 max-w-xl" data-i18n="hero.sub">
             Tokdash reads the logs already on your machine and shows exactly how many tokens you burn, and what they
             cost, across twenty-four coding agents. Add the rest of your machines as servers and read them as one
             total. No account, no upload, no telemetry.
           </p>
 
           <div class="reveal flex flex-wrap items-center gap-2.5 mt-5" aria-label="Tokdash at a glance">
-            <span class="chip" data-i18n="hero.tag1"><span class="dot"></span> Twenty-four agents, one dashboard</span>
+            <span class="chip" data-i18n="hero.tag1" id="heroTag1"><span class="dot"></span> Twenty-four agents, one dashboard</span>
             <span class="chip" data-i18n="hero.tag2">WSL, macOS and Linux servers, combined</span>
           </div>
 
@@ -2716,68 +3168,545 @@
     })();
   </script>
 
-  <!-- Liquid Glass Cursor Follower on Setup section -->
-  <div id="setupGlassFollower" class="liquid-glass-follower" aria-hidden="true"></div>
+  <!-- ============ Lander Intro Sequence & Transition Engine (Anime.js) ============ -->
   <script>
     (function () {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      var follower = document.getElementById('setupGlassFollower');
-      var setupSection = document.getElementById('install');
-      if (!follower || !setupSection) return;
+      if (document.documentElement.classList.contains('lander-skipped')) return;
+      if (typeof anime === 'undefined') return;
 
-      var targetX = -100, targetY = -100;
-      var currentX = -100, currentY = -100;
-      var isHovering = false;
-      var rafId = null;
+      var overlay = document.getElementById('landerOverlay');
+      var hi = document.getElementById('landerHi');
+      var cursor = document.getElementById('landerCursor');
+      var stage = document.getElementById('landerStage');
+      var queryWrap = document.getElementById('landerQueryWrap');
+      var query = document.getElementById('landerQuery');
+      var desc = document.getElementById('landerDesc');
+      var line1 = document.getElementById('descLine1');
+      var line2 = document.getElementById('descLine2');
+      var line3 = document.getElementById('descLine3');
+      var exploreWrap = document.getElementById('landerExploreWrap');
+      var exploreBtn = document.getElementById('landerExploreBtn');
+      var skipBtn = document.getElementById('landerSkipBtn');
+      var glassLens = document.getElementById('landerGlassLens');
+      var langBtn = document.getElementById('landerLangBtn');
+      var langModal = document.getElementById('landerLangModal');
+      var langDialog = document.getElementById('landerLangDialog');
+      var langClose = document.getElementById('landerLangClose');
+      var heroHeading = document.getElementById('heroHeading');
+      var heroParagraph = document.getElementById('heroParagraph');
 
-      function onMouseMove(e) {
-        var rect = setupSection.getBoundingClientRect();
-        // Trigger within setup section bounds plus 8px padding
-        if (e.clientX >= rect.left - 8 && e.clientX <= rect.right + 8 &&
-            e.clientY >= rect.top - 8 && e.clientY <= rect.bottom + 8) {
-          if (!isHovering) {
-            isHovering = true;
-            follower.style.opacity = '1';
-            if (currentX < 0) {
-              currentX = e.clientX;
-              currentY = e.clientY;
+      if (!overlay || !hi || !cursor || !stage || !query || !exploreBtn) return;
+
+      // Lock scroll while intro is playing
+      document.body.classList.add('lander-locked');
+      if (window.__lenis) window.__lenis.stop();
+
+      var isFinished = false;
+      var activeTimeline = null;
+      var lensRafId = null;
+
+      // Language switcher modal handlers
+      if (langBtn && langModal && langDialog) {
+        langBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          langModal.style.display = 'flex';
+          setTimeout(function () { langDialog.classList.add('open'); }, 10);
+        });
+      }
+
+      function closeLangModal() {
+        if (!langModal || !langDialog) return;
+        langDialog.classList.remove('open');
+        setTimeout(function () { langModal.style.display = 'none'; }, 180);
+      }
+
+      if (langClose) langClose.addEventListener('click', closeLangModal);
+      if (langModal) {
+        langModal.addEventListener('click', function (e) {
+          if (e.target === langModal) closeLangModal();
+        });
+      }
+
+      // Handle language selection
+      function setupLangOptions() {
+        document.querySelectorAll('.lander-lang-opt, .lander-lang-tokens .lt').forEach(function (btn) {
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var targetLang = btn.getAttribute('data-lang');
+            if (targetLang && window.__applyLang) {
+              window.__applyLang(targetLang);
+              document.querySelectorAll('.lander-lang-tokens .lt').forEach(function (token) {
+                token.classList.toggle('active', token.getAttribute('data-lang') === targetLang);
+              });
+            }
+            closeLangModal();
+          });
+        });
+      }
+      setupLangOptions();
+
+      // Wrap words inside heroHeading and heroParagraph so they can be targeted
+      function prepareHeroWords() {
+        function wrap(el) {
+          if (!el) return;
+          var childNodes = Array.from(el.childNodes);
+          childNodes.forEach(function (node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              var text = node.textContent;
+              if (!text.trim()) return;
+              var words = text.split(/(\s+)/);
+              var frag = document.createDocumentFragment();
+              words.forEach(function (w) {
+                if (!w.trim()) {
+                  frag.appendChild(document.createTextNode(w));
+                } else {
+                  var span = document.createElement('span');
+                  span.className = 'hw';
+                  var clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  span.setAttribute('data-w', clean);
+                  span.textContent = w;
+                  frag.appendChild(span);
+                }
+              });
+              el.replaceChild(frag, node);
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              wrap(node);
+            }
+          });
+        }
+        wrap(heroHeading);
+        wrap(heroParagraph);
+        wrap(document.getElementById('heroEyebrow'));
+        wrap(document.getElementById('heroTag1'));
+      }
+
+      function finishIntro(skipAnim) {
+        if (isFinished) return;
+        isFinished = true;
+        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
+        document.documentElement.classList.add('lander-skipped');
+
+        if (lensRafId) cancelAnimationFrame(lensRafId);
+        if (activeTimeline) activeTimeline.pause();
+
+        if (skipAnim) {
+          anime({
+            targets: overlay,
+            opacity: 0,
+            duration: 350,
+            easing: 'easeOutQuad',
+            complete: function () {
+              overlay.style.display = 'none';
+              document.body.classList.remove('lander-locked');
+              if (window.__lenis) window.__lenis.start();
+            }
+          });
+        }
+      }
+
+      if (skipBtn) {
+        skipBtn.addEventListener('click', function () {
+          finishIntro(true);
+        });
+      }
+
+      // Track cursor position for liquid glass burst
+      var mouseX = window.innerWidth / 2;
+      var mouseY = window.innerHeight / 2;
+      window.addEventListener('mousemove', function (e) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      }, { passive: true });
+
+      // Run sequence
+      prepareHeroWords();
+
+      // Timeline
+      activeTimeline = anime.timeline({
+        autoplay: true
+      });
+
+      // Stage 1: "Hi." in dead center
+      activeTimeline
+        .add({
+          targets: hi,
+          opacity: [0, 1],
+          scale: [0.85, 1],
+          duration: 750,
+          easing: 'easeOutBack(1.4)'
+        })
+        // Generous wait in center
+        .add({
+          targets: hi,
+          duration: 1400
+        })
+        // Stage 2: Typing cursor glides from left screen over "Hi.", erasing it, and stops at right of "Hi."
+        .add({
+          targets: cursor,
+          opacity: [0, 1],
+          left: [-20, 0],
+          duration: 180,
+          easing: 'linear'
+        })
+        .add({
+          targets: cursor,
+          duration: 1150,
+          easing: 'cubicBezier(0.4, 0, 0.2, 1)',
+          update: function (anim) {
+            var hiRect = hi.getBoundingClientRect();
+            var maxRight = hiRect.right + 25;
+            var curX = (anim.progress / 100) * maxRight;
+            cursor.style.left = curX + 'px';
+            cursor.style.top = (hiRect.top + hiRect.height / 2) + 'px';
+            cursor.style.height = (hiRect.height * 0.95) + 'px';
+
+            if (curX > hiRect.left) {
+              var wipePct = Math.min(100, Math.max(0, ((curX - hiRect.left) / hiRect.width) * 100));
+              hi.style.clipPath = 'polygon(' + wipePct + '% 0%, 100% 0%, 100% 100%, ' + wipePct + '% 100%)';
+            }
+            if (curX >= hiRect.right) {
+              hi.style.opacity = '0';
             }
           }
-          targetX = e.clientX;
-          targetY = e.clientY;
-        } else if (isHovering) {
-          isHovering = false;
-          follower.style.opacity = '0';
-        }
-      }
+        })
+        // Brief pause after erasing "Hi."
+        .add({
+          targets: cursor,
+          duration: 350
+        })
+        // Stage 3: Cursor FLIES to the place above for the next line ("What is Tokdash?") instead of appearing there
+        .add({
+          targets: stage,
+          opacity: [0, 1],
+          duration: 450,
+          easing: 'easeOutQuad'
+        }, '-=100')
+        .add({
+          targets: cursor,
+          duration: 700,
+          easing: 'cubicBezier(0.33, 1, 0.68, 1)',
+          update: function (anim) {
+            var p = anim.progress / 100;
+            var hiRect = hi.getBoundingClientRect();
+            var qRect = query.getBoundingClientRect();
+            var startX = hiRect.right + 25;
+            var startY = hiRect.top + hiRect.height / 2;
+            var targetX = qRect.right;
+            var targetY = qRect.top + qRect.height / 2;
 
-      function update() {
-        if (isHovering || Math.abs(targetX - currentX) > 0.4 || Math.abs(targetY - currentY) > 0.4) {
-          // Smooth lag interpolation (lerp: 0.12)
-          currentX += (targetX - currentX) * 0.12;
-          currentY += (targetY - currentY) * 0.12;
-          var x = currentX - 39;
-          var y = currentY - 39;
-          follower.style.transform = 'translate3d(' + x.toFixed(1) + 'px, ' + y.toFixed(1) + 'px, 0)';
-        }
-        rafId = requestAnimationFrame(update);
-      }
+            cursor.style.left = (startX + (targetX - startX) * p) + 'px';
+            cursor.style.top = (startY + (targetY - startY) * p) + 'px';
+            cursor.style.height = ((hiRect.height * (1 - p) + qRect.height * p) * 0.9) + 'px';
+          }
+        }, '-=400')
+        // Pause at the start of "What is Tokdash?"
+        .add({
+          targets: cursor,
+          duration: 250
+        })
+        // Stage 4: Cursor glides towards left, revealing "What is Tokdash?" slowly and properly
+        .add({
+          targets: cursor,
+          duration: 1500,
+          easing: 'cubicBezier(0.25, 1, 0.5, 1)',
+          update: function (anim) {
+            var qRect = query.getBoundingClientRect();
+            var progress = anim.progress; // 0 to 100
+            var revealPct = Math.max(0, 100 - progress);
+            query.style.clipPath = 'polygon(' + revealPct + '% 0%, 100% 0%, 100% 100%, ' + revealPct + '% 100%)';
 
-      window.addEventListener('mousemove', onMouseMove, { passive: true });
-      window.addEventListener('mouseleave', function () {
-        isHovering = false;
-        follower.style.opacity = '0';
+            var cX = qRect.left + (revealPct / 100) * qRect.width;
+            var cY = qRect.top + qRect.height / 2;
+            cursor.style.left = cX + 'px';
+            cursor.style.top = cY + 'px';
+            cursor.style.height = (qRect.height * 0.9) + 'px';
+          }
+        })
+        // Generous pause at the 'W' of "What"
+        .add({
+          targets: cursor,
+          duration: 500
+        })
+        // Stage 5: Shift cursor down to description line 1 start
+        .add({
+          targets: cursor,
+          duration: 380,
+          easing: 'easeInOutCubic',
+          update: function (anim) {
+            var p = anim.progress / 100;
+            var qRect = query.getBoundingClientRect();
+            var l1Rect = line1 ? line1.getBoundingClientRect() : desc.getBoundingClientRect();
+            var startX = qRect.left;
+            var startY = qRect.top + qRect.height / 2;
+            var targetX = l1Rect.left;
+            var targetY = l1Rect.top + l1Rect.height / 2;
+
+            cursor.style.left = (startX + (targetX - startX) * p) + 'px';
+            cursor.style.top = (startY + (targetY - startY) * p) + 'px';
+            cursor.style.height = (qRect.height * 0.9 * (1 - p) + 20 * p) + 'px';
+          }
+        })
+        .add({
+          targets: cursor,
+          duration: 150
+        })
+        // Stage 6: Glide over Description line-by-line to reveal it
+        // Line 1
+        .add({
+          targets: cursor,
+          duration: 950,
+          easing: 'cubicBezier(0.3, 0, 0.2, 1)',
+          update: function (anim) {
+            if (!line1) return;
+            var l1Rect = line1.getBoundingClientRect();
+            var p = anim.progress; // 0 to 100
+            line1.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
+            cursor.style.left = (l1Rect.left + (p / 100) * l1Rect.width) + 'px';
+            cursor.style.top = (l1Rect.top + l1Rect.height / 2) + 'px';
+            cursor.style.height = '20px';
+          }
+        })
+        // Carriage return to Line 2 start
+        .add({
+          targets: cursor,
+          duration: 180,
+          easing: 'easeInOutQuad',
+          update: function (anim) {
+            if (!line1 || !line2) return;
+            var p = anim.progress / 100;
+            var l1Rect = line1.getBoundingClientRect();
+            var l2Rect = line2.getBoundingClientRect();
+            var startX = l1Rect.right;
+            var startY = l1Rect.top + l1Rect.height / 2;
+            var targetX = l2Rect.left;
+            var targetY = l2Rect.top + l2Rect.height / 2;
+            cursor.style.left = (startX + (targetX - startX) * p) + 'px';
+            cursor.style.top = (startY + (targetY - startY) * p) + 'px';
+          }
+        })
+        // Line 2
+        .add({
+          targets: cursor,
+          duration: 1000,
+          easing: 'cubicBezier(0.3, 0, 0.2, 1)',
+          update: function (anim) {
+            if (!line2) return;
+            var l2Rect = line2.getBoundingClientRect();
+            var p = anim.progress; // 0 to 100
+            line2.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
+            cursor.style.left = (l2Rect.left + (p / 100) * l2Rect.width) + 'px';
+            cursor.style.top = (l2Rect.top + l2Rect.height / 2) + 'px';
+            cursor.style.height = '20px';
+          }
+        })
+        // Carriage return to Line 3 start
+        .add({
+          targets: cursor,
+          duration: 180,
+          easing: 'easeInOutQuad',
+          update: function (anim) {
+            if (!line2 || !line3) return;
+            var p = anim.progress / 100;
+            var l2Rect = line2.getBoundingClientRect();
+            var l3Rect = line3.getBoundingClientRect();
+            var startX = l2Rect.right;
+            var startY = l2Rect.top + l2Rect.height / 2;
+            var targetX = l3Rect.left;
+            var targetY = l3Rect.top + l3Rect.height / 2;
+            cursor.style.left = (startX + (targetX - startX) * p) + 'px';
+            cursor.style.top = (startY + (targetY - startY) * p) + 'px';
+          }
+        })
+        // Line 3
+        .add({
+          targets: cursor,
+          duration: 1150,
+          easing: 'cubicBezier(0.3, 0, 0.2, 1)',
+          update: function (anim) {
+            if (!line3) return;
+            var l3Rect = line3.getBoundingClientRect();
+            var p = anim.progress; // 0 to 100
+            line3.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
+            cursor.style.left = (l3Rect.left + (p / 100) * l3Rect.width) + 'px';
+            cursor.style.top = (l3Rect.top + l3Rect.height / 2) + 'px';
+            cursor.style.height = '20px';
+          }
+        })
+        // Fade out cursor
+        .add({
+          targets: cursor,
+          opacity: [1, 0],
+          duration: 280,
+          easing: 'easeOutQuad'
+        })
+        // Stage 7: Circular feature pill boxes pop in sequentially
+        .add({
+          targets: '.lander-story-chip',
+          opacity: [0, 1],
+          translateY: [14, 0],
+          scale: [0.92, 1],
+          delay: anime.stagger(90),
+          duration: 550,
+          easing: 'easeOutBack(1.4)'
+        }, '+=100')
+        // Stage 8: "Explore" button emerges downwards and waits
+        .add({
+          targets: exploreWrap,
+          opacity: [0, 1],
+          translateY: [-18, 0],
+          duration: 700,
+          easing: 'easeOutBack(1.2)'
+        }, '+=150');
+
+      // Stage 9: Explore Button Click -> Semantic Coordinate Morph & Liquid Glass Burst
+      exploreBtn.addEventListener('click', function (e) {
+        if (isFinished) return;
+        isFinished = true;
+        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
+        document.documentElement.classList.add('lander-skipped');
+
+        if (activeTimeline) activeTimeline.pause();
+
+        var clickX = e ? e.clientX : mouseX;
+        var clickY = e ? e.clientY : mouseY;
+
+        // Position & burst liquid glass lens
+        if (glassLens) {
+          glassLens.style.left = clickX + 'px';
+          glassLens.style.top = clickY + 'px';
+
+          var targetLensX = clickX;
+          var targetLensY = clickY;
+          var curLensX = clickX;
+          var curLensY = clickY;
+
+          function onLensMouseMove(evt) {
+            targetLensX = evt.clientX;
+            targetLensY = evt.clientY;
+          }
+          window.addEventListener('mousemove', onLensMouseMove, { passive: true });
+
+          function updateLens() {
+            curLensX += (targetLensX - curLensX) * 0.15;
+            curLensY += (targetLensY - curLensY) * 0.15;
+            glassLens.style.left = curLensX + 'px';
+            glassLens.style.top = curLensY + 'px';
+            lensRafId = requestAnimationFrame(updateLens);
+          }
+          lensRafId = requestAnimationFrame(updateLens);
+
+          anime({
+            targets: glassLens,
+            opacity: [0, 1, 0.9, 0],
+            scale: [0.5, 1.35, 1.7],
+            duration: 1100,
+            easing: 'easeOutCubic',
+            complete: function () {
+              if (lensRafId) cancelAnimationFrame(lensRafId);
+              window.removeEventListener('mousemove', onLensMouseMove);
+              glassLens.style.display = 'none';
+            }
+          });
+        }
+
+        // Semantic word morph calculation
+        var words = document.querySelectorAll('#landerDesc .m-word');
+        var matching = [];
+        var nonMatching = [];
+
+        words.forEach(function (wEl) {
+          var clean = (wEl.getAttribute('data-w') || wEl.textContent).toLowerCase().replace(/[^a-z0-9]/g, '');
+          var matchEl = document.querySelector('.hw[data-w="' + clean + '"]:not(.hw-matched)');
+          if (matchEl) {
+            matchEl.classList.add('hw-matched');
+            var src = wEl.getBoundingClientRect();
+            var dst = matchEl.getBoundingClientRect();
+            matching.push({
+              el: wEl,
+              dx: dst.left - src.left,
+              dy: dst.top - src.top,
+              target: matchEl
+            });
+          } else {
+            nonMatching.push(wEl);
+          }
+        });
+
+        // Fly matching words into frontpage positions
+        matching.forEach(function (item) {
+          var targetStyle = window.getComputedStyle(item.target);
+          anime({
+            targets: item.el,
+            translateX: item.dx,
+            translateY: item.dy,
+            fontSize: targetStyle.fontSize,
+            fontWeight: targetStyle.fontWeight,
+            color: targetStyle.color,
+            duration: 950,
+            easing: 'cubicBezier(0.25, 1, 0.5, 1)'
+          });
+        });
+
+        // Disperse non-matching words
+        anime({
+          targets: nonMatching,
+          opacity: 0,
+          translateX: function () { return (Math.random() - 0.5) * 140; },
+          translateY: function () { return (Math.random() - 0.5) * 100 + 40; },
+          filter: ['blur(0px)', 'blur(10px)'],
+          duration: 650,
+          easing: 'easeOutQuad'
+        });
+
+        // Disperse circular chips
+        anime({
+          targets: '.lander-story-chip',
+          opacity: 0,
+          translateY: 20,
+          filter: ['blur(0px)', 'blur(8px)'],
+          duration: 550,
+          easing: 'easeOutQuad'
+        });
+
+        // Hide explore button & query
+        anime({
+          targets: [exploreWrap, queryWrap],
+          opacity: 0,
+          scale: 0.9,
+          duration: 500,
+          easing: 'easeOutQuad'
+        });
+
+        // Fade out overlay and reveal landing page
+        anime({
+          targets: overlay,
+          opacity: [1, 0],
+          duration: 850,
+          delay: 450,
+          easing: 'linear',
+          complete: function () {
+            overlay.style.display = 'none';
+            document.body.classList.remove('lander-locked');
+            if (window.__lenis) window.__lenis.start();
+          }
+        });
+
+        // Subtle stagger reveal for front page header and hero
+        anime({
+          targets: ['header', '#hero', '.preview-wrap'],
+          opacity: [0.7, 1],
+          translateY: [12, 0],
+          duration: 750,
+          delay: anime.stagger(100, { start: 400 }),
+          easing: 'easeOutCubic'
+        });
       });
 
-      document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-          if (rafId) cancelAnimationFrame(rafId);
-        } else {
-          rafId = requestAnimationFrame(update);
-        }
-      });
-
-      rafId = requestAnimationFrame(update);
+      // Developer helper to replay intro on demand
+      window.__replayIntro = function () {
+        try { sessionStorage.removeItem('tokdash_lander_seen'); } catch (err) {}
+        location.reload();
+      };
     })();
   </script>
 </body>
