@@ -469,6 +469,30 @@
       75% { opacity: 0; }
       100% { opacity: 0; }
     }
+
+    /* ---- Logo Morph Engine for .opt-li .opt-ic (synchronized with line beside them) ---- */
+    html.js .opt-li .opt-ic {
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.35) rotate(-35deg);
+      border-radius: 50%;
+      will-change: transform, opacity, border-radius, box-shadow;
+    }
+    html.js .opt-li .opt-ic.anim-ready {
+      visibility: visible;
+    }
+    html.js .opt-li .opt-ic.morphed {
+      opacity: 1;
+      transform: none;
+      border-radius: 9px;
+    }
+    .opt-li:hover .opt-ic.morphed {
+      border-color: var(--color-cta);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--color-cta) 45%, transparent);
+      transform: scale(1.06);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html.js [data-i18n="feat.h"],
       html.js [data-i18n="feat.sub"],
@@ -488,8 +512,12 @@
       html.js [data-i18n="opt.3.p"],
       html.js [data-i18n="opt.4.h"],
       html.js [data-i18n="opt.4.p"],
-      html.js [data-i18n="cta.h"] {
+      html.js [data-i18n="cta.h"],
+      html.js .opt-li .opt-ic {
         visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        border-radius: 9px !important;
       }
       .heading-char { opacity: 1 !important; transition: none !important; }
       .scramble-char.pending { opacity: 1 !important; visibility: visible !important; }
@@ -1226,12 +1254,17 @@
       will-change: clip-path;
       white-space: nowrap;
     }
-    .lander-desc .m-word {
+    .lander-desc .m-word,
+    .lander-desc .anime-word,
+    .anime-word {
       display: inline-block;
-      margin-right: 0.28em;
+      white-space: nowrap;
+      margin: 0;
+      padding: 0;
       transition: color 0.3s ease;
     }
-    .lander-desc .m-word[data-target] {
+    .lander-desc .m-word[data-target],
+    .lander-desc .anime-word[data-target] {
       color: #FFFFFF;
       font-weight: 500;
     }
@@ -2648,7 +2681,7 @@
       var DRAW_EASING = 'cubicBezier(0.759, 0.059, 0.381, 0.929)';
 
       var drawableSvgs = Array.prototype.slice.call(
-        document.querySelectorAll('.feature-icon svg, .opt-ic svg, .svg-drawable, .copy-glyph, a.btn svg, .btn svg')
+        document.querySelectorAll('.feature-icon svg, .svg-drawable, .copy-glyph, a.btn svg, .btn svg')
       );
 
       function getStrokables(svg) {
@@ -3822,6 +3855,139 @@
         el._scrambleTimer = requestAnimationFrame(tick);
       }
 
+      // --- Row Logos: Synchronized Morph Engine (.opt-ic beside animated lines) ---
+      function getStrokables(svg) {
+        if (!svg) return [];
+        var shapes = Array.prototype.slice.call(
+          svg.querySelectorAll('path, rect, circle, line, polyline, polygon')
+        );
+        return shapes.filter(function (shape) {
+          var stroke = shape.getAttribute('stroke');
+          if (!stroke || stroke === 'none') {
+            var comp = window.getComputedStyle(shape).stroke;
+            if (!comp || comp === 'none') return false;
+          }
+          return true;
+        });
+      }
+
+      function getFills(svg) {
+        if (!svg) return [];
+        var shapes = Array.prototype.slice.call(
+          svg.querySelectorAll('path, circle, rect')
+        );
+        return shapes.filter(function (shape) {
+          var fill = shape.getAttribute('fill');
+          return fill && fill !== 'none' && fill !== 'transparent';
+        });
+      }
+
+      function prepareLogo(icon) {
+        if (!icon) return;
+        if (isReduced) {
+          icon.classList.add('anim-ready');
+          icon.classList.add('morphed');
+          return;
+        }
+        var svg = icon.querySelector('svg');
+        if (!svg) {
+          icon.classList.add('anim-ready');
+          return;
+        }
+
+        var strokables = getStrokables(svg);
+        var fills = getFills(svg);
+
+        if (typeof anime !== 'undefined') {
+          strokables.forEach(function (s) {
+            var len = anime.setDashoffset(s);
+            s.style.strokeDashoffset = len;
+          });
+        }
+        fills.forEach(function (f) {
+          f.style.opacity = '0';
+        });
+
+        icon.classList.add('anim-ready');
+      }
+
+      function morphLogo(icon) {
+        if (!icon) return;
+        if (isReduced) {
+          icon.classList.add('anim-ready');
+          icon.classList.add('morphed');
+          return;
+        }
+        var svg = icon.querySelector('svg');
+        if (!svg) return;
+
+        var strokables = getStrokables(svg);
+        var fills = getFills(svg);
+
+        if (typeof anime !== 'undefined') {
+          anime.remove(icon);
+          if (strokables.length > 0) anime.remove(strokables);
+          if (fills.length > 0) anime.remove(fills);
+
+          strokables.forEach(function (s) {
+            var len = anime.setDashoffset(s);
+            s.style.strokeDashoffset = len;
+          });
+          fills.forEach(function (f) {
+            f.style.opacity = '0';
+          });
+
+          // 1. Container badge shape morph: circle -> squircle, scale, rotate, glowing pulse
+          anime({
+            targets: icon,
+            opacity: [0, 1],
+            scale: [0.35, 1],
+            rotate: [-35, 0],
+            borderRadius: ['50%', '9px'],
+            boxShadow: [
+              '0 0 0px 0px transparent',
+              '0 0 20px 4px color-mix(in srgb, var(--color-cta) 75%, transparent)',
+              '0 0 0px 0px transparent'
+            ],
+            borderColor: [
+              'var(--color-cta)',
+              'color-mix(in srgb, var(--color-cta) 26%, transparent)'
+            ],
+            duration: 850,
+            easing: 'inOutExpo',
+            complete: function () {
+              icon.classList.add('morphed');
+            }
+          });
+
+          // 2. SVG line-art morph (stroke drawing)
+          if (strokables.length > 0) {
+            anime({
+              targets: strokables,
+              strokeDashoffset: [anime.setDashoffset, 0],
+              duration: 900,
+              delay: anime.stagger(60, { start: 40 }),
+              easing: 'inOutExpo'
+            });
+          }
+
+          // 3. SVG fills / accents
+          if (fills.length > 0) {
+            anime({
+              targets: fills,
+              opacity: [0, 1],
+              scale: [0.3, 1],
+              duration: 500,
+              delay: 350,
+              easing: 'inOutExpo'
+            });
+          }
+        } else {
+          icon.classList.add('anim-ready');
+          icon.classList.add('morphed');
+        }
+      }
+
       function getHeadingElements() {
         var selector = HEADING_KEYS.map(function (k) { return '[data-i18n="' + k + '"]'; }).join(', ');
         return Array.prototype.slice.call(document.querySelectorAll(selector));
@@ -3834,10 +4000,15 @@
 
       var headingEls = getHeadingElements();
       var targetEls = getTargetElements();
+      var rowLis = Array.prototype.slice.call(document.querySelectorAll('.opt-li'));
 
-      // Immediately prepare all elements so no raw text is ever visible before animation
+      // Immediately prepare all elements so no raw text or un-morphed logos are visible before animation
       headingEls.forEach(prepareHeading);
       targetEls.forEach(prepareScramble);
+      rowLis.forEach(function (li) {
+        var ic = li.querySelector('.opt-ic');
+        if (ic) prepareLogo(ic);
+      });
 
       if (!('IntersectionObserver' in window) || isReduced) {
         return;
@@ -3851,6 +4022,35 @@
             var el = entry.target;
             if (!handledSet.has(el)) {
               handledSet.add(el);
+
+              // If an .opt-li row enters view, morph its logo and coordinate heading & paragraph
+              if (el.classList.contains('opt-li')) {
+                var ic = el.querySelector('.opt-ic');
+                if (ic) morphLogo(ic);
+                var h = el.querySelector('h3[data-i18n]');
+                if (h && !handledSet.has(h)) {
+                  handledSet.add(h);
+                  animateHeading(h);
+                  textIo.unobserve(h);
+                }
+                var p = el.querySelector('p[data-i18n]');
+                if (p && !handledSet.has(p)) {
+                  handledSet.add(p);
+                  scrambleElement(p, false);
+                  textIo.unobserve(p);
+                }
+                textIo.unobserve(el);
+                return;
+              }
+
+              // Standalone elements outside .opt-li (e.g. feat.h, feat.sub, cta.h)
+              var rowLi = el.closest('.opt-li');
+              if (rowLi && !handledSet.has(rowLi)) {
+                handledSet.add(rowLi);
+                var rowIc = rowLi.querySelector('.opt-ic');
+                if (rowIc) morphLogo(rowIc);
+              }
+
               var key = el.getAttribute('data-i18n');
               if (HEADING_KEYS.indexOf(key) !== -1) {
                 animateHeading(el);
@@ -3863,14 +4063,41 @@
         });
       }, { rootMargin: '0px 0px -5% 0px', threshold: 0.1 });
 
+      rowLis.forEach(function (li) { textIo.observe(li); });
       headingEls.forEach(function (el) { textIo.observe(el); });
       targetEls.forEach(function (el) { textIo.observe(el); });
+
+      // Interactive hover morph for list items
+      rowLis.forEach(function (li) {
+        li.addEventListener('mouseenter', function () {
+          if (isReduced || !handledSet.has(li)) return;
+          var ic = li.querySelector('.opt-ic');
+          if (ic && ic.classList.contains('morphed') && typeof anime !== 'undefined') {
+            var strokables = getStrokables(ic.querySelector('svg'));
+            if (strokables.length > 0) {
+              anime({
+                targets: strokables,
+                strokeDashoffset: [anime.setDashoffset, 0],
+                duration: 600,
+                delay: anime.stagger(40),
+                easing: 'inOutExpo'
+              });
+            }
+          }
+        });
+      });
 
       // Global trigger for language updates
       window.__triggerScramble = function () {
         if (isReduced) return;
         var hTargets = getHeadingElements();
         var pTargets = getTargetElements();
+
+        // Re-morph all row logos alongside the translated text
+        rowLis.forEach(function (li) {
+          var ic = li.querySelector('.opt-ic');
+          if (ic) morphLogo(ic);
+        });
 
         hTargets.forEach(function (el) {
           el.removeAttribute('data-raw-text');
@@ -4059,7 +4286,113 @@
     })();
   </script>
 
-  <!-- ============ Lander Intro Sequence & Transition Engine (Anime.js) ============ -->
+  <!-- ============ Text Splitter Engine (splitText with includeSpaces) ============ -->
+  <script>
+    function splitText(target, parameters) {
+      var params = parameters || {};
+      var includeSpaces = params.includeSpaces === true; // explicitly false when passed as false
+      var wordClass = (params.words && typeof params.words.class === 'string') ? params.words.class : 'anime-word';
+
+      var elements = [];
+      if (typeof target === 'string') {
+        elements = Array.prototype.slice.call(document.querySelectorAll(target));
+      } else if (target instanceof HTMLElement) {
+        elements = [target];
+      } else if (target && target.length) {
+        elements = Array.prototype.slice.call(target);
+      }
+
+      var allWords = [];
+      var allChars = [];
+      var originalStates = [];
+
+      elements.forEach(function (el) {
+        var originalHTML = el.innerHTML;
+        var originalAria = el.getAttribute('aria-label');
+        var fullText = el.textContent;
+
+        if (!el.getAttribute('aria-label') && params.accessible !== false) {
+          el.setAttribute('aria-label', fullText);
+        }
+
+        originalStates.push({
+          element: el,
+          html: originalHTML,
+          ariaLabel: originalAria
+        });
+
+        function traverseAndSplit(node) {
+          if (node.nodeType === Node.ELEMENT_NODE && node.classList && node.classList.contains(wordClass)) {
+            allWords.push(node);
+            return;
+          }
+          if (node.nodeType === Node.TEXT_NODE) {
+            var text = node.textContent;
+            if (!text) return;
+
+            var tokens = text.match(/\S+|\s+/g) || [];
+            var frag = document.createDocumentFragment();
+
+            tokens.forEach(function (token) {
+              if (/^\s+$/.test(token)) {
+                if (includeSpaces) {
+                  var spaceSpan = document.createElement('span');
+                  spaceSpan.className = 'anime-space';
+                  spaceSpan.textContent = token;
+                  spaceSpan.setAttribute('aria-hidden', 'true');
+                  frag.appendChild(spaceSpan);
+                } else {
+                  // Do not wrap spaces in split elements
+                  frag.appendChild(document.createTextNode(token));
+                }
+              } else {
+                var wSpan = document.createElement('span');
+                wSpan.className = wordClass;
+                wSpan.textContent = token;
+                var clean = token.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+                wSpan.setAttribute('data-word', clean);
+                wSpan.setAttribute('aria-hidden', 'true');
+                frag.appendChild(wSpan);
+                allWords.push(wSpan);
+              }
+            });
+
+            node.parentNode.replaceChild(frag, node);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            var children = Array.prototype.slice.call(node.childNodes);
+            children.forEach(traverseAndSplit);
+          }
+        }
+
+        var childList = Array.prototype.slice.call(el.childNodes);
+        childList.forEach(traverseAndSplit);
+      });
+
+      return {
+        words: allWords,
+        chars: allChars,
+        includeSpaces: includeSpaces,
+        elements: elements,
+        revert: function () {
+          originalStates.forEach(function (item) {
+            item.element.innerHTML = item.html;
+            if (item.ariaLabel !== null) {
+              item.element.setAttribute('aria-label', item.ariaLabel);
+            } else {
+              item.element.removeAttribute('aria-label');
+            }
+          });
+        }
+      };
+    }
+
+    if (typeof anime !== 'undefined') {
+      anime.splitText = splitText;
+    }
+    window.splitText = splitText;
+  </script>
+
+  <!-- ============ Lander Intro Sequence & Transition Engine ============ -->
   <script>
     (function () {
       if (document.documentElement.classList.contains('lander-skipped')) return;
@@ -4451,7 +4784,8 @@
         var html = words.map(function (item) {
           var targetAttr = item.t ? ' data-target="' + item.t + '"' : '';
           var wAttr = item.w ? ' data-w="' + item.w + '"' : '';
-          return '<span class="m-word"' + wAttr + targetAttr + '>' + item.text + '</span>';
+          var clean = item.w || item.text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+          return '<span class="anime-word m-word"' + wAttr + targetAttr + ' data-word="' + clean + '">' + item.text + '</span>';
         }).join(' ');
         lineEl.innerHTML = html;
       }
@@ -4514,59 +4848,12 @@
       }
       setupLangOptions();
 
-      // Wrap words inside heroHeading and heroParagraph so they can be targeted
+      // Prepare words inside hero section using splitText with includeSpaces: false
       function prepareHeroWords(lang) {
         [heroHeading, heroParagraph, document.getElementById('heroEyebrow'), document.getElementById('heroTag1')].forEach(function (container) {
           if (!container) return;
-          container.querySelectorAll('.hw').forEach(function (hw) {
-            hw.replaceWith(document.createTextNode(hw.textContent));
-          });
-          container.normalize();
+          splitText(container, { words: true, includeSpaces: false });
         });
-
-        function wrap(el) {
-          if (!el) return;
-          var childNodes = Array.from(el.childNodes);
-          childNodes.forEach(function (node) {
-            if (node.nodeType === Node.TEXT_NODE) {
-              var text = node.textContent;
-              if (!text.trim()) return;
-
-              var words = [];
-              if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-                try {
-                  var seg = new Intl.Segmenter(lang || 'en', { granularity: 'word' });
-                  words = Array.from(seg.segment(text)).map(function (s) { return s.segment; });
-                } catch (e) {
-                  words = text.split(/(\s+)/);
-                }
-              } else {
-                words = text.split(/(\s+)/);
-              }
-
-              var frag = document.createDocumentFragment();
-              words.forEach(function (w) {
-                var clean = w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
-                if (!clean) {
-                  frag.appendChild(document.createTextNode(w));
-                } else {
-                  var span = document.createElement('span');
-                  span.className = 'hw';
-                  span.setAttribute('data-w', clean);
-                  span.textContent = w;
-                  frag.appendChild(span);
-                }
-              });
-              el.replaceChild(frag, node);
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-              wrap(node);
-            }
-          });
-        }
-        wrap(heroHeading);
-        wrap(heroParagraph);
-        wrap(document.getElementById('heroEyebrow'));
-        wrap(document.getElementById('heroTag1'));
       }
 
       // Synchronize initial lander language
@@ -4852,7 +5139,7 @@
           easing: 'easeOutBack(1.2)'
         }, '+=150');
 
-      // Stage 9: Explore Button Click -> Semantic Coordinate Morph & Liquid Glass Burst
+      // Stage 9: Explore Button Click -> splitText Word Flight & Liquid Glass Burst
       exploreBtn.addEventListener('click', function (e) {
         if (isFinished) return;
         isFinished = true;
@@ -4860,6 +5147,12 @@
         document.documentElement.classList.add('lander-skipped');
 
         if (activeTimeline) activeTimeline.pause();
+
+        var isReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (isReducedMotion) {
+          finishIntro(true);
+          return;
+        }
 
         var clickX = e ? e.clientX : mouseX;
         var clickY = e ? e.clientY : mouseY;
@@ -4903,71 +5196,280 @@
           });
         }
 
-        // Semantic word morph calculation
-        var words = document.querySelectorAll('#landerDesc .m-word');
-        var matching = [];
-        var nonMatching = [];
+        // Unclip lines so text is fully measurable and visible
+        if (line1) line1.style.clipPath = 'none';
+        if (line2) line2.style.clipPath = 'none';
+        if (line3) line3.style.clipPath = 'none';
+        if (query) query.style.clipPath = 'none';
 
-        words.forEach(function (wEl) {
-          var clean = (wEl.getAttribute('data-w') || wEl.textContent).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
-          var matchEl = document.querySelector('.hw[data-w="' + clean + '"]:not(.hw-matched)');
-          if (matchEl) {
-            matchEl.classList.add('hw-matched');
-            var src = wEl.getBoundingClientRect();
-            var dst = matchEl.getBoundingClientRect();
-            matching.push({
-              el: wEl,
-              dx: dst.left - src.left,
-              dy: dst.top - src.top,
-              target: matchEl
-            });
-          } else {
-            nonMatching.push(wEl);
+        // Prepare frontpage target elements: remove transitions, force static placement so dstRect is true final resting position
+        var heroHeading = document.getElementById('heroHeading');
+        var heroParagraph = document.getElementById('heroParagraph');
+        var heroEyebrow = document.getElementById('heroEyebrow');
+        var heroTag1 = document.getElementById('heroTag1');
+        var headerEl = document.querySelector('header');
+
+        if (headerEl) {
+          headerEl.style.opacity = '1';
+          headerEl.style.visibility = 'visible';
+        }
+
+        [heroHeading, heroParagraph, heroEyebrow, heroTag1].forEach(function (el) {
+          if (el) {
+            el.style.transition = 'none';
+            el.classList.add('in');
+            el.style.transform = 'none';
+            el.style.opacity = '1';
+            el.style.visibility = 'visible';
           }
         });
 
-        // Fly matching words into frontpage positions
-        matching.forEach(function (item) {
-          var targetStyle = window.getComputedStyle(item.target);
-          anime({
-            targets: item.el,
-            translateX: item.dx,
-            translateY: item.dy,
-            fontSize: targetStyle.fontSize,
-            fontWeight: targetStyle.fontWeight,
-            color: targetStyle.color,
-            duration: 950,
-            easing: 'cubicBezier(0.25, 1, 0.5, 1)'
+        // Split frontpage target containers and lander description by words with includeSpaces: false
+        var landerSplit = splitText('#landerDesc', {
+          words: true,
+          includeSpaces: false
+        });
+        var heroParaSplit = splitText('#heroParagraph', {
+          words: true,
+          includeSpaces: false
+        });
+        var heroHeadingSplit = splitText('#heroHeading', {
+          words: true,
+          includeSpaces: false
+        });
+        var heroEyebrowSplit = splitText('#heroEyebrow', {
+          words: true,
+          includeSpaces: false
+        });
+
+        // Force browser layout flush so bounding rects reflect final document positions
+        if (heroParagraph) void heroParagraph.offsetWidth;
+
+        // Match words to destination locations
+        var usedTargets = new Set();
+        var flights = [];
+
+        landerSplit.words.forEach(function (srcWord) {
+          var clean = (srcWord.getAttribute('data-word') || srcWord.getAttribute('data-w') || srcWord.textContent || '')
+            .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+          var targetPref = srcWord.getAttribute('data-target') || '';
+          var targetEl = null;
+
+          function findCandidate(wordList) {
+            if (!wordList) return null;
+            for (var i = 0; i < wordList.length; i++) {
+              var cand = wordList[i];
+              if (!usedTargets.has(cand)) {
+                var candClean = (cand.getAttribute('data-word') || cand.textContent || '')
+                  .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+                if (candClean === clean) {
+                  return cand;
+                }
+              }
+            }
+            return null;
+          }
+
+          // Priority 1: Check preferred container if data-target is set
+          if (targetPref === 'hero-h1') {
+            targetEl = findCandidate(heroHeadingSplit.words);
+          } else if (targetPref === 'hero-sub') {
+            targetEl = findCandidate(heroParaSplit.words);
+          } else if (targetPref === 'hero-eyebrow') {
+            targetEl = findCandidate(heroEyebrowSplit.words);
+          }
+
+          // Priority 2: Fallback across target containers
+          if (!targetEl) targetEl = findCandidate(heroParaSplit.words);
+          if (!targetEl) targetEl = findCandidate(heroHeadingSplit.words);
+          if (!targetEl) targetEl = findCandidate(heroEyebrowSplit.words);
+
+          if (targetEl) {
+            usedTargets.add(targetEl);
+            flights.push({
+              src: srcWord,
+              dst: targetEl
+            });
+          }
+        });
+
+        // Create top-level flying layer directly in body (unconstrained by overflow or clipping)
+        var flyLayer = document.getElementById('landerFlyLayer');
+        if (!flyLayer) {
+          flyLayer = document.createElement('div');
+          flyLayer.id = 'landerFlyLayer';
+          flyLayer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:100050;overflow:visible;';
+          document.body.appendChild(flyLayer);
+        }
+        flyLayer.innerHTML = '';
+
+        var flyingItems = [];
+
+        flights.forEach(function (f, fIdx) {
+          var srcRect = f.src.getBoundingClientRect();
+          var dstRect = f.dst.getBoundingClientRect();
+          var srcStyle = window.getComputedStyle(f.src);
+          var dstStyle = window.getComputedStyle(f.dst);
+
+          // Pre-hide destination word until flight docks
+          f.dst.style.opacity = '0';
+          f.dst.style.visibility = 'visible';
+
+          // Hide original source word in lander
+          f.src.style.opacity = '0';
+
+          var flyer = document.createElement('span');
+          flyer.textContent = f.src.textContent;
+          flyer.style.cssText =
+            'position:fixed;' +
+            'left:' + srcRect.left + 'px;' +
+            'top:' + srcRect.top + 'px;' +
+            'font-size:' + srcStyle.fontSize + ';' +
+            'font-weight:' + srcStyle.fontWeight + ';' +
+            'color:' + srcStyle.color + ';' +
+            'line-height:' + srcStyle.lineHeight + ';' +
+            'font-family:' + srcStyle.fontFamily + ';' +
+            'letter-spacing:' + srcStyle.letterSpacing + ';' +
+            'margin:0;padding:0;display:inline-block;white-space:nowrap;' +
+            'transform-origin:0 0;' +
+            'transform:translate3d(0, 0, 0);' +
+            'transition:color 0.85s cubic-bezier(0.22, 1, 0.36, 1);' +
+            'pointer-events:none;will-change:transform,opacity,color;';
+          flyLayer.appendChild(flyer);
+
+          var dx = dstRect.left - srcRect.left;
+          var dy = dstRect.top - srcRect.top;
+
+          flyingItems.push({
+            flyer: flyer,
+            dst: f.dst,
+            dx: dx,
+            dy: dy,
+            srcColor: srcStyle.color,
+            dstColor: dstStyle.color,
+            srcSize: parseFloat(srcStyle.fontSize) || 18,
+            dstSize: parseFloat(dstStyle.fontSize) || 18,
+            idx: fIdx
           });
         });
 
-        // Disperse non-matching words
-        anime({
-          targets: nonMatching,
-          opacity: 0,
-          translateX: function () { return (Math.random() - 0.5) * 140; },
-          translateY: function () { return (Math.random() - 0.5) * 100 + 40; },
-          filter: ['blur(0px)', 'blur(10px)'],
-          duration: 650,
-          easing: 'easeOutQuad'
+        // Trigger color transition on next animation frame
+        requestAnimationFrame(function () {
+          flyingItems.forEach(function (item) {
+            item.flyer.style.color = item.dstColor;
+          });
         });
+
+        // Launch word flights using a continuous parametric quadratic Bézier curve:
+        // No abrupt mid-flight stops, continuous velocity, and gentle aerodynamic curvature ("not too much curved")
+        var totalFlying = flyingItems.length;
+
+        flyingItems.forEach(function (item) {
+          var dist = Math.hypot(item.dx, item.dy);
+
+          // Gentle upward peak arc deflection: 16px to 32px based on travel distance
+          var peakY = -Math.min(32, Math.max(16, dist * 0.065));
+
+          // Subtle lateral spread based on word index: maintains distinct slipstreams without clutter
+          var spread = (item.idx / Math.max(1, totalFlying - 1)) - 0.5;
+          var peakX = spread * 16;
+
+          var targetScale = item.dstSize / item.srcSize;
+          var animObj = { p: 0 };
+
+          // Cascading stagger: smooth fluid wave
+          var delay = (item.idx % 6) * 20 + Math.floor(item.idx / 6) * 16;
+
+          anime({
+            targets: animObj,
+            p: 1,
+            duration: 1050,
+            delay: delay,
+            easing: 'cubicBezier(0.22, 1, 0.36, 1)',
+            update: function () {
+              var t = animObj.p;
+              // Parabolic arc: 4 * t * (1 - t) has peak 1.0 at t = 0.5, and 0 at t = 0 and t = 1
+              var arc = 4 * t * (1 - t);
+              var curX = t * item.dx + arc * peakX;
+              var curY = t * item.dy + arc * peakY;
+              // Subtle flight elevation scale (+5% max at mid-flight), smoothly scaling to target font size
+              var scale = (1 + (targetScale - 1) * t) * (1 + 0.05 * Math.sin(t * Math.PI));
+              item.flyer.style.transform =
+                'translate3d(' + curX.toFixed(2) + 'px, ' + curY.toFixed(2) + 'px, 0) scale(' + scale.toFixed(3) + ')';
+            },
+            complete: function () {
+              item.dst.style.opacity = '1';
+              item.flyer.style.opacity = '0';
+              if (item.flyer.parentNode) {
+                item.flyer.parentNode.removeChild(item.flyer);
+              }
+            }
+          });
+        });
+
+        // Non-flying destination words fade in softly to complete the sentences
+        var allDstWords = [].concat(
+          heroParaSplit.words,
+          heroHeadingSplit.words,
+          heroEyebrowSplit.words
+        );
+        var remainingDstWords = allDstWords.filter(function (w) {
+          return !usedTargets.has(w);
+        });
+        if (remainingDstWords.length > 0) {
+          remainingDstWords.forEach(function (w) { w.style.opacity = '0'; });
+          anime({
+            targets: remainingDstWords,
+            opacity: [0, 1],
+            duration: 700,
+            delay: 380,
+            easing: 'easeOutCubic'
+          });
+        }
+
+        // Disperse non-matching words
+        var nonMatching = landerSplit.words.filter(function (w) {
+          return !flights.some(function (f) { return f.src === w; });
+        });
+        if (nonMatching.length > 0) {
+          anime({
+            targets: nonMatching,
+            opacity: [1, 0],
+            translateY: [0, 25],
+            filter: ['blur(0px)', 'blur(8px)'],
+            duration: 550,
+            easing: 'easeOutQuad'
+          });
+        }
+
+        // Disperse query title
+        if (query) {
+          anime({
+            targets: query,
+            opacity: [1, 0],
+            translateY: [0, -25],
+            filter: ['blur(0px)', 'blur(8px)'],
+            duration: 550,
+            easing: 'easeOutQuad'
+          });
+        }
 
         // Disperse circular chips
         anime({
           targets: '.lander-story-chip',
-          opacity: 0,
-          translateY: 20,
-          filter: ['blur(0px)', 'blur(8px)'],
-          duration: 550,
+          opacity: [1, 0],
+          translateY: [0, 20],
+          filter: ['blur(0px)', 'blur(6px)'],
+          duration: 500,
           easing: 'easeOutQuad'
         });
 
-        // Hide explore button & query
+        // Hide explore button & query wrapper
         anime({
           targets: [exploreWrap, queryWrap],
-          opacity: 0,
-          scale: 0.9,
-          duration: 500,
+          opacity: [1, 0],
+          scale: [1, 0.94],
+          duration: 450,
           easing: 'easeOutQuad'
         });
 
@@ -4975,23 +5477,34 @@
         anime({
           targets: overlay,
           opacity: [1, 0],
-          duration: 850,
-          delay: 450,
+          duration: 800,
+          delay: 420,
           easing: 'linear',
           complete: function () {
             overlay.style.display = 'none';
             document.body.classList.remove('lander-locked');
             if (window.__lenis) window.__lenis.start();
+            if (flyLayer && flyLayer.parentNode) {
+              flyLayer.parentNode.removeChild(flyLayer);
+            }
+            // Ensure all destination words are visible and transitions restored
+            allDstWords.forEach(function (w) {
+              w.style.opacity = '1';
+              w.style.visibility = 'visible';
+            });
+            [heroHeading, heroParagraph, heroEyebrow, heroTag1].forEach(function (el) {
+              if (el) el.style.transition = '';
+            });
           }
         });
 
-        // Subtle stagger reveal for front page header and hero
+        // Subtle stagger reveal for preview card
         anime({
-          targets: ['header', '#hero', '.preview-wrap'],
+          targets: '.preview-wrap',
           opacity: [0.7, 1],
           translateY: [12, 0],
           duration: 750,
-          delay: anime.stagger(100, { start: 400 }),
+          delay: 420,
           easing: 'easeOutCubic'
         });
       });
