@@ -21,7 +21,6 @@ const CORE_ASSETS = [
   BASE_PATH ? `${appPath("/manifest.webmanifest")}?base=${encodeURIComponent(BASE_PATH)}` : appPath("/manifest.webmanifest"),
   appPath("/static/landing.css"),
   appPath("/static/lenis.min.js"),
-  appPath("/static/lenis.css"),
   appPath("/static/anime.min.js"),
   appPath("/static/icons/icon-192.png"),
   appPath("/static/icons/icon-512.png"),
