@@ -969,10 +969,23 @@
       text-align: left;
       transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
-    .lander-lang-opt:hover {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(96, 165, 250, 0.4);
+    .lander-lang-opt:hover, .lander-lang-opt.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(96, 165, 250, 0.45);
       color: #FFFFFF;
+    }
+    @media (max-width: 640px) {
+      .lander-lang-wrap {
+        top: 14px;
+        left: 14px;
+      }
+      .lander-lang-tokens {
+        gap: 4px;
+      }
+      .lander-skip-btn {
+        bottom: 14px;
+        right: 18px;
+      }
     }
 
     /* Bottom Right: Skip Button */
@@ -1195,7 +1208,6 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         <span class="lander-lang-tokens">
           <span class="lt" data-lang="en">eng</span><span class="lander-lang-sep">·</span>
-          <span class="lt" data-lang="fr">français</span><span class="lander-lang-sep">·</span>
           <span class="lt" data-lang="zh">中文</span><span class="lander-lang-sep">·</span>
           <span class="lt" data-lang="ja">日本語</span><span class="lander-lang-sep">·</span>
           <span class="lt" data-lang="ko">한국어</span><span class="lander-lang-sep">·</span>
@@ -1214,7 +1226,6 @@
         </div>
         <div class="lander-lang-grid">
           <button type="button" class="lander-lang-opt" data-lang="en"><span>🇺🇸</span> <span>English</span></button>
-          <button type="button" class="lander-lang-opt" data-lang="fr"><span>🇫🇷</span> <span>Français</span></button>
           <button type="button" class="lander-lang-opt" data-lang="zh"><span>🇨🇳</span> <span>中文</span></button>
           <button type="button" class="lander-lang-opt" data-lang="ja"><span>🇯🇵</span> <span>日本語</span></button>
           <button type="button" class="lander-lang-opt" data-lang="ko"><span>🇰🇷</span> <span>한국어</span></button>
@@ -2991,11 +3002,48 @@
         if (sel && document.activeElement !== sel) sel.value = selectedLang();
         window.__lang = lang;
       }
-      apply(currentLang());
+
+      window.__syncLanderTokens = function (lang) {
+        document.querySelectorAll('.lander-lang-tokens .lt').forEach(function (token) {
+          token.classList.toggle('active', token.getAttribute('data-lang') === lang);
+        });
+        document.querySelectorAll('.lander-lang-opt').forEach(function (opt) {
+          opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
+        });
+      };
+
+      window.__applyLang = function (lang) {
+        if (!lang) return;
+        var storageValue = lang;
+        var effectiveLang = lang;
+        if (lang === 'system') {
+          effectiveLang = detectBrowser();
+        } else if (SUPPORTED.indexOf(lang) === -1) {
+          effectiveLang = 'en';
+          storageValue = 'en';
+        }
+        try { localStorage.setItem('tokdash-site-lang', storageValue); } catch (e) {}
+        apply(effectiveLang);
+
+        var sel = document.getElementById('langToggle');
+        if (sel && sel.value !== storageValue) sel.value = storageValue;
+
+        if (window.__syncLanderTokens) {
+          window.__syncLanderTokens(effectiveLang);
+        }
+
+        if (typeof window.__updateLanderText === 'function') {
+          window.__updateLanderText(effectiveLang);
+        }
+      };
+
+      var initialLang = currentLang();
+      apply(initialLang);
+      window.__syncLanderTokens(initialLang);
+
       var toggle = document.getElementById('langToggle');
       if (toggle) toggle.addEventListener('change', function () {
-        try { localStorage.setItem('tokdash-site-lang', toggle.value); } catch (e) {}
-        apply(currentLang());
+        window.__applyLang(toggle.value);
       });
     })();
   </script>
@@ -3208,9 +3256,13 @@
       // Language switcher modal handlers
       if (langBtn && langModal && langDialog) {
         langBtn.addEventListener('click', function (e) {
+          if (e.target.closest('.lt')) return;
           e.stopPropagation();
           langModal.style.display = 'flex';
           setTimeout(function () { langDialog.classList.add('open'); }, 10);
+          if (activeTimeline && !activeTimeline.completed && !isFinished) {
+            activeTimeline.pause();
+          }
         });
       }
 
@@ -3218,6 +3270,9 @@
         if (!langModal || !langDialog) return;
         langDialog.classList.remove('open');
         setTimeout(function () { langModal.style.display = 'none'; }, 180);
+        if (activeTimeline && !activeTimeline.completed && !isFinished) {
+          activeTimeline.play();
+        }
       }
 
       if (langClose) langClose.addEventListener('click', closeLangModal);
@@ -3227,6 +3282,380 @@
         });
       }
 
+      var LANDER_I18N = {
+        en: {
+          query: 'What is Tokdash?',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'Tokdash' },
+            { w: 'is', text: 'is' },
+            { w: 'a', text: 'a' },
+            { w: 'token', t: 'hero-h1', text: 'token' },
+            { w: 'and', t: 'hero-h1', text: 'and' },
+            { w: 'cost', t: 'hero-h1', text: 'cost' },
+            { w: 'tracker', text: 'tracker' },
+            { w: 'dashboard', t: 'hero-h1', text: 'dashboard,' },
+            { w: 'that', text: 'that' },
+            { w: 'reads', t: 'hero-sub', text: 'reads' },
+            { w: 'the', t: 'hero-sub', text: 'the' },
+            { w: 'logs', t: 'hero-sub', text: 'logs' }
+          ],
+          line2: [
+            { w: 'already', t: 'hero-sub', text: 'already' },
+            { w: 'present', text: 'present' },
+            { w: 'in', text: 'in' },
+            { w: 'your', t: 'hero-h1', text: 'your' },
+            { w: 'machine', t: 'hero-sub', text: 'machine' },
+            { w: 'and', t: 'hero-sub', text: 'and' },
+            { w: 'shows', t: 'hero-sub', text: 'shows' },
+            { w: 'you', text: 'you' },
+            { w: 'exactly', text: 'exactly' },
+            { w: 'where', text: 'where' },
+            { w: 'your', t: 'hero-h1', text: 'your' },
+            { w: 'tokens', t: 'hero-sub', text: 'tokens' },
+            { w: 'go', text: 'go' }
+          ],
+          line3: [
+            { w: 'and', t: 'hero-sub', text: 'and' },
+            { w: 'how', text: 'how' },
+            { w: 'much', text: 'much' },
+            { w: 'you', t: 'hero-sub', text: 'you' },
+            { w: 'burn', t: 'hero-sub', text: 'burn,' },
+            { w: 'what', t: 'hero-sub', text: 'what' },
+            { w: 'they', t: 'hero-sub', text: 'they' },
+            { w: 'cost', t: 'hero-sub', text: 'cost,' },
+            { w: 'no', t: 'hero-sub', text: 'no' },
+            { w: 'account', t: 'hero-sub', text: 'account,' },
+            { w: 'no', t: 'hero-sub', text: 'no' },
+            { w: 'telemetry', t: 'hero-sub', text: 'telemetry' },
+            { w: 'and', t: 'hero-sub', text: 'and' },
+            { w: 'no', text: 'no' },
+            { w: 'upload', t: 'hero-sub', text: 'upload.' }
+          ],
+          chips: [
+            'Twenty-four agents, one dashboard',
+            'Local-first & 100% private',
+            'Open source & MIT licensed',
+            'Zero telemetry · Nothing leaves your PC',
+            'Reads logs already on disk',
+            'Real-time cost & cache tracking'
+          ],
+          explore: 'Explore Tokdash',
+          skip: 'skip',
+          modalTitle: 'Select Language'
+        },
+        zh: {
+          query: '什么是 Tokdash？',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'Tokdash' },
+            { w: '是', text: '是' },
+            { w: '一个', text: '一个' },
+            { w: '本地', t: 'hero-h1', text: '本地' },
+            { w: 'token', t: 'hero-h1', text: 'Token' },
+            { w: '与', t: 'hero-h1', text: '与' },
+            { w: '成本', t: 'hero-h1', text: '成本' },
+            { w: '追踪', text: '追踪' },
+            { w: '仪表盘', t: 'hero-h1', text: '仪表盘，' },
+            { w: '直接', text: '直接' },
+            { w: '读取', t: 'hero-sub', text: '读取' },
+            { w: '日志', t: 'hero-sub', text: '日志' }
+          ],
+          line2: [
+            { w: '你', text: '你' },
+            { w: '电脑', t: 'hero-sub', text: '电脑上' },
+            { w: '现有', t: 'hero-sub', text: '现有的' },
+            { w: '日志', t: 'hero-sub', text: '日志，' },
+            { w: '精确', t: 'hero-sub', text: '精确' },
+            { w: '呈现', t: 'hero-sub', text: '呈现' },
+            { w: 'token', t: 'hero-sub', text: 'Token' },
+            { w: '流向', text: '流向' },
+            { w: '与', text: '与' },
+            { w: '消耗', t: 'hero-sub', text: '消耗' }
+          ],
+          line3: [
+            { w: '以及', text: '以及' },
+            { w: '对应', text: '对应' },
+            { w: '成本', t: 'hero-sub', text: '成本。' },
+            { w: '无需', t: 'hero-sub', text: '无需' },
+            { w: '账号', t: 'hero-sub', text: '账号，' },
+            { w: '零遥测', t: 'hero-sub', text: '零遥测，' },
+            { w: '不上传', t: 'hero-sub', text: '不上传' },
+            { w: '任何', text: '任何' },
+            { w: '数据', text: '数据。' }
+          ],
+          chips: [
+            '二十四款 AI 编码工具，一站掌控',
+            '本地优先 · 100% 私密安全',
+            '开源免费 · MIT 许可协议',
+            '零遥测 · 数据绝不离开你的电脑',
+            '直接读取磁盘现有日志',
+            '实时成本与缓存率追踪'
+          ],
+          explore: '探索 Tokdash',
+          skip: '跳过',
+          modalTitle: '选择语言'
+        },
+        ja: {
+          query: 'Tokdash とは？',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'Tokdash' },
+            { w: 'は', text: 'は' },
+            { w: 'ローカルで', text: 'ローカルで' },
+            { w: '動作する', text: '動作する' },
+            { w: 'トークン', t: 'hero-h1', text: 'トークンと' },
+            { w: 'コスト', t: 'hero-h1', text: 'コストの' },
+            { w: '追跡', text: '追跡' },
+            { w: 'ダッシュボード', t: 'hero-h1', text: 'ダッシュボードです。' }
+          ],
+          line2: [
+            { w: 'マシン', t: 'hero-sub', text: 'マシン上の' },
+            { w: '既存', t: 'hero-sub', text: '既存' },
+            { w: 'ログ', t: 'hero-sub', text: 'ログを' },
+            { w: '直接', text: '直接' },
+            { w: '読み取り', t: 'hero-sub', text: '読み取り、' },
+            { w: 'トークン', t: 'hero-sub', text: 'トークンの' },
+            { w: '消費先', text: '消費先と' },
+            { w: '利用量', text: '利用量を' },
+            { w: '正確', t: 'hero-sub', text: '正確に表示。' }
+          ],
+          line3: [
+            { w: 'コスト', t: 'hero-sub', text: 'コストも' },
+            { w: '一目で', text: '一目で把握でき、' },
+            { w: 'アカウント', t: 'hero-sub', text: 'アカウント不要・' },
+            { w: 'テレメトリ', t: 'hero-sub', text: 'テレメトリなし・' },
+            { w: 'アップロード', t: 'hero-sub', text: 'アップロード不要。' }
+          ],
+          chips: [
+            '24種類のAIエージェントを1つの画面で',
+            'ローカルファースト ＆ 100% プライベート',
+            'オープンソース ＆ MIT ライセンス',
+            'テレメトリなし · データはPC外に出ません',
+            'ディスク上の既存ログを直接読み取り',
+            'リアルタイムのコスト・キャッシュ追跡'
+          ],
+          explore: 'Tokdash を探索する',
+          skip: 'スキップ',
+          modalTitle: '言語を選択'
+        },
+        ko: {
+          query: 'Tokdash란 무엇인가요?',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'Tokdash는' },
+            { w: '로컬에서', text: '로컬에서' },
+            { w: '동작하는', text: '동작하는' },
+            { w: '토큰', t: 'hero-h1', text: '토큰 및' },
+            { w: '비용', t: 'hero-h1', text: '비용' },
+            { w: '추적', text: '추적' },
+            { w: '대시보드로,', t: 'hero-h1', text: '대시보드로,' }
+          ],
+          line2: [
+            { w: '컴퓨터에', text: '컴퓨터에' },
+            { w: '이미', t: 'hero-sub', text: '이미' },
+            { w: '존재하는', text: '존재하는' },
+            { w: '로그를', t: 'hero-sub', text: '로그를' },
+            { w: '직접', text: '직접' },
+            { w: '읽어', t: 'hero-sub', text: '읽어' },
+            { w: '토큰', t: 'hero-sub', text: '토큰의' },
+            { w: '사용처와', text: '사용처와' },
+            { w: '소비량을', text: '소비량을' },
+            { w: '정확히', t: 'hero-sub', text: '정확히 보여줍니다.' }
+          ],
+          line3: [
+            { w: '발생', text: '발생' },
+            { w: '비용을', t: 'hero-sub', text: '비용을' },
+            { w: '확인하며,', text: '확인하며,' },
+            { w: '계정', t: 'hero-sub', text: '계정 없이,' },
+            { w: '텔레메트리', t: 'hero-sub', text: '텔레메트리 없이,' },
+            { w: '업로드', t: 'hero-sub', text: '업로드 없이.' }
+          ],
+          chips: [
+            '24개 AI 에이전트, 하나의 대시보드',
+            '로컬 우선 & 100% 개인정보 보호',
+            '오픈 소스 & MIT 라이선스',
+            '제로 텔레메트리 · 데이터 외부 전송 없음',
+            '디스크의 기존 로그 직접 분석',
+            '실시간 비용 및 캐시 모니터링'
+          ],
+          explore: 'Tokdash 둘러보기',
+          skip: '건너뛰기',
+          modalTitle: '언어 선택'
+        },
+        es: {
+          query: '¿Qué es Tokdash?',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'Tokdash' },
+            { w: 'es', text: 'es' },
+            { w: 'un', text: 'un' },
+            { w: 'panel', text: 'panel' },
+            { w: 'de', text: 'de' },
+            { w: 'seguimiento', text: 'seguimiento' },
+            { w: 'de', text: 'de' },
+            { w: 'tokens', t: 'hero-h1', text: 'tokens' },
+            { w: 'y', t: 'hero-h1', text: 'y' },
+            { w: 'costes', t: 'hero-h1', text: 'costes' },
+            { w: 'que', text: 'que' },
+            { w: 'lee', t: 'hero-sub', text: 'lee' },
+            { w: 'los', t: 'hero-sub', text: 'los' },
+            { w: 'registros', t: 'hero-sub', text: 'registros' }
+          ],
+          line2: [
+            { w: 'ya', t: 'hero-sub', text: 'ya' },
+            { w: 'presentes', text: 'presentes' },
+            { w: 'en', text: 'en' },
+            { w: 'tu', t: 'hero-h1', text: 'tu' },
+            { w: 'máquina', t: 'hero-sub', text: 'máquina' },
+            { w: 'y', t: 'hero-sub', text: 'y' },
+            { w: 'te', text: 'te' },
+            { w: 'muestra', t: 'hero-sub', text: 'muestra' },
+            { w: 'exactamente', text: 'exactamente' },
+            { w: 'adónde', text: 'adónde' },
+            { w: 'van', text: 'van' },
+            { w: 'tus', t: 'hero-h1', text: 'tus' },
+            { w: 'tokens', t: 'hero-sub', text: 'tokens' }
+          ],
+          line3: [
+            { w: 'y', t: 'hero-sub', text: 'y' },
+            { w: 'cuánto', text: 'cuánto' },
+            { w: 'consumes,', t: 'hero-sub', text: 'consumes,' },
+            { w: 'lo', text: 'lo' },
+            { w: 'que', text: 'que' },
+            { w: 'cuestan,', t: 'hero-sub', text: 'cuestan,' },
+            { w: 'sin', t: 'hero-sub', text: 'sin' },
+            { w: 'cuenta,', t: 'hero-sub', text: 'cuenta,' },
+            { w: 'sin', t: 'hero-sub', text: 'sin' },
+            { w: 'telemetría', t: 'hero-sub', text: 'telemetría' },
+            { w: 'y', t: 'hero-sub', text: 'y' },
+            { w: 'sin', text: 'sin' },
+            { w: 'subidas.', t: 'hero-sub', text: 'subidas.' }
+          ],
+          chips: [
+            'Veinticuatro agentes, un solo panel',
+            'Local-first y 100% privado',
+            'Código abierto con licencia MIT',
+            'Cero telemetría · Nada sale de tu PC',
+            'Lee los registros ya existentes en disco',
+            'Seguimiento de costes y caché en tiempo real'
+          ],
+          explore: 'Explorar Tokdash',
+          skip: 'saltar',
+          modalTitle: 'Seleccionar idioma'
+        },
+        pt: {
+          query: 'O que é o Tokdash?',
+          line1: [
+            { w: 'tokdash', t: 'hero-sub', text: 'O Tokdash' },
+            { w: 'é', text: 'é' },
+            { w: 'um', text: 'um' },
+            { w: 'painel', text: 'painel' },
+            { w: 'de', text: 'de' },
+            { w: 'rastreamento', text: 'rastreamento' },
+            { w: 'de', text: 'de' },
+            { w: 'tokens', t: 'hero-h1', text: 'tokens' },
+            { w: 'e', t: 'hero-h1', text: 'e' },
+            { w: 'custos', t: 'hero-h1', text: 'custos' },
+            { w: 'que', text: 'que' },
+            { w: 'lê', t: 'hero-sub', text: 'lê' },
+            { w: 'os', t: 'hero-sub', text: 'os' },
+            { w: 'logs', t: 'hero-sub', text: 'logs' }
+          ],
+          line2: [
+            { w: 'já', t: 'hero-sub', text: 'já' },
+            { w: 'presentes', text: 'presentes' },
+            { w: 'na', text: 'na' },
+            { w: 'sua', t: 'hero-h1', text: 'sua' },
+            { w: 'máquina', t: 'hero-sub', text: 'máquina' },
+            { w: 'e', t: 'hero-sub', text: 'e' },
+            { w: 'mostra', t: 'hero-sub', text: 'mostra' },
+            { w: 'exatamente', text: 'exatamente' },
+            { w: 'para', text: 'para' },
+            { w: 'onde', text: 'onde' },
+            { w: 'vão', text: 'vão' },
+            { w: 'os', text: 'os' },
+            { w: 'seus', text: 'seus' },
+            { w: 'tokens', t: 'hero-sub', text: 'tokens' }
+          ],
+          line3: [
+            { w: 'e', t: 'hero-sub', text: 'e' },
+            { w: 'quanto', text: 'quanto' },
+            { w: 'você', t: 'hero-sub', text: 'você' },
+            { w: 'consome,', t: 'hero-sub', text: 'consome,' },
+            { w: 'o', text: 'o' },
+            { w: 'que', text: 'que' },
+            { w: 'custam,', t: 'hero-sub', text: 'custam,' },
+            { w: 'sem', t: 'hero-sub', text: 'sem' },
+            { w: 'conta,', t: 'hero-sub', text: 'conta,' },
+            { w: 'sem', t: 'hero-sub', text: 'sem' },
+            { w: 'telemetria', t: 'hero-sub', text: 'telemetria' },
+            { w: 'e', t: 'hero-sub', text: 'e' },
+            { w: 'sem', text: 'sem' },
+            { w: 'upload.', t: 'hero-sub', text: 'upload.' }
+          ],
+          chips: [
+            'Vinte e quatro agentes, um só dashboard',
+            'Local-first e 100% privado',
+            'Código aberto e licença MIT',
+            'Zero telemetria · Nada sai do seu PC',
+            'Lê os logs já gravados em disco',
+            'Rastreamento de custos e cache em tempo real'
+          ],
+          explore: 'Explorar Tokdash',
+          skip: 'pular',
+          modalTitle: 'Selecionar idioma'
+        }
+      };
+
+      function renderLine(lineEl, words) {
+        if (!lineEl || !words) return;
+        var html = words.map(function (item) {
+          var targetAttr = item.t ? ' data-target="' + item.t + '"' : '';
+          var wAttr = item.w ? ' data-w="' + item.w + '"' : '';
+          return '<span class="m-word"' + wAttr + targetAttr + '>' + item.text + '</span>';
+        }).join(' ');
+        lineEl.innerHTML = html;
+      }
+
+      window.__updateLanderText = function (lang) {
+        var data = LANDER_I18N[lang] || LANDER_I18N.en;
+        if (!data) return;
+
+        if (query) query.textContent = data.query;
+        renderLine(line1, data.line1);
+        renderLine(line2, data.line2);
+        renderLine(line3, data.line3);
+
+        var chips = document.querySelectorAll('.lander-chips-grid .lander-story-chip');
+        if (chips && data.chips) {
+          chips.forEach(function (chip, idx) {
+            if (data.chips[idx]) {
+              var textSpan = chip.querySelector('span:not(.chip-dot)');
+              if (textSpan) textSpan.innerHTML = data.chips[idx];
+            }
+          });
+        }
+
+        if (exploreBtn && data.explore) {
+          var expSpan = exploreBtn.querySelector('span');
+          if (expSpan) expSpan.textContent = data.explore;
+        }
+
+        if (skipBtn && data.skip) {
+          skipBtn.textContent = data.skip;
+        }
+
+        var modalH3 = document.querySelector('.lander-lang-head h3');
+        if (modalH3 && data.modalTitle) {
+          modalH3.textContent = data.modalTitle;
+        }
+
+        if (activeTimeline && activeTimeline.completed) {
+          if (query) query.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+          if (line1) line1.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+          if (line2) line2.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+          if (line3) line3.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+        }
+
+        prepareHeroWords(lang);
+      };
+
       // Handle language selection
       function setupLangOptions() {
         document.querySelectorAll('.lander-lang-opt, .lander-lang-tokens .lt').forEach(function (btn) {
@@ -3235,9 +3664,6 @@
             var targetLang = btn.getAttribute('data-lang');
             if (targetLang && window.__applyLang) {
               window.__applyLang(targetLang);
-              document.querySelectorAll('.lander-lang-tokens .lt').forEach(function (token) {
-                token.classList.toggle('active', token.getAttribute('data-lang') === targetLang);
-              });
             }
             closeLangModal();
           });
@@ -3246,7 +3672,15 @@
       setupLangOptions();
 
       // Wrap words inside heroHeading and heroParagraph so they can be targeted
-      function prepareHeroWords() {
+      function prepareHeroWords(lang) {
+        [heroHeading, heroParagraph, document.getElementById('heroEyebrow'), document.getElementById('heroTag1')].forEach(function (container) {
+          if (!container) return;
+          container.querySelectorAll('.hw').forEach(function (hw) {
+            hw.replaceWith(document.createTextNode(hw.textContent));
+          });
+          container.normalize();
+        });
+
         function wrap(el) {
           if (!el) return;
           var childNodes = Array.from(el.childNodes);
@@ -3254,15 +3688,27 @@
             if (node.nodeType === Node.TEXT_NODE) {
               var text = node.textContent;
               if (!text.trim()) return;
-              var words = text.split(/(\s+)/);
+
+              var words = [];
+              if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                try {
+                  var seg = new Intl.Segmenter(lang || 'en', { granularity: 'word' });
+                  words = Array.from(seg.segment(text)).map(function (s) { return s.segment; });
+                } catch (e) {
+                  words = text.split(/(\s+)/);
+                }
+              } else {
+                words = text.split(/(\s+)/);
+              }
+
               var frag = document.createDocumentFragment();
               words.forEach(function (w) {
-                if (!w.trim()) {
+                var clean = w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+                if (!clean) {
                   frag.appendChild(document.createTextNode(w));
                 } else {
                   var span = document.createElement('span');
                   span.className = 'hw';
-                  var clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
                   span.setAttribute('data-w', clean);
                   span.textContent = w;
                   frag.appendChild(span);
@@ -3279,6 +3725,11 @@
         wrap(document.getElementById('heroEyebrow'));
         wrap(document.getElementById('heroTag1'));
       }
+
+      // Synchronize initial lander language
+      var initialLanderLang = window.__lang || 'en';
+      window.__updateLanderText(initialLanderLang);
+      if (window.__syncLanderTokens) window.__syncLanderTokens(initialLanderLang);
 
       function finishIntro(skipAnim) {
         if (isFinished) return;
@@ -3615,7 +4066,7 @@
         var nonMatching = [];
 
         words.forEach(function (wEl) {
-          var clean = (wEl.getAttribute('data-w') || wEl.textContent).toLowerCase().replace(/[^a-z0-9]/g, '');
+          var clean = (wEl.getAttribute('data-w') || wEl.textContent).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
           var matchEl = document.querySelector('.hw[data-w="' + clean + '"]:not(.hw-matched)');
           if (matchEl) {
             matchEl.classList.add('hw-matched');
