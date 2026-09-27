@@ -382,7 +382,57 @@
       html { scroll-behavior: auto; }
     }
 
-    /* ---- Text Scramble Decoder & Block Cursor ---- */
+    /* ---- Text Scramble Decoder & Heading Char Fade-in ---- */
+    html.js [data-i18n="feat.h"],
+    html.js [data-i18n="feat.sub"],
+    html.js [data-i18n="srv.1.h"],
+    html.js [data-i18n="srv.1.p"],
+    html.js [data-i18n="srv.2.h"],
+    html.js [data-i18n="srv.2.p"],
+    html.js [data-i18n="srv.3.h"],
+    html.js [data-i18n="srv.3.p"],
+    html.js [data-i18n="srv.4.h"],
+    html.js [data-i18n="srv.4.p"],
+    html.js [data-i18n="opt.1.h"],
+    html.js [data-i18n="opt.1.p"],
+    html.js [data-i18n="opt.2.h"],
+    html.js [data-i18n="opt.2.p"],
+    html.js [data-i18n="opt.3.h"],
+    html.js [data-i18n="opt.3.p"],
+    html.js [data-i18n="opt.4.h"],
+    html.js [data-i18n="opt.4.p"],
+    html.js [data-i18n="cta.h"] {
+      visibility: hidden;
+    }
+    html.js [data-i18n="feat.h"].anim-ready,
+    html.js [data-i18n="feat.sub"].anim-ready,
+    html.js [data-i18n="srv.1.h"].anim-ready,
+    html.js [data-i18n="srv.1.p"].anim-ready,
+    html.js [data-i18n="srv.2.h"].anim-ready,
+    html.js [data-i18n="srv.2.p"].anim-ready,
+    html.js [data-i18n="srv.3.h"].anim-ready,
+    html.js [data-i18n="srv.3.p"].anim-ready,
+    html.js [data-i18n="srv.4.h"].anim-ready,
+    html.js [data-i18n="srv.4.p"].anim-ready,
+    html.js [data-i18n="opt.1.h"].anim-ready,
+    html.js [data-i18n="opt.1.p"].anim-ready,
+    html.js [data-i18n="opt.2.h"].anim-ready,
+    html.js [data-i18n="opt.2.p"].anim-ready,
+    html.js [data-i18n="opt.3.h"].anim-ready,
+    html.js [data-i18n="opt.3.p"].anim-ready,
+    html.js [data-i18n="opt.4.h"].anim-ready,
+    html.js [data-i18n="opt.4.p"].anim-ready,
+    html.js [data-i18n="cta.h"].anim-ready {
+      visibility: visible;
+    }
+    .heading-char {
+      display: inline;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+    }
+    .heading-char.in {
+      opacity: 1;
+    }
     .scramble-box {
       position: relative;
     }
@@ -420,7 +470,29 @@
       100% { opacity: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .scramble-char.pending { opacity: 1; visibility: visible; }
+      html.js [data-i18n="feat.h"],
+      html.js [data-i18n="feat.sub"],
+      html.js [data-i18n="srv.1.h"],
+      html.js [data-i18n="srv.1.p"],
+      html.js [data-i18n="srv.2.h"],
+      html.js [data-i18n="srv.2.p"],
+      html.js [data-i18n="srv.3.h"],
+      html.js [data-i18n="srv.3.p"],
+      html.js [data-i18n="srv.4.h"],
+      html.js [data-i18n="srv.4.p"],
+      html.js [data-i18n="opt.1.h"],
+      html.js [data-i18n="opt.1.p"],
+      html.js [data-i18n="opt.2.h"],
+      html.js [data-i18n="opt.2.p"],
+      html.js [data-i18n="opt.3.h"],
+      html.js [data-i18n="opt.3.p"],
+      html.js [data-i18n="opt.4.h"],
+      html.js [data-i18n="opt.4.p"],
+      html.js [data-i18n="cta.h"] {
+        visibility: visible !important;
+      }
+      .heading-char { opacity: 1 !important; transition: none !important; }
+      .scramble-char.pending { opacity: 1 !important; visibility: visible !important; }
       .scramble-cursor { display: none !important; }
     }
 
@@ -3483,10 +3555,23 @@
     })();
   </script>
 
-  <!-- ============ Text Scramble Decoder Engine ============ -->
+  <!-- ============ Text Scramble Decoder & Heading Char-Fade Engine ============ -->
   <script>
     (function () {
       var isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      var HEADING_KEYS = [
+        'feat.h',
+        'srv.1.h',
+        'srv.2.h',
+        'srv.3.h',
+        'srv.4.h',
+        'opt.1.h',
+        'opt.2.h',
+        'opt.3.h',
+        'opt.4.h',
+        'cta.h'
+      ];
 
       var TARGET_KEYS = [
         'feat.sub',
@@ -3500,7 +3585,8 @@
         'opt.4.p'
       ];
 
-      var GLYPHS = '0123456789ABCDEF_~<>{}/*+=!@#$%^&abcdef';
+      // Scramble settings: includes '.' full stop
+      var GLYPHS = '0123456789ABCDEF_~<>{}/*+=!@#$%^&abcdef.';
       var PERTURBATION = 0.685;
       var REVEAL_RATE = 100; // chars/sec
       var REVEAL_DELAY = 50; // ms
@@ -3520,15 +3606,120 @@
         return easeOutExpo(p);
       }
 
+      // --- Headings: Fast Char-by-Char Fade-in (No cursor, no scramble) ---
+      function prepareHeading(el) {
+        if (!el) return;
+        var text = el.getAttribute('data-raw-text') || el.textContent.trim();
+        if (!text) return;
+        el.setAttribute('data-raw-text', text);
+        el.setAttribute('aria-label', text);
+
+        if (isReduced) {
+          el.textContent = text;
+          el.classList.add('anim-ready');
+          return;
+        }
+
+        var chars = text.split('');
+        var len = chars.length;
+        if (!len) return;
+
+        el.innerHTML = '';
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < len; i++) {
+          var span = document.createElement('span');
+          span.className = 'heading-char';
+          if (chars[i] === ' ') {
+            span.innerHTML = '&nbsp;';
+          } else {
+            span.textContent = chars[i];
+          }
+          frag.appendChild(span);
+        }
+        el.appendChild(frag);
+        el.classList.add('anim-ready');
+      }
+
+      function animateHeading(el) {
+        if (!el) return;
+        var text = el.getAttribute('data-raw-text') || el.textContent.trim();
+        if (!text) return;
+
+        if (isReduced) {
+          el.textContent = text;
+          el.classList.add('anim-ready');
+          return;
+        }
+
+        if (el._headingTimeouts) {
+          el._headingTimeouts.forEach(clearTimeout);
+        }
+        el._headingTimeouts = [];
+
+        var charSpans = Array.prototype.slice.call(el.querySelectorAll('.heading-char'));
+        if (!charSpans.length) {
+          prepareHeading(el);
+          charSpans = Array.prototype.slice.call(el.querySelectorAll('.heading-char'));
+        }
+
+        // Heading char interval: 14ms per char (faster than the scrambler below)
+        var CHAR_INTERVAL = 14;
+        var START_DELAY = 30;
+
+        for (var i = 0; i < charSpans.length; i++) {
+          (function (idx) {
+            var timer = setTimeout(function () {
+              if (charSpans[idx]) {
+                charSpans[idx].classList.add('in');
+              }
+            }, START_DELAY + (idx * CHAR_INTERVAL));
+            el._headingTimeouts.push(timer);
+          })(i);
+        }
+      }
+
+      // --- Paragraphs: Cyber Scramble Decoder with Block Cursor ---
+      function prepareScramble(el) {
+        if (!el) return;
+        var fullText = el.getAttribute('data-raw-text') || el.textContent.trim();
+        if (!fullText) return;
+        el.setAttribute('data-raw-text', fullText);
+        el.setAttribute('aria-label', fullText);
+
+        if (isReduced) {
+          el.textContent = fullText;
+          el.classList.add('anim-ready');
+          return;
+        }
+
+        var chars = fullText.split('');
+        var len = chars.length;
+        if (!len) return;
+
+        el.classList.add('scramble-box');
+        el.innerHTML = '';
+
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < len; i++) {
+          var span = document.createElement('span');
+          span.className = 'scramble-char pending';
+          span.textContent = chars[i];
+          frag.appendChild(span);
+        }
+        el.appendChild(frag);
+        el.classList.add('anim-ready');
+      }
+
       function scrambleElement(el, immediate) {
         if (!el) return;
-        var fullText = el.textContent.trim();
+        var fullText = el.getAttribute('data-raw-text') || el.textContent.trim();
         if (!fullText) return;
 
         el.setAttribute('aria-label', fullText);
 
         if (isReduced || immediate) {
           el.textContent = fullText;
+          el.classList.add('anim-ready');
           return;
         }
 
@@ -3561,6 +3752,7 @@
         frag.appendChild(cursor);
 
         el.appendChild(frag);
+        el.classList.add('anim-ready');
 
         var revealDuration = (len / REVEAL_RATE) * 1000;
         var settleWindow = SETTLE_RATE * 5;
@@ -3630,39 +3822,67 @@
         el._scrambleTimer = requestAnimationFrame(tick);
       }
 
+      function getHeadingElements() {
+        var selector = HEADING_KEYS.map(function (k) { return '[data-i18n="' + k + '"]'; }).join(', ');
+        return Array.prototype.slice.call(document.querySelectorAll(selector));
+      }
+
       function getTargetElements() {
         var selector = TARGET_KEYS.map(function (k) { return '[data-i18n="' + k + '"]'; }).join(', ');
         return Array.prototype.slice.call(document.querySelectorAll(selector));
       }
 
-      var observedElements = getTargetElements();
-      var handledSet = new WeakSet();
+      var headingEls = getHeadingElements();
+      var targetEls = getTargetElements();
+
+      // Immediately prepare all elements so no raw text is ever visible before animation
+      headingEls.forEach(prepareHeading);
+      targetEls.forEach(prepareScramble);
 
       if (!('IntersectionObserver' in window) || isReduced) {
         return;
       }
 
-      var scrambleIo = new IntersectionObserver(function (entries) {
+      var handledSet = new WeakSet();
+
+      var textIo = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
-            if (!handledSet.has(entry.target)) {
-              handledSet.add(entry.target);
-              scrambleElement(entry.target, false);
-              scrambleIo.unobserve(entry.target);
+            var el = entry.target;
+            if (!handledSet.has(el)) {
+              handledSet.add(el);
+              var key = el.getAttribute('data-i18n');
+              if (HEADING_KEYS.indexOf(key) !== -1) {
+                animateHeading(el);
+              } else {
+                scrambleElement(el, false);
+              }
+              textIo.unobserve(el);
             }
           }
         });
       }, { rootMargin: '0px 0px -5% 0px', threshold: 0.1 });
 
-      observedElements.forEach(function (el) {
-        scrambleIo.observe(el);
-      });
+      headingEls.forEach(function (el) { textIo.observe(el); });
+      targetEls.forEach(function (el) { textIo.observe(el); });
 
       // Global trigger for language updates
       window.__triggerScramble = function () {
         if (isReduced) return;
-        var targets = getTargetElements();
-        targets.forEach(function (el) {
+        var hTargets = getHeadingElements();
+        var pTargets = getTargetElements();
+
+        hTargets.forEach(function (el) {
+          el.removeAttribute('data-raw-text');
+          prepareHeading(el);
+          if (handledSet.has(el)) {
+            animateHeading(el);
+          }
+        });
+
+        pTargets.forEach(function (el) {
+          el.removeAttribute('data-raw-text');
+          prepareScramble(el);
           if (handledSet.has(el)) {
             scrambleElement(el, false);
           }
