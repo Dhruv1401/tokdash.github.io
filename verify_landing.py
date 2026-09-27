@@ -100,6 +100,21 @@ threading.Thread(target=serve, daemon=True).start()
 errors = []
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, args=BROWSER_ARGS)
+    no_js = browser.new_context(java_script_enabled=False).new_page()
+    no_js.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    assert no_js.locator("#landerOverlay").evaluate(
+        "el => getComputedStyle(el).display"
+    ) == "none", "intro must not block visitors with JavaScript disabled"
+    no_js.close()
+
+    no_anime = browser.new_page()
+    no_anime.route("**/static/anime.min.js", lambda route: route.abort())
+    no_anime.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    assert no_anime.locator("#landerOverlay").evaluate(
+        "el => getComputedStyle(el).display"
+    ) == "none", "intro must not block visitors when Anime.js is unavailable"
+    no_anime.close()
+
     page = browser.new_page(viewport={"width": 1440, "height": 960, }, reduced_motion="reduce")
     # Landing CSS is prebuilt, so the page must render with no network at all.
     page.route(
@@ -122,6 +137,12 @@ with sync_playwright() as p:
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
     page.wait_for_timeout(800)
+    assert page.locator("#landerOverlay").evaluate(
+        "el => getComputedStyle(el).display"
+    ) == "none", "reduced motion should skip the intro"
+    assert page.locator(".reveal").evaluate_all(
+        "els => els.every(el => getComputedStyle(el).opacity === '1')"
+    ), "reduced motion should show all sections without scroll fades"
 
     text = lambda sel: " ".join(page.locator(sel).first.inner_text().split())
 
@@ -196,6 +217,25 @@ with sync_playwright() as p:
         }"""
     )
     assert not overflow, f"mobile overflow in the new sections: {overflow[:6]}"
+
+    intro = browser.new_page(viewport={"width": 1440, "height": 960})
+    intro.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    intro.wait_for_function(
+        "getComputedStyle(document.querySelector('#landerExploreWrap')).opacity === '1'",
+        timeout=15000,
+    )
+    intro.locator("#landerExploreBtn").click()
+    assert intro.locator("#landerOverlay").evaluate(
+        "el => getComputedStyle(el).display"
+    ) != "none", "Explore must keep the overlay visible during its exit animation"
+    intro.wait_for_function(
+        "document.documentElement.classList.contains('lander-skipped')",
+        timeout=5000,
+    )
+    assert not intro.locator("body").evaluate(
+        "el => el.classList.contains('lander-locked')"
+    ), "Explore must unlock scrolling after the exit animation"
+    intro.close()
 
     browser.close()
 

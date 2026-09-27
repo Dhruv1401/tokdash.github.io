@@ -54,14 +54,10 @@
   <!-- Tailwind: prebuilt static CSS so layout works with JS disabled/blocked.
        Regenerate after class changes: see README ("Rebuilding the landing CSS"). -->
   <link rel="stylesheet" href="/static/landing.css" />
-  <link rel="stylesheet" href="/static/lenis.css" />
   <script src="/static/anime.min.js"></script>
 
   <!-- Avoid theme and lander flash: set classes before paint -->
   <script>
-    if (typeof anime !== 'undefined' && anime.penner) {
-      anime.penner['inOutExpo'] = anime.penner['easeInOutExpo'] || anime.easing('cubicBezier(0.759, 0.059, 0.381, 0.929)');
-    }
     (function () {
       // Mark the document as JS-capable up front: reveal animations are opt-in
       // via html.js, so content stays visible when JS is disabled or blocked.
@@ -376,9 +372,7 @@
     html.js:not(.anim-active) .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
     html.js .reveal.in { opacity: 1; transform: none; }
     @media (prefers-reduced-motion: reduce) {
-      html.js .reveal { opacity: 0; transform: none; }
-      html.js:not(.anim-active) .reveal { transition: opacity 0.5s ease; }
-      html.js .reveal.in { opacity: 1; transform: none; }
+      html.js .reveal { opacity: 1; transform: none; transition: none; }
       html { scroll-behavior: auto; }
     }
 
@@ -981,6 +975,7 @@
     html.lander-skipped .lander-overlay {
       display: none !important;
     }
+    html.lander-active .lander-overlay { display: flex; }
     body.lander-locked {
       overflow: hidden !important;
       touch-action: none;
@@ -992,7 +987,7 @@
       background: radial-gradient(circle at 50% 45%, rgba(15, 23, 42, 0.98) 0%, rgba(8, 14, 26, 0.99) 100%);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       overflow: hidden;
@@ -2527,7 +2522,7 @@
       var isReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var allReveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
 
-      if (!('IntersectionObserver' in window) || typeof anime === 'undefined') {
+      if (isReduced || !('IntersectionObserver' in window) || typeof anime === 'undefined') {
         allReveals.forEach(function (e) { e.classList.add('in'); });
         return;
       }
@@ -2662,13 +2657,6 @@
           singleIo.observe(el);
         }
       });
-
-      // Harmonize with Lenis smooth scroll
-      if (window.__lenis) {
-        window.__lenis.on('scroll', function () {
-          // Native scroll updates drive the IntersectionObserver callbacks in real-time
-        });
-      }
     })();
 
     // ---- Drawable SVGs Engine (Stroked Line Art Reveals) ----
@@ -4421,10 +4409,6 @@
 
       if (!overlay || !hi || !cursor || !stage || !query || !exploreBtn) return;
 
-      // Lock scroll while intro is playing
-      document.body.classList.add('lander-locked');
-      if (window.__lenis) window.__lenis.stop();
-
       var isFinished = false;
       var activeTimeline = null;
       var lensRafId = null;
@@ -4830,7 +4814,7 @@
           if (line3) line3.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
         }
 
-        prepareHeroWords(lang);
+        prepareHeroWords();
       };
 
       // Handle language selection
@@ -4849,7 +4833,7 @@
       setupLangOptions();
 
       // Prepare words inside hero section using splitText with includeSpaces: false
-      function prepareHeroWords(lang) {
+      function prepareHeroWords() {
         [heroHeading, heroParagraph, document.getElementById('heroEyebrow'), document.getElementById('heroTag1')].forEach(function (container) {
           if (!container) return;
           splitText(container, { words: true, includeSpaces: false });
@@ -4865,7 +4849,6 @@
         if (isFinished) return;
         isFinished = true;
         try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
-        document.documentElement.classList.add('lander-skipped');
 
         if (lensRafId) cancelAnimationFrame(lensRafId);
         if (activeTimeline) activeTimeline.pause();
@@ -4877,7 +4860,8 @@
             duration: 350,
             easing: 'easeOutQuad',
             complete: function () {
-              overlay.style.display = 'none';
+              document.documentElement.classList.remove('lander-active');
+              document.documentElement.classList.add('lander-skipped');
               document.body.classList.remove('lander-locked');
               if (window.__lenis) window.__lenis.start();
             }
@@ -5142,17 +5126,14 @@
       // Stage 9: Explore Button Click -> splitText Word Flight & Liquid Glass Burst
       exploreBtn.addEventListener('click', function (e) {
         if (isFinished) return;
-        isFinished = true;
-        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
-        document.documentElement.classList.add('lander-skipped');
-
-        if (activeTimeline) activeTimeline.pause();
-
-        var isReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (isReducedMotion) {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           finishIntro(true);
           return;
         }
+        isFinished = true;
+        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
+
+        if (activeTimeline) activeTimeline.pause();
 
         var clickX = e ? e.clientX : mouseX;
         var clickY = e ? e.clientY : mouseY;
@@ -5481,7 +5462,8 @@
           delay: 420,
           easing: 'linear',
           complete: function () {
-            overlay.style.display = 'none';
+            document.documentElement.classList.remove('lander-active');
+            document.documentElement.classList.add('lander-skipped');
             document.body.classList.remove('lander-locked');
             if (window.__lenis) window.__lenis.start();
             if (flyLayer && flyLayer.parentNode) {
@@ -5509,11 +5491,9 @@
         });
       });
 
-      // Developer helper to replay intro on demand
-      window.__replayIntro = function () {
-        try { sessionStorage.removeItem('tokdash_lander_seen'); } catch (err) {}
-        location.reload();
-      };
+      document.documentElement.classList.add('lander-active');
+      document.body.classList.add('lander-locked');
+      if (window.__lenis) window.__lenis.stop();
     })();
   </script>
 </body>
