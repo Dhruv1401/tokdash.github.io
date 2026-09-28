@@ -1203,13 +1203,17 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      /* Start, not center: the overlay already centers the stage, and centered
+         content that overflows a short screen spills above the scroll origin. */
+      justify-content: flex-start;
       opacity: 0;
       position: relative;
       z-index: 10000;
       padding: 20px;
-      max-height: 92vh;
+      /* Scroll beneath neither the fixed language row (top) nor skip (bottom). */
+      max-height: calc(100% - 96px);
       overflow-y: auto;
+      overscroll-behavior: contain;
       scrollbar-width: none;
     }
     .lander-stage::-webkit-scrollbar {
@@ -1229,7 +1233,6 @@
       text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
       clip-path: polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%);
       will-change: clip-path;
-      white-space: nowrap;
     }
     .lander-desc {
       max-width: 760px;
@@ -1247,7 +1250,6 @@
       margin: 6px 0;
       clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%);
       will-change: clip-path;
-      white-space: nowrap;
     }
     .lander-desc .m-word,
     .lander-desc .anime-word,
@@ -1395,7 +1397,7 @@
     <div id="landerCursor" class="lander-cursor" aria-hidden="true"></div>
 
     <!-- Center Narrative Stage -->
-    <div id="landerStage" class="lander-stage">
+    <div id="landerStage" class="lander-stage" data-lenis-prevent>
       <!-- Stage 3: What is Tokdash? Heading -->
       <div id="landerQueryWrap" class="lander-query-wrap">
         <h2 id="landerQuery" class="lander-query">What is Tokdash?</h2>
@@ -3649,13 +3651,15 @@
         el.innerHTML = '';
         var frag = document.createDocumentFragment();
         for (var i = 0; i < len; i++) {
+          // Keep spaces as plain text: an &nbsp; span removes the line-break
+          // opportunity, so a heading could never wrap on a phone.
+          if (chars[i] === ' ') {
+            frag.appendChild(document.createTextNode(' '));
+            continue;
+          }
           var span = document.createElement('span');
           span.className = 'heading-char';
-          if (chars[i] === ' ') {
-            span.innerHTML = '&nbsp;';
-          } else {
-            span.textContent = chars[i];
-          }
+          span.textContent = chars[i];
           frag.appendChild(span);
         }
         el.appendChild(frag);
@@ -4422,6 +4426,12 @@
       var activeTimeline = null;
       var lensRafId = null;
 
+      // 20px for a one-row line; a line that wraps (phones) gets a cursor as tall
+      // as its rows, since the sweep reveals every row of the line at once.
+      function lineCursorHeight(rect) {
+        return Math.max(20, rect.height - 12);
+      }
+
       // Language switcher modal handlers
       if (langBtn && langModal && langDialog) {
         langBtn.addEventListener('click', function (e) {
@@ -5017,7 +5027,7 @@
 
             cursor.style.left = (startX + (targetX - startX) * p) + 'px';
             cursor.style.top = (startY + (targetY - startY) * p) + 'px';
-            cursor.style.height = (qRect.height * 0.9 * (1 - p) + 20 * p) + 'px';
+            cursor.style.height = (qRect.height * 0.9 * (1 - p) + lineCursorHeight(l1Rect) * p) + 'px';
           }
         })
         .add({
@@ -5037,7 +5047,7 @@
             line1.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
             cursor.style.left = (l1Rect.left + (p / 100) * l1Rect.width) + 'px';
             cursor.style.top = (l1Rect.top + l1Rect.height / 2) + 'px';
-            cursor.style.height = '20px';
+            cursor.style.height = lineCursorHeight(l1Rect) + 'px';
           }
         })
         // Carriage return to Line 2 start
@@ -5070,7 +5080,7 @@
             line2.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
             cursor.style.left = (l2Rect.left + (p / 100) * l2Rect.width) + 'px';
             cursor.style.top = (l2Rect.top + l2Rect.height / 2) + 'px';
-            cursor.style.height = '20px';
+            cursor.style.height = lineCursorHeight(l2Rect) + 'px';
           }
         })
         // Carriage return to Line 3 start
@@ -5103,7 +5113,7 @@
             line3.style.clipPath = 'polygon(0% 0%, ' + p + '% 0%, ' + p + '% 100%, 0% 100%)';
             cursor.style.left = (l3Rect.left + (p / 100) * l3Rect.width) + 'px';
             cursor.style.top = (l3Rect.top + l3Rect.height / 2) + 'px';
-            cursor.style.height = '20px';
+            cursor.style.height = lineCursorHeight(l3Rect) + 'px';
           }
         })
         // Fade out cursor
