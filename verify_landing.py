@@ -4,12 +4,11 @@ product cannot keep)."""
 import html as html_module
 import http.server
 import re
-import socketserver
 import threading
 from html.parser import HTMLParser
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 PORT = 8972
@@ -89,9 +88,15 @@ LANG_REPORT = {
 THEME_COUNT = "17"
 
 
+class ThreadedServer(http.server.ThreadingHTTPServer):
+    """Threaded, with a deep backlog: the page fetches ~30 assets at once, and
+    unlike socketserver.TCPServer it can rebind a port left in TIME_WAIT."""
+    request_queue_size = 128
+
+
 def serve():
     handler = lambda *a, **k: http.server.SimpleHTTPRequestHandler(*a, directory=ROOT, **k)
-    with socketserver.TCPServer(("127.0.0.1", PORT), handler) as httpd:
+    with ThreadedServer(("127.0.0.1", PORT), handler) as httpd:
         httpd.serve_forever()
 
 
@@ -236,6 +241,38 @@ with sync_playwright() as p:
         "el => el.classList.contains('lander-locked')"
     ), "Explore must unlock scrolling after the exit animation"
     intro.close()
+
+    # Scroll-triggered animations with motion on. Every page above runs reduced
+    # motion or stays on the intro, so an Anime.js error here (such as a v4-only
+    # easing name) would leave scrolled-to text and row icons hidden unnoticed.
+    motion = browser.new_context(viewport={"width": 1440, "height": 960})
+    motion.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
+    moving = motion.new_page()
+    moving.route(
+        "**/*",
+        lambda route: route.abort()
+        if route.request.url.startswith("http") and "127.0.0.1" not in route.request.url
+        else route.continue_(),
+    )
+    moving.on("console", on_console)
+    moving.on("pageerror", lambda e: errors.append(str(e)))
+    moving.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    animated = moving.locator(
+        "[data-i18n='feat.h'], [data-i18n='feat.sub'], .opt-li, [data-i18n='cta.h']"
+    )
+    for i in range(animated.count()):
+        animated.nth(i).scroll_into_view_if_needed()
+        moving.wait_for_timeout(250)
+    settled = """() => !document.querySelector('.scramble-char.pending')
+      && [...document.querySelectorAll('.opt-li .opt-ic')].every((ic) => ic.classList.contains('morphed'))
+      && [...document.querySelectorAll('.heading-char')].every((c) => c.classList.contains('in'))"""
+    try:
+        moving.wait_for_function(settled, timeout=10000)
+    except PlaywrightTimeoutError:
+        pass
+    assert moving.evaluate(settled), "with motion on, scrolled-to text or row icons never finished animating"
+    print("motion-on animations settled:", animated.count(), "targets")
+    motion.close()
 
     browser.close()
 
