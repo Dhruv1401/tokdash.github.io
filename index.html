@@ -55,14 +55,6 @@
        Regenerate after class changes: see README ("Rebuilding the landing CSS"). -->
   <link rel="stylesheet" href="/static/landing.css" />
   <script src="/static/anime.min.js"></script>
-  <script>
-    // Anime.js v3 Penner easing alias compatibility (supports Anime v4 naming like 'inOutExpo')
-    if (typeof anime !== 'undefined' && anime.penner) {
-      anime.penner.inOutExpo = anime.penner.easeInOutExpo;
-      anime.penner.outExpo = anime.penner.easeOutExpo;
-      anime.penner.inExpo = anime.penner.easeInExpo;
-    }
-  </script>
 
   <!-- Avoid theme and lander flash: set classes before paint -->
   <script>
@@ -3626,11 +3618,10 @@
       }
 
       function getEase(p) {
-        if (typeof anime !== 'undefined') {
+        if (typeof anime !== 'undefined' && anime.easing) {
           try {
-            var fn = (anime.easing && (anime.easing('easeInOutExpo') || anime.easing('inOutExpo'))) ||
-                     (anime.penner && (anime.penner.easeInOutExpo || anime.penner.inOutExpo)) ||
-                     (anime.easing && anime.easing('cubicBezier(0.759, 0.059, 0.381, 0.929)'));
+            // anime.js v3 names: 'easeInOutExpo', not v4's 'inOutExpo'.
+            var fn = anime.easing('easeInOutExpo');
             if (typeof fn === 'function') return fn(p);
           } catch (e) {}
         }
@@ -3982,6 +3973,9 @@
               });
             }
           } catch (e) {
+            // Show the finished logo: undo the hidden strokes and fills set up above.
+            strokables.forEach(function (s) { s.style.strokeDashoffset = ''; });
+            fills.forEach(function (f) { f.style.opacity = ''; });
             icon.classList.add('anim-ready');
             icon.classList.add('morphed');
           }
@@ -4029,11 +4023,7 @@
               // If an .opt-li row enters view, morph its logo and coordinate heading & paragraph
               if (el.classList.contains('opt-li')) {
                 var ic = el.querySelector('.opt-ic');
-                if (ic) {
-                  try {
-                    morphLogo(ic);
-                  } catch (e) {}
-                }
+                if (ic) morphLogo(ic);
                 var h = el.querySelector('h3[data-i18n]');
                 if (h && !handledSet.has(h)) {
                   handledSet.add(h);
@@ -4055,11 +4045,7 @@
               if (rowLi && !handledSet.has(rowLi)) {
                 handledSet.add(rowLi);
                 var rowIc = rowLi.querySelector('.opt-ic');
-                if (rowIc) {
-                  try {
-                    morphLogo(rowIc);
-                  } catch (e) {}
-                }
+                if (rowIc) morphLogo(rowIc);
               }
 
               var key = el.getAttribute('data-i18n');
