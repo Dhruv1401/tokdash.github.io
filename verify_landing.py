@@ -242,37 +242,95 @@ with sync_playwright() as p:
     ), "Explore must unlock scrolling after the exit animation"
     intro.close()
 
+    # The intro on a phone and on a short landscape screen. Every line must fit the
+    # stage, the heading must not start above the scroll origin, and the stage must
+    # scroll to Explore under a wheel while Lenis is stopped for the intro.
+    for viewport in ({"width": 390, "height": 844}, {"width": 844, "height": 390}):
+        size = f"{viewport['width']}x{viewport['height']}"
+        small = browser.new_page(viewport=viewport)
+        small.on("pageerror", lambda e: errors.append(str(e)))
+        small.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+        small.wait_for_function(
+            "getComputedStyle(document.querySelector('#landerExploreWrap')).opacity === '1'",
+            timeout=15000,
+        )
+        fit = small.evaluate(
+            """() => {
+              const stage = document.getElementById('landerStage');
+              const box = stage.getBoundingClientRect();
+              const pad = parseFloat(getComputedStyle(stage).paddingLeft);
+              const spill = [...stage.querySelectorAll('.m-word')].filter((w) => {
+                const r = w.getBoundingClientRect();
+                return r.left < box.left + pad - 1 || r.right > box.right - pad + 1;
+              });
+              return {
+                spill: spill.map((w) => w.textContent),
+                cutAbove: document.getElementById('landerQuery').getBoundingClientRect().top < box.top - 1,
+              };
+            }"""
+        )
+        assert not fit["spill"], f"{size} intro: words run past the stage: {fit['spill'][:6]}"
+        assert not fit["cutAbove"], f"{size} intro: the heading starts above the scroll origin"
+        stage_box = small.locator("#landerStage").bounding_box()
+        small.mouse.move(stage_box["x"] + stage_box["width"] / 2, stage_box["y"] + stage_box["height"] / 2)
+        small.mouse.wheel(0, 800)
+        small.wait_for_timeout(500)
+        assert small.evaluate(
+            """() => {
+              const b = document.getElementById('landerExploreBtn').getBoundingClientRect();
+              const s = document.getElementById('landerStage').getBoundingClientRect();
+              return b.top >= s.top - 1 && b.bottom <= Math.min(innerHeight, s.bottom) + 1;
+            }"""
+        ), f"{size} intro: scrolling the stage does not bring Explore into view"
+        small.locator("#landerExploreBtn").click()
+        small.wait_for_function(
+            "document.documentElement.classList.contains('lander-skipped')",
+            timeout=5000,
+        )
+        small.close()
+    print("intro fits and scrolls to Explore: 390x844, 844x390")
+
     # Scroll-triggered animations with motion on. Every page above runs reduced
     # motion or stays on the intro, so an Anime.js error here (such as a v4-only
     # easing name) would leave scrolled-to text and row icons hidden unnoticed.
-    motion = browser.new_context(viewport={"width": 1440, "height": 960})
-    motion.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
-    moving = motion.new_page()
-    moving.route(
-        "**/*",
-        lambda route: route.abort()
-        if route.request.url.startswith("http") and "127.0.0.1" not in route.request.url
-        else route.continue_(),
-    )
-    moving.on("console", on_console)
-    moving.on("pageerror", lambda e: errors.append(str(e)))
-    moving.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
-    animated = moving.locator(
-        "[data-i18n='feat.h'], [data-i18n='feat.sub'], .opt-li, [data-i18n='cta.h']"
-    )
-    for i in range(animated.count()):
-        animated.nth(i).scroll_into_view_if_needed()
-        moving.wait_for_timeout(250)
+    # The phone pass also catches split headings that can no longer wrap.
     settled = """() => !document.querySelector('.scramble-char.pending')
       && [...document.querySelectorAll('.opt-li .opt-ic')].every((ic) => ic.classList.contains('morphed'))
       && [...document.querySelectorAll('.heading-char')].every((c) => c.classList.contains('in'))"""
-    try:
-        moving.wait_for_function(settled, timeout=10000)
-    except PlaywrightTimeoutError:
-        pass
-    assert moving.evaluate(settled), "with motion on, scrolled-to text or row icons never finished animating"
-    print("motion-on animations settled:", animated.count(), "targets")
-    motion.close()
+    for viewport in ({"width": 1440, "height": 960}, {"width": 390, "height": 844}):
+        motion = browser.new_context(viewport=viewport)
+        motion.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
+        moving = motion.new_page()
+        moving.route(
+            "**/*",
+            lambda route: route.abort()
+            if route.request.url.startswith("http") and "127.0.0.1" not in route.request.url
+            else route.continue_(),
+        )
+        moving.on("console", on_console)
+        moving.on("pageerror", lambda e: errors.append(str(e)))
+        moving.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+        animated = moving.locator(
+            "[data-i18n='feat.h'], [data-i18n='feat.sub'], .opt-li, [data-i18n='cta.h']"
+        )
+        for i in range(animated.count()):
+            animated.nth(i).scroll_into_view_if_needed()
+            moving.wait_for_timeout(250)
+        try:
+            moving.wait_for_function(settled, timeout=10000)
+        except PlaywrightTimeoutError:
+            pass
+        width = viewport["width"]
+        assert moving.evaluate(settled), f"{width}px: with motion on, scrolled-to text or row icons never finished animating"
+        clipped = moving.evaluate(
+            """() => [...document.querySelectorAll(
+                "[data-i18n='feat.h'], [data-i18n='feat.sub'], .opt-li [data-i18n], [data-i18n='cta.h']")]
+              .filter((el) => el.scrollWidth > el.clientWidth + 1)
+              .map((el) => el.getAttribute('data-i18n'))"""
+        )
+        assert not clipped, f"{width}px: animated text overflows its box: {clipped[:6]}"
+        print(f"motion-on animations settled at {width}px:", animated.count(), "targets")
+        motion.close()
 
     browser.close()
 
