@@ -89,9 +89,13 @@ LANG_REPORT = {
 THEME_COUNT = "17"
 
 
+class ThreadedServer(http.server.ThreadingHTTPServer):
+    request_queue_size = 128
+    daemon_threads = True
+
 def serve():
     handler = lambda *a, **k: http.server.SimpleHTTPRequestHandler(*a, directory=ROOT, **k)
-    with socketserver.TCPServer(("127.0.0.1", PORT), handler) as httpd:
+    with ThreadedServer(("127.0.0.1", PORT), handler) as httpd:
         httpd.serve_forever()
 
 

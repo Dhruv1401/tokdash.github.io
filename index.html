@@ -55,6 +55,14 @@
        Regenerate after class changes: see README ("Rebuilding the landing CSS"). -->
   <link rel="stylesheet" href="/static/landing.css" />
   <script src="/static/anime.min.js"></script>
+  <script>
+    // Anime.js v3 Penner easing alias compatibility (supports Anime v4 naming like 'inOutExpo')
+    if (typeof anime !== 'undefined' && anime.penner) {
+      anime.penner.inOutExpo = anime.penner.easeInOutExpo;
+      anime.penner.outExpo = anime.penner.easeOutExpo;
+      anime.penner.inExpo = anime.penner.easeInExpo;
+    }
+  </script>
 
   <!-- Avoid theme and lander flash: set classes before paint -->
   <script>
@@ -2341,7 +2349,7 @@
               d: [{ value: SUN_D }],
               rotate: [0, 180],
               duration: 550,
-              easing: 'inOutExpo'
+              easing: 'easeInOutExpo'
             });
             anime({
               targets: themeRays,
@@ -2349,7 +2357,7 @@
               scale: [0.2, 1],
               rotate: [-45, 0],
               duration: 500,
-              easing: 'inOutExpo'
+              easing: 'easeInOutExpo'
             });
           } else {
             // Morph to Moon
@@ -2358,7 +2366,7 @@
               d: [{ value: MOON_D }],
               rotate: [180, 0],
               duration: 550,
-              easing: 'inOutExpo'
+              easing: 'easeInOutExpo'
             });
             anime({
               targets: themeRays,
@@ -2366,7 +2374,7 @@
               scale: [1, 0.2],
               rotate: [0, -45],
               duration: 450,
-              easing: 'inOutExpo'
+              easing: 'easeInOutExpo'
             });
           }
         } else {
@@ -2410,7 +2418,7 @@
             targets: front,
             d: [{ value: BOX_D }],
             strokeWidth: [{ value: 2 }],
-            easing: 'inOutExpo',
+            easing: 'easeInOutExpo',
             duration: 450,
             complete: function () {
               delete el.dataset.copying;
@@ -2421,7 +2429,7 @@
               targets: back,
               d: [{ value: BACK_EXPAND }],
               opacity: [{ value: 1 }],
-              easing: 'inOutExpo',
+              easing: 'easeInOutExpo',
               duration: 400
             });
           }
@@ -2445,7 +2453,7 @@
             targets: front,
             d: [{ value: TICK_D }],
             strokeWidth: [{ value: 2.5 }],
-            easing: 'inOutExpo',
+            easing: 'easeInOutExpo',
             duration: 480
           });
           if (back) {
@@ -2453,7 +2461,7 @@
               targets: back,
               d: [{ value: BACK_COLLAPSE }],
               opacity: [{ value: 0 }],
-              easing: 'inOutExpo',
+              easing: 'easeInOutExpo',
               duration: 360
             });
           }
@@ -2745,7 +2753,7 @@
             opacity: [0, 1],
             duration: 600,
             delay: anime.stagger(80, { start: 400 }),
-            easing: 'inOutExpo'
+            easing: 'easeInOutExpo'
           });
         }
       }
@@ -3618,9 +3626,11 @@
       }
 
       function getEase(p) {
-        if (typeof anime !== 'undefined' && anime.easing) {
+        if (typeof anime !== 'undefined') {
           try {
-            var fn = anime.easing('inOutExpo') || anime.easing('cubicBezier(0.759, 0.059, 0.381, 0.929)');
+            var fn = (anime.easing && (anime.easing('easeInOutExpo') || anime.easing('inOutExpo'))) ||
+                     (anime.penner && (anime.penner.easeInOutExpo || anime.penner.inOutExpo)) ||
+                     (anime.easing && anime.easing('cubicBezier(0.759, 0.059, 0.381, 0.929)'));
             if (typeof fn === 'function') return fn(p);
           } catch (e) {}
         }
@@ -3913,62 +3923,67 @@
         var fills = getFills(svg);
 
         if (typeof anime !== 'undefined') {
-          anime.remove(icon);
-          if (strokables.length > 0) anime.remove(strokables);
-          if (fills.length > 0) anime.remove(fills);
+          try {
+            anime.remove(icon);
+            if (strokables.length > 0) anime.remove(strokables);
+            if (fills.length > 0) anime.remove(fills);
 
-          strokables.forEach(function (s) {
-            var len = anime.setDashoffset(s);
-            s.style.strokeDashoffset = len;
-          });
-          fills.forEach(function (f) {
-            f.style.opacity = '0';
-          });
-
-          // 1. Container badge shape morph: circle -> squircle, scale, rotate, glowing pulse
-          anime({
-            targets: icon,
-            opacity: [0, 1],
-            scale: [0.35, 1],
-            rotate: [-35, 0],
-            borderRadius: ['50%', '9px'],
-            boxShadow: [
-              '0 0 0px 0px transparent',
-              '0 0 20px 4px color-mix(in srgb, var(--color-cta) 75%, transparent)',
-              '0 0 0px 0px transparent'
-            ],
-            borderColor: [
-              'var(--color-cta)',
-              'color-mix(in srgb, var(--color-cta) 26%, transparent)'
-            ],
-            duration: 850,
-            easing: 'inOutExpo',
-            complete: function () {
-              icon.classList.add('morphed');
-            }
-          });
-
-          // 2. SVG line-art morph (stroke drawing)
-          if (strokables.length > 0) {
-            anime({
-              targets: strokables,
-              strokeDashoffset: [anime.setDashoffset, 0],
-              duration: 900,
-              delay: anime.stagger(60, { start: 40 }),
-              easing: 'inOutExpo'
+            strokables.forEach(function (s) {
+              var len = anime.setDashoffset(s);
+              s.style.strokeDashoffset = len;
             });
-          }
+            fills.forEach(function (f) {
+              f.style.opacity = '0';
+            });
 
-          // 3. SVG fills / accents
-          if (fills.length > 0) {
+            // 1. Container badge shape morph: circle -> squircle, scale, rotate, glowing pulse
             anime({
-              targets: fills,
+              targets: icon,
               opacity: [0, 1],
-              scale: [0.3, 1],
-              duration: 500,
-              delay: 350,
-              easing: 'inOutExpo'
+              scale: [0.35, 1],
+              rotate: [-35, 0],
+              borderRadius: ['50%', '9px'],
+              boxShadow: [
+                '0 0 0px 0px transparent',
+                '0 0 20px 4px color-mix(in srgb, var(--color-cta) 75%, transparent)',
+                '0 0 0px 0px transparent'
+              ],
+              borderColor: [
+                'var(--color-cta)',
+                'color-mix(in srgb, var(--color-cta) 26%, transparent)'
+              ],
+              duration: 850,
+              easing: 'easeInOutExpo',
+              complete: function () {
+                icon.classList.add('morphed');
+              }
             });
+
+            // 2. SVG line-art morph (stroke drawing)
+            if (strokables.length > 0) {
+              anime({
+                targets: strokables,
+                strokeDashoffset: [anime.setDashoffset, 0],
+                duration: 900,
+                delay: anime.stagger(60, { start: 40 }),
+                easing: 'easeInOutExpo'
+              });
+            }
+
+            // 3. SVG fills / accents
+            if (fills.length > 0) {
+              anime({
+                targets: fills,
+                opacity: [0, 1],
+                scale: [0.3, 1],
+                duration: 500,
+                delay: 350,
+                easing: 'easeInOutExpo'
+              });
+            }
+          } catch (e) {
+            icon.classList.add('anim-ready');
+            icon.classList.add('morphed');
           }
         } else {
           icon.classList.add('anim-ready');
@@ -4014,7 +4029,11 @@
               // If an .opt-li row enters view, morph its logo and coordinate heading & paragraph
               if (el.classList.contains('opt-li')) {
                 var ic = el.querySelector('.opt-ic');
-                if (ic) morphLogo(ic);
+                if (ic) {
+                  try {
+                    morphLogo(ic);
+                  } catch (e) {}
+                }
                 var h = el.querySelector('h3[data-i18n]');
                 if (h && !handledSet.has(h)) {
                   handledSet.add(h);
@@ -4036,7 +4055,11 @@
               if (rowLi && !handledSet.has(rowLi)) {
                 handledSet.add(rowLi);
                 var rowIc = rowLi.querySelector('.opt-ic');
-                if (rowIc) morphLogo(rowIc);
+                if (rowIc) {
+                  try {
+                    morphLogo(rowIc);
+                  } catch (e) {}
+                }
               }
 
               var key = el.getAttribute('data-i18n');
@@ -4068,7 +4091,7 @@
                 strokeDashoffset: [anime.setDashoffset, 0],
                 duration: 600,
                 delay: anime.stagger(40),
-                easing: 'inOutExpo'
+                easing: 'easeInOutExpo'
               });
             }
           }
