@@ -322,6 +322,34 @@ with sync_playwright() as p:
             pass
         width = viewport["width"]
         assert moving.evaluate(settled), f"{width}px: with motion on, scrolled-to text or row icons never finished animating"
+
+        # Every block has to arrive. A reveal whose tween never runs leaves the
+        # whole section at zero opacity, which reads as a blank page with the
+        # boxes and the text missing, and the settled check above passes anyway
+        # because it only looks at headings and row icons.
+        #
+        # Each reveal is brought to the middle of the viewport in turn rather
+        # than jumped past in a sweep. A block shorter than the scroll step can
+        # pass through the observer's window between two sampled positions and
+        # never be seen, which is a flaw in the sweep and not in the page.
+        blocks = moving.locator(".reveal")
+        for i in range(blocks.count()):
+            blocks.nth(i).scroll_into_view_if_needed()
+            moving.wait_for_timeout(70)
+        try:
+            moving.wait_for_function(
+                """() => [...document.querySelectorAll('.reveal')].every(
+                    (el) => el.classList.contains('in') && getComputedStyle(el).opacity === '1')""",
+                timeout=15000,
+            )
+        except PlaywrightTimeoutError:
+            pass
+        hidden = moving.evaluate(
+            """() => [...document.querySelectorAll('.reveal')]
+              .filter((el) => getComputedStyle(el).opacity !== '1' || !el.classList.contains('in'))
+              .map((el) => el.className.slice(0, 40))"""
+        )
+        assert not hidden, f"{width}px: {len(hidden)} blocks never revealed, page reads blank: {hidden[:4]}"
         clipped = moving.evaluate(
             """() => [...document.querySelectorAll(
                 "[data-i18n='feat.h'], [data-i18n='feat.sub'], .opt-li [data-i18n], [data-i18n='cta.h']")]
@@ -329,7 +357,10 @@ with sync_playwright() as p:
               .map((el) => el.getAttribute('data-i18n'))"""
         )
         assert not clipped, f"{width}px: animated text overflows its box: {clipped[:6]}"
-        print(f"motion-on animations settled at {width}px:", animated.count(), "targets")
+        print(
+            f"motion-on animations settled at {width}px:",
+            animated.count(), "targets and", blocks.count(), "blocks, all revealed",
+        )
         motion.close()
 
     browser.close()

@@ -49,7 +49,7 @@
   <!-- Fonts (Design System: Fira Code / Fira Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Tailwind: prebuilt static CSS so layout works with JS disabled/blocked.
        Regenerate after class changes: see README ("Rebuilding the landing CSS"). -->
@@ -80,34 +80,79 @@
       --color-primary: #1E40AF;
       --color-secondary: #3B82F6;
       --color-cta: #F59E0B;
-      --color-bg: #F8FAFC;
-      --color-text: #0F172A;
-      --color-muted: #475569;
-      --color-border: #E2E8F0;
+      /* Near-neutral, and just dark enough that a white panel still reads as
+         raised. Whiter than a sand tone: the blue is the accent's job, and a
+         tinted page reads as stained rather than as tinted. */
+      --color-bg: #EAE8E5;
+      --color-text: #16130E;
+      --color-muted: #55524C;
+      --color-border: #D6D2CB;
       --color-cost: #0F766E;
+
+      /* Glass over a light canvas only reads if the canvas is itself tinted:
+         a white veil on a white page is invisible, which is why the light
+         theme carries its tint in the background rather than as a glow on top
+         of white. Panels then sit brighter than what is behind them, the
+         inverse of the dark theme, and both end up with one rule. */
+      --glass: rgba(255, 255, 255, 0.90);
+      /* Small chips and pills, which carry no backdrop filter. Opaque enough to
+         sit on the card behind them without the card showing through as a
+         rectangle, which is the only thing the blur was ever doing here. */
+      --pill-fill: rgba(255, 255, 255, 0.90);
+      --glass-strong: rgba(255, 255, 255, 0.97);
+      --glass-line: rgba(40, 38, 34, 0.26);
+      /* backdrop-filter has to re-sample and re-blur the backdrop behind an
+         element every time anything behind it moves, which during a scroll is
+         every frame. saturate() is a colour-matrix pass on top of that, and
+         24 tool pills do not need a 20px kernel. Two tiers: the wide blur for
+         the few large surfaces where the glass actually reads, and a narrow one
+         for everything small and repeated. */
+      --glass-blur: blur(14px);
 
       --radius-md: 12px;
       --radius-lg: 16px;
       --t-fast: 180ms;
       --t-med: 240ms;
 
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-      --shadow-lg: 0 16px 44px rgba(15, 23, 42, 0.12);
+      /* Three layers, not one: a tight contact shadow that grounds the panel,
+         a near one that gives it a lip, and a wide diffuse one that reads as
+         the panel sitting above the page. A single shadow reads flat, which is
+         exactly what made the boxes disappear into the background. */
+      --shadow-sm: 0 1px 2px rgba(40, 36, 30, 0.11), 0 1px 1px rgba(40, 36, 30, 0.07);
+      --shadow-md: 0 1px 2px rgba(40, 36, 30, 0.09), 0 5px 12px -4px rgba(40, 36, 30, 0.15), 0 14px 30px -12px rgba(40, 36, 30, 0.18);
+      --shadow-lg: 0 2px 4px rgba(40, 36, 30, 0.09), 0 12px 26px -8px rgba(40, 36, 30, 0.22), 0 30px 62px -26px rgba(40, 36, 30, 0.28);
+      /* A white top highlight only reads on a panel darker than the page.
+         A light panel is already near-white, so its top edge has to be a
+         faint dark one instead, reinforcing the 1px border it sits under. */
+      --hairline: inset 0 1px 0 rgba(40, 38, 34, 0.07);
     }
 
     html.dark {
       --color-primary: #60A5FA;
       --color-secondary: #93C5FD;
       --color-cta: #FBBF24;
-      --color-bg: #0F172A;
-      --color-text: #E2E8F0;
-      --color-muted: #94A3B8;
-      --color-border: #334155;
+      /* Near-black with a blue cast rather than a blue-grey: at this depth the
+         hue reads as a temperature, not as a colour, and it lets the one blue
+         accent carry all of the emphasis on the page. */
+      --color-bg: #05070E;
+      --color-text: #E8ECF5;
+      --color-muted: #8A94AB;
+      --color-border: #1A2136;
       --color-cost: #34D399;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-      --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-      --shadow-lg: 0 16px 44px rgba(0,0,0,0.5);
+
+      /* Glass over near-black needs a lighter, cooler fill than the light
+         theme's, or the panels disappear into the canvas entirely. Shadows
+         barely register on a near-black page, so separation here comes from
+         the fill lift and the hairline doing the work instead. */
+      --glass: rgba(152, 180, 238, 0.068);
+      --pill-fill: rgba(255, 255, 255, 0.055);
+      --glass-strong: rgba(152, 180, 238, 0.105);
+      --glass-line: rgba(190, 212, 252, 0.24);
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.4);
+      --shadow-md: 0 1px 2px rgba(0,0,0,0.55), 0 6px 16px -6px rgba(0,0,0,0.75), 0 16px 36px -14px rgba(0,0,0,0.85);
+      --shadow-lg: 0 2px 6px rgba(0,0,0,0.6), 0 16px 40px -12px rgba(0,0,0,0.9), 0 34px 72px -28px rgba(0,0,0,0.95);
+      --hairline: inset 0 1px 0 rgba(190, 214, 255, 0.07);
     }
 
     /* ---- Lenis smooth scroll ---- */
@@ -139,41 +184,53 @@
 
     body {
       font-family: "Fira Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(59,130,246,0.16), transparent 65%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(245,158,11,0.12), transparent 55%),
+      /* Barely there, and cool rather than warm: a warm glow on a near-neutral
+         canvas just re-yellows the page the tint was removed from. */
+      background: radial-gradient(1200px 700px at 10% -16%, rgba(88, 116, 176, 0.09), transparent 66%),
+                  radial-gradient(900px 560px at 92% 2%, rgba(132, 146, 186, 0.07), transparent 60%),
                   var(--color-bg);
+      background-attachment: fixed;
       color: var(--color-text);
       -webkit-font-smoothing: antialiased;
     }
     html.dark body {
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(59,130,246,0.10), transparent 65%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(245,158,11,0.06), transparent 55%),
+      /* One cold light in the corner and nothing else. The old pair of large
+         glows was most of what made the page read as blue rather than dark. */
+      background: radial-gradient(1000px 620px at 14% -12%, rgba(56,104,196,0.20), transparent 60%),
+                  radial-gradient(760px 460px at 92% 2%, rgba(120,90,220,0.07), transparent 62%),
                   var(--color-bg);
+      background-attachment: fixed;
     }
+    /* No fixed vignette over the viewport here: on a content site the bottom
+       of the screen is where the footer and the install command live, and a
+       fixed scrim over them costs more legibility than the depth is worth. */
 
     .mono { font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
     .text-muted { color: var(--color-muted); }
 
     /* ---- Card system ---- */
     .surface {
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid var(--color-border);
+      background: var(--glass);
+      border: 1px solid var(--glass-line);
       border-radius: var(--radius-lg);
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-      backdrop-filter: blur(12px);
-      transition: transform var(--t-med) ease, box-shadow var(--t-med) ease;
+      box-shadow: var(--shadow-sm), var(--shadow-md), var(--shadow-lg), var(--hairline);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      transition: transform var(--t-med) ease, box-shadow var(--t-med) ease, border-color var(--t-med) ease, background var(--t-med) ease;
     }
     .surface:hover {
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+      box-shadow: var(--shadow-md), var(--hairline);
+      transform: translateY(-3px);
     }
     html.dark .surface {
-      background: rgba(30, 41, 59, 0.9);
-      border-color: #334155;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.2);
+      background: var(--glass);
+      border-color: var(--glass-line);
+      box-shadow: var(--shadow-sm), var(--shadow-md), var(--hairline);
     }
     html.dark .surface:hover {
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 10px 10px -5px rgba(0,0,0,0.3);
+      border-color: color-mix(in srgb, var(--color-primary) 40%, var(--glass-line));
+      box-shadow: var(--shadow-md), var(--shadow-lg), var(--hairline);
     }
     /* Static surface, no lift on hover (used for the hero preview & terminal) */
     .surface-static:hover { transform: none; }
@@ -183,12 +240,19 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 10px;
       border-radius: 10px; padding: 12px 18px; min-height: 48px;
       font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;
+      position: relative; overflow: hidden;
       transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease, background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease;
     }
     .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28); }
+    /* Magnetic offset, rewritten every frame by the cursor loop. It lives in
+       its own custom property and is folded into each element's own transform
+       so the pull composes with the hover lift instead of fighting it. */
+    .btn, .tool-pill { --mx: 0px; --my: 0px; transform: translate3d(var(--mx, 0px), var(--my, 0px), 0); }
+    /* Pale at rest, solid on hover: the tint keeps the page calm until a
+       pointer actually lands on the action. */
     .btn-primary {
       background: rgba(37, 99, 235, 0.07);
-      color: #1D4ED8;
+      color: var(--color-primary);
       border: 1px solid rgba(59, 130, 246, 0.45);
       box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
       backdrop-filter: blur(8px);
@@ -221,14 +285,35 @@
       border-color: rgba(96, 165, 250, 0.75);
       box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38), 0 3px 6px rgba(37, 99, 235, 0.2);
     }
+    /* The lifts above are the repo's own and are left exactly as they were.
+       These two re-state the same selectors with the offset folded in, purely
+       so the magnetic pull survives a hover instead of being replaced by it.
+       At (0,2,0) they win over the plain .btn rule, without editing the rules
+       they compose with. Same values, same order of effects. */
+    .btn-primary:hover { transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 2px), 0); }
+    .btn-primary:active { transform: translate3d(var(--mx, 0px), var(--my, 0px), 0); }
+
+    /* The arrow leans into the direction of travel, and a sheen rides across
+       the primary button as it fills. The sheen is white on purpose: it only
+       becomes visible on hover, where the pale tint has already become the
+       solid blue fill it reads well against. */
+    .btn svg, .cmd .copy-ic { transition: transform var(--t-fast) cubic-bezier(0.22, 1, 0.36, 1); }
+    .btn:hover svg { transform: translateX(3px); }
+    .btn:active svg { transform: translateX(1px); }
+    .btn-primary::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+      transform: translateX(-120%); opacity: 0;
+    }
+    .btn-primary:hover::after { transform: translateX(120%); opacity: 1; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease; }
 
     .btn-ghost {
       background: rgba(15, 23, 42, 0.04); color: var(--color-text);
       border: 1px solid rgba(226,232,240,0.9);
     }
-    .btn-ghost:hover { background: rgba(15, 23, 42, 0.08); transform: translateY(-1px); border-color: rgba(30,64,175,0.3); }
-    html.dark .btn-ghost { background: rgba(148,163,184,0.08); border-color: #475569; }
-    html.dark .btn-ghost:hover { background: rgba(148,163,184,0.15); border-color: rgba(96,165,250,0.4); }
+    .btn-ghost:hover { background: rgba(15, 23, 42, 0.08); transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0); border-color: rgba(30,64,175,0.3); }
+    html.dark .btn-ghost { background: var(--glass); border-color: var(--glass-line); }
+    html.dark .btn-ghost:hover { background: var(--wash, rgba(255,255,255,0.06)); border-color: color-mix(in srgb, var(--color-primary) 40%, var(--glass-line)); }
 
     /* Microsoft Store badge: Microsoft ships a dark badge for light backgrounds and a
        light badge for dark ones. Keyed off html.dark so it follows the site toggle. */
@@ -250,26 +335,68 @@
       color: color-mix(in srgb, var(--color-cta) 86%, var(--color-text));
     }
 
-    /* ---- Nav ---- */
+    /* ---- Nav ----
+       Frosted glass, but the blur is only switched on once the bar is actually
+       sitting over content. At the top of the hero there is nothing behind it
+       to blur, so paying for a full-width backdrop filter there would be cost
+       with no visible return, and a backdrop filter on a fixed-width element
+       has to re-blur on every frame the page moves under it. */
     .site-nav {
       position: sticky; top: 0; z-index: 50;
-      backdrop-filter: blur(14px);
-      background: color-mix(in srgb, var(--color-bg) 78%, transparent);
-      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+      background: color-mix(in srgb, var(--color-bg) 62%, transparent);
+      border-bottom: 1px solid transparent;
+      transition: background var(--t-med) ease, box-shadow var(--t-med) ease,
+                  border-color var(--t-med) ease, backdrop-filter var(--t-med) ease;
+    }
+    /* Once the hero starts leaving, the bar earns a real edge and the glass
+       switches on. */
+    .site-nav.scrolled {
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+      border-bottom-color: var(--color-border);
+      box-shadow: 0 10px 30px -14px rgba(15, 23, 42, 0.28);
+    }
+    html.dark .site-nav.scrolled {
+      background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+      box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .site-nav, .site-nav.scrolled { background: var(--color-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    }
+    .nav-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; pointer-events: none; }
+    .nav-progress > i {
+      display: block; height: 100%; width: 100%;
+      transform: scaleX(0); transform-origin: 0 50%; will-change: transform;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-secondary) 55%, var(--color-cta));
+      box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 55%, transparent);
     }
     .nav-link {
+      position: relative;
       font-size: 14px; font-weight: 600; color: var(--color-muted);
-      padding: 8px 12px; border-radius: 8px; transition: color var(--t-fast) ease, background var(--t-fast) ease;
+      padding: 8px 12px; border-radius: 8px;
+      transition: color var(--t-fast) ease, background var(--t-fast) ease;
     }
     .nav-link:hover { color: var(--color-text); background: rgba(30,64,175,0.06); }
+    /* Underline grows from the centre, so the nav reads as one considered set. */
+    .nav-link::after {
+      content: ""; position: absolute; left: 18%; right: 18%; bottom: 2px; height: 2px;
+      border-radius: 2px; background: var(--color-primary);
+      transform: scaleX(0); transform-origin: 50% 50%;
+      transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .nav-link:hover::after, .nav-link:focus-visible::after { transform: scaleX(1); }
+    html.dark .nav-link:hover { background: rgba(96, 165, 250, 0.10); }
 
     /* ---- Eyebrow chip ---- */
+    /* The eyebrow keeps the accent colour in its text, where it is a few
+       characters, and drops the blue wash it used to fill itself with. */
     .chip {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
       letter-spacing: 0.02em; color: var(--color-primary);
-      background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+      background: var(--pill-fill);
+      border: 1px solid var(--glass-line);
     }
     .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-cta); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cta) 22%, transparent); }
 
@@ -278,6 +405,98 @@
       background: linear-gradient(120deg, var(--color-primary), var(--color-secondary) 60%, var(--color-cta));
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
+
+    /* ---- Typographic polish ----
+       balance evens out the ragged last line of a heading; pretty stops the
+       browser leaving a single word stranded on the final line of a paragraph. */
+    h1, h2, h3 { text-wrap: balance; }
+    p { text-wrap: pretty; }
+
+    /* Section headings share one scale so the page keeps a single voice.
+       Defined here rather than as Tailwind utilities so the prebuilt,
+       purged static/landing.css does not have to be regenerated for it. */
+    .sec-title { font-size: 1.875rem; line-height: 1.14; }
+    @media (min-width: 640px) { .sec-title { font-size: 2.5rem; } }
+
+    /* Keyboard focus, everywhere. .btn keeps its own ring, so it opts out. */
+    :where(a, button, select, input, summary):not(.btn):focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+
+    /* ---- Section pacing ----
+       A barely-there tint every other section gives the long page a rhythm
+       instead of one undifferentiated white column. */
+    /* z-index: 0 makes the section its own stacking context, so the -1
+       pseudo paints above the page background instead of behind it. */
+    .band { position: relative; z-index: 0; }
+    .band::before {
+      content: ""; position: absolute; z-index: -1;
+      top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100vw;
+      /* Light mode gets a neutral wash and firm hairlines for the rhythm;
+         a blue tint over an already blue canvas just reads as a smudge. */
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--color-text) 2.5%, transparent),
+        color-mix(in srgb, var(--color-text) 1%, transparent));
+      border-top: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+      mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    }
+    html.dark .band::before {
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--color-primary) 7%, transparent),
+        color-mix(in srgb, var(--color-primary) 2.5%, transparent));
+      border-top-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+      border-bottom-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+    }
+
+    /* ---- Hero proof strip ---- */
+    .proof {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px;
+      margin-top: 30px; padding-top: 22px;
+      border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+    }
+    .proof-item {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13.5px; font-weight: 600; color: var(--color-muted);
+    }
+    .proof-item b {
+      color: var(--color-text); font-weight: 800; font-size: 16px;
+      font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    }
+    .proof-item .tick {
+      width: 20px; height: 20px; border-radius: 50%; flex: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--color-cost);
+      background: color-mix(in srgb, var(--color-cost) 14%, transparent);
+    }
+
+    /* ---- Scroll hint ---- */
+    .scroll-hint {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-top: 26px; color: var(--color-muted);
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .scroll-hint.gone { opacity: 0; transform: translateY(10px); pointer-events: none; }
+    .scroll-hint-mouse {
+      width: 20px; height: 32px; border-radius: 11px; flex: none; position: relative;
+      border: 1.5px solid color-mix(in srgb, var(--color-muted) 55%, transparent);
+    }
+    .scroll-hint-mouse > i {
+      position: absolute; left: 50%; top: 6px; width: 3px; height: 7px; margin-left: -1.5px;
+      border-radius: 2px; background: var(--color-primary);
+      animation: hint-wheel 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+    @keyframes hint-wheel {
+      0%   { transform: translateY(0);    opacity: 0; }
+      25%  { opacity: 1; }
+      70%  { transform: translateY(11px); opacity: 0; }
+      100% { transform: translateY(11px); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { .scroll-hint-mouse > i { animation: none; } }
 
     /* ---- Install command pill ---- */
     .cmd {
@@ -288,7 +507,7 @@
       box-shadow: var(--shadow-md); cursor: pointer; border: none;
       transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease;
     }
-    html.dark .cmd { background: #020617; border: 1px solid #334155; }
+    html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); }
     .cmd:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
     .cmd .prompt { color: var(--color-cta); }
     .cmd .copy-ic {
@@ -307,13 +526,30 @@
     }
     .tool-pill {
       display: flex; align-items: center; gap: 11px; padding: 12px 16px;
-      border-radius: 12px; border: 1px solid var(--color-border);
-      background: color-mix(in srgb, var(--color-bg) 40%, rgba(255,255,255,0.6));
+      border-radius: 12px; border: 1px solid var(--glass-line);
+      background: var(--pill-fill);
       font-weight: 600; font-size: 14.5px; color: var(--color-text); text-decoration: none;
-      transition: transform var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+      transition: transform var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease, background var(--t-fast) ease;
     }
-    html.dark .tool-pill { background: rgba(30,41,59,0.55); }
-    .tool-pill:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); box-shadow: var(--shadow-md); }
+    /* Deliberately no backdrop-filter here, and the same goes for .chip below.
+       Both sit on an already-opaque card, behind a veil of 4-7% in dark and 90%
+       in light -- at which strength there is nothing behind them left to blur.
+       All 34 of them did have one, and a backdrop filter has to re-sample what
+       is behind the element on every frame the page scrolls. Twenty-five tool
+       pills and nine chips re-sampling a flat card sixty times a second is
+       what turned a smooth scroll into a stutter, in exchange for an effect
+       that was not visible to begin with. The fill stands in for it. */
+    .tool-pill:hover { transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 2px), 0); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); box-shadow: var(--shadow-md); }
+    .tool-logo { transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--t-med) ease; }
+    .tool-pill:hover .tool-logo { transform: scale(1.12) rotate(-3deg); }
+    /* Card icon lifts a touch as its card does, so the two read as one object. */
+    .feature-icon { transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--t-med) ease; }
+    .surface:hover .feature-icon { transform: translateY(-2px) scale(1.06); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-primary) 60%, transparent); }
+    /* The hero preview used to carry a 9s infinite box-shadow "breath".
+       box-shadow is paint-only, so that animated forever even at rest and even
+       with nothing on screen: a permanent repaint loop for a decorative hint.
+       The same life is now carried by the JS-driven figure drift further down,
+       which costs nothing while the hero is scrolled away. */
     /* White logo chip, keeping every mark (incl. dark monochrome glyphs) legible in light & dark. */
     .tool-logo { width: 30px; height: 30px; flex: none; object-fit: contain; border-radius: 7px; background: #fff; padding: 4px; box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06); }
     /* Same chip for marks that are wordmarks: they carry the name, so the pill prints no label. */
@@ -321,10 +557,16 @@
     .tool-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
     /* ---- Hero preview mini-dashboard ---- */
-    .preview-topbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); }
+    .preview-topbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); background: rgba(255,255,255,0.45); }
+    html.dark .preview-topbar { background: rgba(255,255,255,0.025); }
     .dot-r { width: 11px; height: 11px; border-radius: 50%; }
-    .kpi { padding: 14px; border-radius: 12px; border: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-bg) 30%, rgba(255,255,255,0.55)); }
-    html.dark .kpi { background: rgba(15,23,42,0.5); }
+    /* The KPI cards are a layer inside the dashboard, not panels on the page,
+       so they sit a step further back than the dashboard that contains them. */
+    /* Inset a step, so it reads as a layer inside the panel rather than a
+       second panel. Dark: lighter than nothing. Light: a faint grey wash,
+       because a second white veil on a white panel would not register. */
+    .kpi { padding: 14px; border-radius: 12px; border: 1px solid var(--glass-line); background: rgba(11, 16, 32, 0.022); }
+    html.dark .kpi { background: rgba(148, 176, 232, 0.035); }
     .kpi-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
     .kpi-val { font-size: 22px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
 
@@ -338,18 +580,168 @@
     html.dark .l3 { background: #2563EB; } html.dark .l4 { background: #3B82F6; } html.dark .l5 { background: #60A5FA; }
     html.dark .l6 { background: #93C5FD; } html.dark .l7 { background: #BFDBFE; } html.dark .l8 { background: #DBEAFE; } html.dark .l9 { background: #EFF6FF; }
 
+    /* ---- Scroll mini-map ----
+       Fixed, pointer-only and desktop-only: below 1024px the header nav already
+       carries the same information and the column would sit on top of the
+       content. The blur is deliberately not used here: this is a fixed
+       full-height element, so a backdrop filter on it would re-run every frame
+       for the entire scroll. */
+    .minimap {
+      position: fixed; z-index: 40;
+      right: clamp(10px, 1.4vw, 24px); top: 50%; transform: translateY(-50%);
+      pointer-events: none; user-select: none;
+      opacity: 0; transition: opacity 0.6s ease;
+    }
+    html.js .minimap.ready { opacity: 1; }
+    .minimap-rail {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column; gap: 5px; align-items: flex-end;
+    }
+    /* The bar owns the whole 64px and the label floats beside it, out of flow.
+       In flow, an invisible-but-space-taking label would push the bar off its
+       anchor by whatever that language happens to be long. */
+    .minimap-node {
+      position: relative;
+      display: flex; align-items: center;
+      height: 7px; width: 64px;
+      pointer-events: auto;
+    }
+    /* The bar is 7px tall, which is not something anyone can aim at. The link
+       is stretched well past it without disturbing the layout, so the rail is
+       as easy to hit as it looks to be. */
+    .minimap-node > a {
+      position: absolute; inset: -6px -6px -6px 0;
+      display: flex; align-items: center;
+      text-decoration: none; color: inherit; border-radius: 4px;
+    }
+    .minimap-node > a:focus-visible {
+      outline: 2px solid var(--color-primary); outline-offset: 2px;
+    }
+    /* Pointing anywhere at the rail lifts the whole thing, not just the bar
+       under the pointer. It reads as the rail leaning in to meet you, and it
+       gives the labels room to be read without a per-bar animation. */
+    .minimap-rail { transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 100% 50%; }
+    .minimap:hover .minimap-rail,
+    .minimap:focus-within .minimap-rail { transform: scale(1.12); }
+    /* Bars grow leftwards from a spine on the right, so the rail has one edge
+       the eye can follow instead of a ragged one, and length reads as distance
+       travelled into the content rather than away from it. */
+    .minimap-bar {
+      display: block; height: 4px; width: 64px; border-radius: 999px;
+      transform: scaleX(0.2); transform-origin: 100% 50%;
+      background: color-mix(in srgb, var(--color-text) 26%, transparent);
+      will-change: transform;
+      transition: background 0.35s ease;
+    }
+    .minimap-node.on .minimap-bar { background: color-mix(in srgb, var(--color-text) 62%, transparent); }
+    .minimap-node.active .minimap-bar { background: var(--color-text); }
+    .minimap-tip {
+      position: absolute; right: calc(100% + 12px); top: 50%;
+      font-family: "Rubik", ui-sans-serif, system-ui, sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--color-text); white-space: nowrap;
+      max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+      padding: 4px 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+      border: 1px solid var(--glass-line);
+      opacity: 0; transform: translate(6px, -50%);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+    }
+    .minimap-node:hover .minimap-bar,
+    .minimap-node:focus-visible .minimap-bar { background: var(--color-text); transform: scaleX(1) !important; }
+    .minimap-node:hover .minimap-tip,
+    .minimap-node:focus-visible .minimap-tip { opacity: 1; transform: translate(0, -50%); }
+    @media (max-width: 1023px) { .minimap { display: none; } }
+    html:not(.js) .minimap { display: none; }
+
+    /* ---- Cursor ----
+       A dot that tracks the pointer exactly and a ring that lags behind it.
+       The lag is the whole effect: two elements at different rates read as
+       something with weight, one element just reads as a bigger dot. */
+    .cursor-dot, .cursor-ring {
+      position: fixed; top: 0; left: 0; z-index: 10020;
+      pointer-events: none; border-radius: 50%;
+      opacity: 0; will-change: transform;
+      transition: opacity 0.3s ease;
+    }
+    .cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--color-text); }
+    .cursor-ring {
+      width: 30px; height: 30px; margin: -15px 0 0 -15px;
+      border: 1px solid color-mix(in srgb, var(--color-text) 45%, transparent);
+      transition: opacity 0.3s ease, width 0.28s ease, height 0.28s ease,
+                  margin 0.28s ease, background 0.28s ease, border-color 0.28s ease;
+    }
+    html.js.cursor-on .cursor-dot, html.js.cursor-on .cursor-ring { opacity: 1; }
+    /* Hover changes the ring's scale, not its size. Animating width/height
+       reflows the element every frame, and the cursor is the one thing on the
+       page that is guaranteed to be moving; the ring script below writes the
+       transform instead, which is the same visual with no layout. */
+    html.js.cursor-on.cursor-hot .cursor-ring {
+      background: color-mix(in srgb, var(--color-text) 7%, transparent);
+      border-color: color-mix(in srgb, var(--color-text) 70%, transparent);
+    }
+    /* The real cursor is only hidden once the replacement is actually on
+       screen, so a device that never gets the effect still has a cursor. */
+    html.js.cursor-on, html.js.cursor-on * { cursor: none !important; }
+    /* Hiding the pointer outright is fine over a control but not over a page
+       of body copy, where the I-beam is the only cue that a word can be
+       selected. Hand the real cursor back for the duration of a text drag
+       and inside form fields. */
+    html.js.cursor-on.cursor-selecting, html.js.cursor-on.cursor-selecting * { cursor: auto !important; }
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .cursor-dot, .cursor-ring { display: none; }
+    }
+    /* The rail is not hiding for the same reason as the cursor -- it is
+       pointer-free and legible at rest -- but under reduced motion it is
+       rewritten every frame as the bar lengths track the scroll, which is the
+       thing being asked to stop. The nav's progress hairline still reports
+       position in that case, so nothing is lost by standing this one down. */
+    @media (prefers-reduced-motion: reduce) {
+      .minimap { display: none; }
+    }
+
+    /* ---- Mini-dashboard entrance stage ----
+       perspective only reaches direct children, so the KPI grid and the
+       heatmap each get their own 3D context rather than one on .preview-wrap. */
+    .kpi-stage { perspective: 900px; }
+    #miniHeat { perspective: 620px; }
+    /* Layer promotion for the entrance, and only for the entrance.
+       will-change is a standing instruction to the compositor, not a hint for
+       the next few frames: a promoted element holds its own texture until the
+       property is taken away again. Left on permanently, 140 heatmap cells
+       and 4 KPI cards meant 144 extra composited layers for the rest of the
+       page's life -- which is what turned a smooth scroll into a stutter, and
+       it is invisible until someone scrolls. The script adds `.will-anim`
+       before the timeline runs and drops it the moment the timeline ends. */
+    .kpi-in, .hcell { backface-visibility: hidden; }
+    .kpi-in.will-anim, .hcell.will-anim { will-change: transform, opacity; }
+
     /* floating glow behind preview */
     .preview-wrap { position: relative; }
     .preview-wrap::before {
       content: ""; position: absolute; inset: -8% -6% -12% -6%; z-index: -1;
-      background: radial-gradient(60% 60% at 70% 10%, rgba(59,130,246,0.30), transparent 70%),
-                  radial-gradient(50% 50% at 10% 90%, rgba(245,158,11,0.22), transparent 70%);
-      filter: blur(18px);
+      background: radial-gradient(60% 60% at 70% 10%, rgba(56,104,196,0.15), transparent 70%),
+                  radial-gradient(50% 50% at 10% 90%, rgba(245,158,11,0.07), transparent 70%);
+      filter: blur(22px);
     }
 
     /* ---- Terminal block ---- */
-    .terminal { background: var(--color-text); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-lg); }
-    html.dark .terminal { background: #020617; border: 1px solid #334155; }
+    /* A terminal is a dark object in both themes. On the dark page it is
+       glass; on the light page it stays dark, but takes the same edge and the
+       same elevation so it reads as a deliberate slab rather than a hole. */
+    .terminal {
+      background: #0D1322; border-radius: 14px; overflow: hidden;
+      /* A light hairline, because a dark fill under a dark hairline has no
+         edge at all; this is the one surface that stays dark in light mode. */
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: var(--shadow-lg);
+    }
+    html.dark .terminal {
+      background: rgba(148, 176, 232, 0.045);
+      border-color: var(--glass-line);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+    }
     .terminal-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .terminal-body { padding: 20px 22px; font-family: "Fira Code", monospace; font-size: 14px; line-height: 2; color: #E2E8F0; }
     .terminal-body .p { color: var(--color-cta); }
@@ -543,8 +935,8 @@
     .srv-bar { grid-column: 1 / -1; height: 6px; }
     .srv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .srv-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 5px 9px;
-      border-radius: 8px; border: 1px solid var(--color-border);
-      background: color-mix(in srgb, var(--color-bg) 30%, rgba(255, 255, 255, 0.55)); }
+      border-radius: 8px; border: 1px solid var(--glass-line);
+      background: var(--glass); }
     .srv-chip b { font-weight: 700; }
     .srv-chip span { color: var(--color-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
 
@@ -575,12 +967,12 @@
       display: flex; align-items: center; gap: 14px; padding: 0 12px;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
       font-size: 13px; color: rgba(0,0,0,0.85);
-      background: rgba(246, 246, 248, 0.55);
+      background: rgba(246, 246, 248, 0.52);
       backdrop-filter: blur(24px) saturate(1.5);
       -webkit-backdrop-filter: blur(24px) saturate(1.5);
       white-space: nowrap; overflow: hidden;
     }
-    html.dark .comp-mock .mac-menubar { color: rgba(255,255,255,0.92); background: rgba(28,28,30,0.45); }
+    html.dark .comp-mock .mac-menubar { color: rgba(255,255,255,0.92); background: rgba(148, 176, 232, 0.06); }
     .comp-mock .mac-menubar .app { font-weight: 700; flex: none; }
     .comp-mock .mac-menubar .dim { opacity: 0.75; }
     .comp-mock .mac-menubar .mi { min-width: 0; overflow: hidden; }
@@ -620,15 +1012,15 @@
       position: absolute; top: 34px; right: 10px; width: 352px; max-width: calc(100% - 20px);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
       color: #1D1D1F;
-      background: rgba(242, 242, 245, 0.78);
+      background: rgba(242, 242, 245, 0.74);
       backdrop-filter: blur(30px) saturate(1.7);
       -webkit-backdrop-filter: blur(30px) saturate(1.7);
-      border: 0.5px solid rgba(0,0,0,0.12);
+      border: 0.5px solid rgba(0,0,0,0.22);
       border-radius: 14px;
       box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 1px 4px rgba(0,0,0,0.12);
       z-index: 20;
     }
-    html.dark .comp-mock .mac-pop { color: #F2F2F2; background: rgba(34, 34, 37, 0.74); border-color: rgba(255,255,255,0.16); }
+    html.dark .comp-mock .mac-pop { color: #F2F2F2; background: rgba(148, 176, 232, 0.085); border-color: rgba(160, 190, 245, 0.16); }
     @media (prefers-reduced-transparency: reduce) {
       .comp-mock .mac-pop { background: #F2F2F5; }
       html.dark .comp-mock .mac-pop { background: #222225; }
@@ -707,11 +1099,11 @@
     .comp-mock .mac-btn {
       appearance: none; font: inherit; font-size: 13px; cursor: pointer;
       border-radius: 6px; border: 0.5px solid rgba(0,0,0,0.16);
-      background: rgba(255,255,255,0.65); color: #1D1D1F;
+      background: rgba(255,255,255,0.62); color: #1D1D1F;
       padding: 3px 12px 4px; box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.08);
     }
     .comp-mock .mac-btn:hover { background: rgba(255,255,255,0.85); }
-    html.dark .comp-mock .mac-btn { background: rgba(255,255,255,0.16); color: #F2F2F2; border-color: rgba(255,255,255,0.12); }
+    html.dark .comp-mock .mac-btn { background: rgba(160, 190, 245, 0.10); color: #F2F2F2; border-color: rgba(160, 190, 245, 0.12); }
     html.dark .comp-mock .mac-btn:hover { background: rgba(255,255,255,0.22); }
     .comp-mock .mac-btn.primary { background: #0A6CFF; border-color: transparent; color: #fff; font-weight: 500; }
     .comp-mock .mac-btn.primary:hover { background: #0A5FE8; }
@@ -755,14 +1147,14 @@
     /* ===== Windows frame ===== */
     .comp-mock .win-frame {
       background:
-        radial-gradient(700px 380px at 30% 30%, rgba(90,140,200,0.35), transparent 70%),
-        radial-gradient(600px 400px at 75% 65%, rgba(70,110,160,0.30), transparent 70%),
-        linear-gradient(150deg, #24425E 0%, #1B3349 50%, #14273A 100%);
+        radial-gradient(700px 380px at 30% 30%, rgba(90,140,200,0.24), transparent 70%),
+        radial-gradient(600px 400px at 75% 65%, rgba(70,110,160,0.20), transparent 70%),
+        linear-gradient(150deg, #1E3448 0%, #17293B 50%, #111F2E 100%);
     }
     html.dark .comp-mock .win-frame {
       background:
-        radial-gradient(700px 380px at 30% 30%, rgba(60,100,150,0.25), transparent 70%),
-        linear-gradient(150deg, #16242F 0%, #0F1A24 55%, #0A1219 100%);
+        radial-gradient(700px 380px at 30% 30%, rgba(56,88,132,0.18), transparent 70%),
+        linear-gradient(150deg, #101A24 0%, #0A121A 55%, #060B11 100%);
     }
     .comp-mock .win-frame, .comp-mock .win-frame * { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
 
@@ -837,10 +1229,10 @@
       color: #1B1B1B;
       background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
-        rgba(242, 244, 247, 0.86);
+        rgba(242, 244, 247, 0.80);
       backdrop-filter: blur(32px) saturate(1.25);
       -webkit-backdrop-filter: blur(32px) saturate(1.25);
-      border: 1px solid rgba(0,0,0,0.10);
+      border: 1px solid rgba(0,0,0,0.22);
       border-radius: 8px;
       box-shadow: 0 16px 48px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.18);
       z-index: 40;
@@ -849,8 +1241,8 @@
       color: #F3F3F3;
       background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
-        rgba(38, 42, 48, 0.88);
-      border-color: rgba(255,255,255,0.10);
+        rgba(148, 176, 232, 0.085);
+      border-color: rgba(160, 190, 245, 0.13);
     }
     @media (prefers-reduced-transparency: reduce) {
       .comp-mock .win-fly { background: #F2F4F7; }
@@ -1544,10 +1936,11 @@
           <span id="ghStarCount" class="gh-count" hidden></span>
         </a>
       </div>
+      <div class="nav-progress" aria-hidden="true"><i></i></div>
     </div>
   </header>
 
-  <main>
+  <main id="top">
     <!-- ============ HERO ============ -->
     <section class="max-w-[1180px] mx-auto px-4 sm:px-6 pt-14 pb-10 lg:pt-20 lg:pb-16">
       <div class="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
@@ -1571,7 +1964,7 @@
           </div>
 
           <div class="reveal flex flex-wrap items-center gap-3 mt-8">
-            <button id="copyCmd" class="cmd" data-cmd="pipx install tokdash" aria-label="Copy: pipx install tokdash">
+            <button class="cmd" data-cmd="pipx install tokdash" aria-label="Copy: pipx install tokdash">
               <span><span class="prompt">$</span>&nbsp;pipx install tokdash</span>
               <span class="copy-ic" aria-hidden="true">
                 <svg id="copyGlyph" class="copy-glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" style="overflow:visible;">
@@ -1586,41 +1979,64 @@
             </a>
           </div>
 
+          <!-- Proof strip: only claims the product can actually back up. The
+               figure lives *inside* the translated string, so word order and
+               counters stay natural in all six languages. -->
+          <div class="proof reveal" aria-label="Tokdash at a glance">
+            <span class="proof-item">
+              <span class="tick" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span data-i18n="hero.proof1"><b>24</b> coding agents</span>
+            </span>
+            <span class="proof-item">
+              <span class="tick" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span data-i18n="hero.proof2"><b>6</b> UI languages</span>
+            </span>
+            <span class="proof-item">
+              <span class="tick" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span data-i18n="hero.proof3"><b>17</b> themes</span>
+            </span>
+          </div>
+
+          <!-- Fades out on the first real scroll, once the reader commits. -->
+          <div class="scroll-hint reveal" aria-hidden="true">
+            <span class="scroll-hint-mouse"><i></i></span>
+            <span class="scroll-hint-text" data-i18n="hero.scroll">Scroll</span>
+          </div>
         </div>
 
         <!-- Preview mini-dashboard -->
-        <div class="reveal preview-wrap">
+        <div class="reveal preview-wrap preview-dash">
           <div class="surface surface-static overflow-hidden" aria-hidden="true">
             <div class="preview-topbar">
               <span class="dot-r" style="background:#F87171;"></span>
               <span class="dot-r" style="background:#FBBF24;"></span>
               <span class="dot-r" style="background:#34D399;"></span>
-              <span class="mono text-xs text-muted ml-2">tokdash · localhost:55423</span>
-              <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-md" style="background:color-mix(in srgb, var(--color-primary) 12%, transparent); color:var(--color-primary);">Last 4 Weeks</span>
+              <span class="mono text-xs text-muted ml-2 pv-text" id="pvClock">tokdash · localhost:55423</span>
+              <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-md pv-text" style="background:color-mix(in srgb, var(--color-primary) 12%, transparent); color:var(--color-primary);">Last 4 Weeks</span>
             </div>
 
             <div class="p-4 sm:p-5">
               <!-- KPIs -->
-              <div class="grid grid-cols-2 gap-3">
-                <div class="kpi">
+              <div class="grid grid-cols-2 gap-3 kpi-stage">
+                <div class="kpi kpi-in">
                   <div class="kpi-label">Total Tokens</div>
                   <div class="kpi-val" style="color:var(--color-primary);">48.2M</div>
-                  <div class="text-[11px] font-semibold mt-1" style="color:var(--color-cost);">▲ 12.4% vs prev</div>
+                  <div class="text-[11px] font-semibold mt-1 pv-text" style="color:var(--color-cost);">▲ 12.4% vs prev</div>
                 </div>
-                <div class="kpi">
+                <div class="kpi kpi-in">
                   <div class="kpi-label">Total Cost</div>
                   <div class="kpi-val" style="color:var(--color-cost);">$312.40</div>
-                  <div class="text-[11px] font-semibold mt-1 text-muted">$11.16 / day avg</div>
+                  <div class="text-[11px] font-semibold mt-1 text-muted pv-text">$11.16 / day avg</div>
                 </div>
-                <div class="kpi">
+                <div class="kpi kpi-in">
                   <div class="kpi-label">Messages</div>
                   <div class="kpi-val">5,847</div>
-                  <div class="text-[11px] font-semibold mt-1 text-muted">212 sessions</div>
+                  <div class="text-[11px] font-semibold mt-1 text-muted pv-text">212 sessions</div>
                 </div>
-                <div class="kpi">
+                <div class="kpi kpi-in">
                   <div class="kpi-label">Cache Hit</div>
                   <div class="kpi-val" style="color:var(--color-cta);">73%</div>
-                  <div class="text-[11px] font-semibold mt-1 text-muted">34.1M cached</div>
+                  <div class="text-[11px] font-semibold mt-1 text-muted pv-text">34.1M cached</div>
                 </div>
               </div>
 
@@ -1628,7 +2044,7 @@
               <div class="kpi mt-3" style="padding:16px;">
                 <div class="flex items-center justify-between mb-3">
                   <div class="kpi-label">Daily Activity</div>
-                  <div class="text-[11px] text-muted mono">Less <span id="legend"></span> More</div>
+                  <div class="text-[11px] text-muted mono"><span class="pv-text">Less</span> <span id="legend"></span> <span class="pv-text">More</span></div>
                 </div>
                 <div id="miniHeat" class="mini-heat"></div>
               </div>
@@ -1667,9 +2083,9 @@
     </section>
 
     <!-- ============ SUPPORTED TOOLS ============ -->
-    <section id="tools" class="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
+    <section id="tools" class="band max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
       <div class="text-center max-w-2xl mx-auto reveal">
-        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight" data-i18n="tools.h">One dashboard for every agent</h2>
+        <h2 class="sec-title font-extrabold tracking-tight" data-i18n="tools.h">One dashboard for every agent</h2>
         <p class="text-muted mt-3" data-i18n="tools.sub">Tokdash unifies usage across twenty-four AI coding tools, letting you switch agents without losing the bill.</p>
       </div>
 
@@ -1708,7 +2124,7 @@
     <section id="features" class="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
       <div class="text-center max-w-2xl mx-auto reveal">
         <span class="chip" data-i18n="feat.eyebrow"><span class="dot"></span> Features</span>
-        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-5" data-i18n="feat.h">Everything you spend, made visible</h2>
+        <h2 class="sec-title font-extrabold tracking-tight mt-5" data-i18n="feat.h">Everything you spend, made visible</h2>
         <p class="text-muted mt-3" data-i18n="feat.sub">From raw token counts to real dollars, drilled down to a single session.</p>
       </div>
 
@@ -1778,7 +2194,7 @@
         <!-- Copy -->
         <div class="reveal">
           <span class="chip" data-i18n="srv.eyebrow"><span class="dot"></span> Multi-server</span>
-          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-5" data-i18n="srv.h">Every machine you code on, one total</h2>
+          <h2 class="sec-title font-extrabold tracking-tight mt-5" data-i18n="srv.h">Every machine you code on, one total</h2>
           <p class="text-muted mt-3 max-w-md" data-i18n="srv.sub">Add a Tokdash server for your WSL box, your Mac, or a spare machine. Select any combination and every tab follows it, while quota stays grouped by the machine that owns it.</p>
 
           <ul class="mt-7 space-y-4">
@@ -1853,7 +2269,7 @@
         <!-- Copy -->
         <div class="reveal">
           <span class="chip" data-i18n="opt.eyebrow"><span class="dot"></span> Cost optimization</span>
-          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-5" data-i18n="opt.h">See where every dollar goes</h2>
+          <h2 class="sec-title font-extrabold tracking-tight mt-5" data-i18n="opt.h">See where every dollar goes</h2>
           <p class="text-muted mt-3 max-w-md" data-i18n="opt.sub">Tokdash breaks spend down to the session, model, and project, so you can find waste and cut it, not just watch the number climb.</p>
 
           <ul class="mt-7 space-y-4">
@@ -1928,10 +2344,10 @@
     </section>
 
     <!-- ============ COMPANION APP ============ -->
-    <section id="companion" class="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
+    <section id="companion" class="band max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
       <div class="text-center reveal">
         <span class="chip" data-i18n="comp.eyebrow"><span class="dot"></span> Companion app</span>
-        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-5" data-i18n="comp.h">Today's spend, one click away in your menu bar</h2>
+        <h2 class="sec-title font-extrabold tracking-tight mt-5" data-i18n="comp.h">Today's spend, one click away in your menu bar</h2>
         <p class="text-muted mt-3 max-w-2xl mx-auto" data-i18n="comp.sub">Tokdash Companion is a native menu-bar (macOS) and tray (Windows) client for your local Tokdash service. Read-only and privacy-first, with no telemetry, and it talks only to the endpoint you configure.</p>
       </div>
 
@@ -2193,7 +2609,7 @@
       <div class="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
         <div class="reveal">
           <span class="chip" data-i18n="start.eyebrow"><span class="dot"></span> Get started</span>
-          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-5" data-i18n="start.h">Up and running in 30 seconds</h2>
+          <h2 class="sec-title font-extrabold tracking-tight mt-5" data-i18n="start.h">Up and running in 30 seconds</h2>
           <p class="text-muted mt-3 max-w-md" data-i18n="start.sub">Python package, one command to install, one to set up. Your data never leaves your laptop.</p>
 
           <ol class="mt-8 space-y-5">
@@ -2256,14 +2672,14 @@
     <section class="max-w-[1180px] mx-auto px-4 sm:px-6 pb-20">
       <div class="surface surface-static reveal overflow-hidden text-center px-6 py-12 sm:py-16"
            style="background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 16%, var(--color-bg)), color-mix(in srgb, var(--color-cta) 12%, var(--color-bg)));">
-        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight" data-i18n="cta.h">See it before you install</h2>
+        <h2 class="sec-title font-extrabold tracking-tight" data-i18n="cta.h">See it before you install</h2>
         <p class="text-muted mt-3 max-w-xl mx-auto" data-i18n="cta.sub">The live demo runs the real dashboard on synthetic data, letting you explore every tab, theme, and chart right in your browser.</p>
         <div class="flex flex-wrap justify-center gap-3 mt-8">
           <a href="/demo/" class="btn btn-primary">
             <span data-i18n="cta.open">Open the live demo</span>
             <svg class="svg-drawable" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <button class="cmd" data-cmd="pipx install tokdash" aria-label="Copy: pipx install tokdash" onclick="window.__copyCmd(this)">
+          <button class="cmd" data-cmd="pipx install tokdash" aria-label="Copy: pipx install tokdash">
             <span><span class="prompt">$</span>&nbsp;pipx install tokdash</span>
             <span class="copy-ic" aria-hidden="true">
               <svg class="copy-glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" style="overflow:visible;">
@@ -2279,7 +2695,10 @@
 
     <!-- ============ RELATED PROJECT ============ -->
     <section id="related" class="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 lg:py-20">
-      <div class="surface p-8 sm:p-10 text-center max-w-3xl mx-auto reveal">
+      <!-- The built Tailwind bundle has no pb-* utility, so p-8/p-10 was
+           leaving this panel with no bottom padding at all and the two buttons
+           sat on its edge. pb-10 is the one that survived the purge. -->
+      <div class="surface p-8 sm:p-10 pb-10 text-center max-w-3xl mx-auto reveal">
         <span class="chip" data-i18n="related.eyebrow"><span class="dot"></span> Related project</span>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-4" data-i18n="related.h">Synchronize and control your agents</h2>
         <p class="text-muted mt-3 max-w-2xl mx-auto" data-i18n="related.sub">From CLI to GUI, from desktop to phone. Pick up right where you left off, anywhere. Cosyncing keeps your coding agents in sync across your own network, as a sister project from the same author.</p>
@@ -2293,6 +2712,27 @@
       </div>
     </section>
   </main>
+
+  <!-- ============ SCROLL MINI-MAP ============
+       A quiet map of the page down the right edge. Each bar is a section, and
+       its length is how close that section is to where you are reading now, so
+       the rail doubles as a sense of distance. It is also a set of links, so
+       it is a real nav landmark in the tab order rather than a decoration:
+       every bar can be reached by keyboard and every one goes somewhere. -->
+  <nav class="minimap" aria-label="Page sections">
+    <ul class="minimap-rail">
+      <li class="minimap-node"><a href="#top"><span class="minimap-bar"></span><span class="minimap-tip" data-i18n="rail.first">Quickstart</span></a></li>
+      <li class="minimap-node"><a href="#features"><span class="minimap-bar"></span><span class="minimap-tip"></span></a></li>
+      <li class="minimap-node"><a href="#servers"><span class="minimap-bar"></span><span class="minimap-tip"></span></a></li>
+      <li class="minimap-node"><a href="#optimize"><span class="minimap-bar"></span><span class="minimap-tip"></span></a></li>
+      <li class="minimap-node"><a href="#companion"><span class="minimap-bar"></span><span class="minimap-tip"></span></a></li>
+      <li class="minimap-node"><a href="#install"><span class="minimap-bar"></span><span class="minimap-tip" data-i18n="rail.last">Setup</span></a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ CURSOR ============ -->
+  <div class="cursor-ring" aria-hidden="true"></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
 
   <!-- ============ FOOTER ============ -->
   <footer class="border-t" style="border-color: color-mix(in srgb, var(--color-border) 70%, transparent);">
@@ -2345,9 +2785,13 @@
               duration: 550,
               easing: 'easeInOutExpo'
             });
+            // The rays are visible while they open rather than appearing at
+            // the same moment they finish opening. Fading in on its own
+            // shorter timing, the way the reveals do, is the difference
+            // between watching a sun come up and watching a shape materialise.
             anime({
               targets: themeRays,
-              opacity: [0, 1],
+              opacity: { value: [0, 1], duration: 240, easing: 'linear' },
               scale: [0.2, 1],
               rotate: [-45, 0],
               duration: 500,
@@ -2362,9 +2806,12 @@
               duration: 550,
               easing: 'easeInOutExpo'
             });
+            // Going the other way the fade is late rather than early, so the
+            // rays are still there while they fold away instead of vanishing
+            // and then shrinking into nothing.
             anime({
               targets: themeRays,
-              opacity: [1, 0],
+              opacity: { value: [1, 0], duration: 320, easing: 'linear' },
               scale: [1, 0.2],
               rotate: [0, -45],
               duration: 450,
@@ -2390,7 +2837,7 @@
     })();
 
     // ---- Copy-to-clipboard with SVG Morphing Engine ----
-    window.__copyCmd = function (el) {
+    function copyCmd(el) {
       if (!el || el.dataset.copying === 'true') return;
       el.dataset.copying = 'true';
       var cmd = el.getAttribute('data-cmd') || '';
@@ -2492,8 +2939,129 @@
         } catch (e) { failure(); }
       }
     };
-    var heroCopy = document.getElementById('copyCmd');
-    if (heroCopy) heroCopy.addEventListener('click', function () { window.__copyCmd(heroCopy); });
+    // One delegated listener covers every install-command pill on the page
+    // (hero and closing CTA alike), so a new .cmd needs no wiring of its own.
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest ? e.target.closest('[data-cmd]') : null;
+      if (el) copyCmd(el);
+    });
+
+    // ---- onScroll: one rAF-coalesced driver for every scroll-linked effect ----
+    // Lenis fires scroll at frame rate and a momentum trackpad fires faster, so
+    // the layout reads are coalesced into one frame. Every subscriber gets the
+    // same normalised progress: 0 at the top, 1 at the last scrollable pixel.
+    // ---- Capability gate ----
+    // Everything decorative on this page asks this first. The question is not
+    // "does the user want motion" but "can this device afford it and has the
+    // user not already said no": a coarse pointer means a finger rather than a
+    // cursor, and a device that has told the browser it is on a metered or
+    // memory-constrained connection has told us twice.
+    var canAnimate = (function () {
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+      } catch (e) {}
+      var nav = window.navigator || {};
+      if (nav.connection && (nav.connection.saveData || nav.connection.effectiveType === 'slow-2g' || nav.connection.effectiveType === '2g')) return false;
+      if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2) return false;
+      if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return false;
+      return true;
+    })();
+    // Pointer-driven flourishes additionally need a real pointer.
+    var hasFinePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+
+    var onScroll = (function () {
+      var subs = [], resizers = [], queued = false;
+      // scrollHeight is a layout read. Taking it inside the scroll frame forces
+      // a synchronous reflow every frame, which is the single most reliable way
+      // to make smooth scrolling feel like it is hitting something. Cache it and
+      // invalidate only when the document can actually have changed size.
+      var vh = window.innerHeight, range = 1;
+      function measure() {
+        vh = window.innerHeight;
+        range = Math.max(1, document.documentElement.scrollHeight - vh);
+        for (var i = 0; i < resizers.length; i++) resizers[i]();
+      }
+      function frame() {
+        queued = false;
+        var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var p = Math.min(1, Math.max(0, y / range));
+        for (var i = 0; i < subs.length; i++) subs[i](p, y, vh, range);
+      }
+      function request() { if (queued) return; queued = true; requestAnimationFrame(frame); }
+      window.addEventListener('scroll', request, { passive: true });
+      window.addEventListener('resize', function () { measure(); request(); }, { passive: true });
+      window.addEventListener('orientationchange', function () { measure(); request(); }, { passive: true });
+      // A late webfont, a language switch, or the heatmap building itself all
+      // change the page height without firing resize.
+      if ('ResizeObserver' in window) {
+        var ro = new ResizeObserver(function () { measure(); request(); });
+        ro.observe(document.body);
+      }
+      measure();
+      return {
+        add: function (fn) { subs.push(fn); frame(); return fn; },
+        // Subscribers that also need to know their own geometry. Anything
+        // reading a rect belongs here rather than in the scroll frame -- a
+        // subscriber that re-measures per frame reintroduces exactly the
+        // forced reflow this driver exists to avoid, no matter how careful
+        // the driver itself is.
+        onResize: function (fn) { resizers.push(fn); fn(); return fn; },
+        request: request,
+        remeasure: measure
+      };
+    })();
+
+    // Sticky nav state + reading progress
+    (function () {
+      var nav = document.querySelector('.site-nav');
+      var bar = document.querySelector('.nav-progress > i');
+      if (!nav && !bar) return;
+      onScroll.add(function (p, y) {
+        if (nav) nav.classList.toggle('scrolled', y > 8);
+        if (bar) bar.style.transform = 'scaleX(' + p + ')';
+      });
+    })();
+
+    // Hero scroll hint: it steps aside as soon as the reader commits.
+    (function () {
+      var hint = document.querySelector('.scroll-hint');
+      if (!hint) return;
+      onScroll.add(function (p, y) { hint.classList.toggle('gone', y > 260); });
+    })();
+
+    // ---- Proof figures roll up once, the first time they come into view ----
+    (function () {
+      if (typeof anime === 'undefined' || !('IntersectionObserver' in window)) return;
+      var items = document.querySelectorAll('.proof-item');
+      if (!items.length) return;
+      var counted = new WeakSet();
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting || counted.has(e.target)) return;
+          counted.add(e.target);
+          // Observe the .proof-item, not the <b> inside it: the i18n pass
+          // replaces that inner span wholesale, so a <b> observed up front ends
+          // up detached and the counter would tick on a node nobody can see.
+          var num = e.target.querySelector('b');
+          if (!num) return;
+          var target = parseFloat(String(num.textContent).replace(/[^0-9.]/g, ''));
+          if (!target) return;
+          io.unobserve(e.target);
+          // Animate a plain counter object, not the element: anime v3 only reads
+          // back real CSS values from the instance, so a custom `count` key on
+          // the element target would come back NaN on every frame.
+          var counter = { value: 0 };
+          anime({
+            targets: counter,
+            value: target,
+            duration: 1200,
+            easing: 'easeOutExpo',
+            update: function () { num.textContent = Math.round(counter.value); }
+          });
+        });
+      }, { threshold: 0.4 });
+      Array.prototype.forEach.call(items, function (n) { io.observe(n); });
+    })();
 
     // ---- Hero mini-heatmap (deterministic synthetic pattern) ----
     (function () {
@@ -2518,6 +3086,725 @@
       if (legend) { for (var i = 0; i <= 4; i++) { var s = document.createElement('span'); s.className = 'hcell l' + (i*2); s.style.display = 'inline-block'; s.style.margin = '0 1px'; s.style.verticalAlign = 'middle'; legend.appendChild(s); } }
     })();
 
+    // ---- Hero mini-dashboard entrance ----
+    // Runs after the heatmap above, because it animates the cells that block
+    // just built. The four KPI cards do not simply fade up where they sit: each
+    // one starts away from its real grid cell, in 3D, and converges fast. The
+    // heatmap then drops into place behind them, leftmost column first and
+    // finishing on the right, with enough per-cell jitter that the wave never
+    // reads as a linear sweep. The randomiser is reseeded on every visit.
+    (function () {
+      var dash = document.querySelector('.preview-dash');
+      if (!dash || typeof anime === 'undefined') return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      var kpis = Array.prototype.slice.call(dash.querySelectorAll('.kpi-in'));
+      var cells = Array.prototype.slice.call(dash.querySelectorAll('#miniHeat .hcell'));
+      // The dashboard's own labels get the same per-character reveal the
+      // section headings use, so the preview reads as the same object as the
+      // rest of the page rather than as a static screenshot.
+      var texts = Array.prototype.slice.call(dash.querySelectorAll('.kpi-label, .pv-text'));
+      var played = false;
+      if (!kpis.length) return;
+
+      function rnd(min, max) { return min + Math.random() * (max - min); }
+
+      // Split into .heading-char spans and reveal them left to right, exactly
+      // as the section headings do. This reuses their class rather than
+      // animating opacity directly: the class carries the transition, the
+      // reduced-motion override, and the settled-state check in
+      // verify_landing.py, all of which key off .heading-char.in.
+      // Spaces stay plain text nodes: wrapping one in a span would remove the
+      // line-break opportunity, which is the bug the heading splitter already
+      // had to fix for the same reason.
+      function staggerChars(el, offset) {
+        if (!el) return;
+        var text = el.textContent;
+        if (!text) return;
+        el.textContent = '';
+        var chars = text.split('');
+        var frag = document.createDocumentFragment();
+        var spans = [];
+        for (var i = 0; i < chars.length; i++) {
+          if (chars[i] === ' ') { frag.appendChild(document.createTextNode(' ')); continue; }
+          var s = document.createElement('span');
+          s.className = 'heading-char';
+          s.textContent = chars[i];
+          frag.appendChild(s);
+          spans.push(s);
+        }
+        el.appendChild(frag);
+        for (var j = 0; j < spans.length; j++) {
+          (function (span, at) {
+            setTimeout(function () { span.classList.add('in'); }, at);
+          })(spans[j], offset + j * 14);
+        }
+      }
+
+      // Tween a headline figure while keeping its affixes and precision, so
+      // "$312.40" never lands as "$312.2" and "5,847" keeps its separator.
+      // The figures deliberately keep this instead of the character reveal:
+      // the counter rewrites textContent on every frame, which would destroy
+      // the character spans the reveal needs. Labels shimmer, numbers roll.
+      //
+      // The roll waits for the card to have most of the way home. A figure
+      // that starts counting the moment its card starts moving reads the
+      // number as arriving somewhere else, and the zero is written straight
+      // away so the wait is a held zero rather than the finished value sitting
+      // there for a beat and then rolling backwards to it.
+      function countUp(el, delay) {
+        if (!el) return;
+        var text = el.textContent.trim();
+        var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
+        if (!m) return;
+        var pre = m[1], raw = m[2], post = m[3];
+        var decimals = ((raw.split('.')[1] || '').match(/\d/g) || []).length;
+        var grouped = raw.indexOf(',') !== -1;
+        var end = parseFloat(raw.replace(/,/g, ''));
+        if (!isFinite(end)) return;
+        var o = { v: 0 };
+        el.textContent = pre + (grouped ? (0).toLocaleString('en-US') : (0).toFixed(decimals)) + post;
+        anime({
+          targets: o, v: end, duration: 950, delay: delay || 0, easing: 'easeOutExpo',
+          update: function () {
+            var n = grouped ? Math.round(o.v).toLocaleString('en-US') : o.v.toFixed(decimals);
+            el.textContent = pre + n + post;
+          },
+          complete: function () { el.textContent = text; }
+        });
+      }
+
+      function play() {
+        if (played) return;
+        played = true;
+
+        // Ask for the layers the entrance needs, and only for the entrance.
+        // The reveal engine already releases its own promotions when it
+        // finishes; without the same here, 140 cells sit on their own
+        // compositor layers for the rest of the session.
+        kpis.concat(cells).forEach(function (el) { el.classList.add('will-anim'); });
+
+        var tl = anime.timeline({
+          easing: 'cubicBezier(0.22, 1, 0.36, 1)',
+          complete: function () {
+            kpis.concat(cells).forEach(function (el) { el.classList.remove('will-anim'); });
+          }
+        });
+
+        kpis.forEach(function (kpi, i) {
+          // One draw of the gap per card. This used to ask for a random gap
+          // twice, once for the card and once for its label, so the label was
+          // timed off a different number and could drift a few hundred
+          // milliseconds away from the box it belongs to.
+          var cardStart = i === 0 ? 0 : i * rnd(74, 150);
+          tl.add({
+            targets: kpi,
+            translateX: [rnd(-52, 52), 0],
+            translateY: [rnd(-38, 38), 0],
+            translateZ: [rnd(-280, -110), 0],
+            rotateX: [rnd(-28, 28), 0],
+            rotateZ: [rnd(-6, 6), 0],
+            scale: [rnd(0.84, 0.95), 1],
+            // Same per-property timing the reveals use: the card is at full
+            // strength a third of the way in, so it is readable while it is
+            // still turning, and the fade is over long before it lands.
+            opacity: { value: [0, 1], duration: 300, easing: 'linear' },
+            duration: 560,
+            easing: 'cubicBezier(0.16, 1, 0.3, 1)'
+          }, cardStart);
+          // Each card's label and figure caption read a beat after the card
+          // itself lands, so the numbers arrive after the box they belong to.
+          countUp(kpi.querySelector('.kpi-val'), cardStart + 260);
+          staggerChars(kpi.querySelector('.kpi-label'), cardStart + 260);
+          var cap = kpi.querySelector('.pv-text');
+          if (cap) staggerChars(cap, cardStart + 340);
+        });
+
+        // When the cards are done, read once and named. The heatmap's own
+        // labels are timed off this rather than off a magic number, so
+        // retiming the cards moves the labels with them.
+        var cardsEnd = tl.duration;
+
+        // The window chrome reads first, before anything inside it.
+        Array.prototype.slice.call(dash.querySelectorAll('.preview-topbar .pv-text'))
+          .forEach(function (el, i) { staggerChars(el, i * 90); });
+
+        var heat = dash.querySelector('#miniHeat');
+        var heatCard = heat && heat.parentNode;
+        if (heatCard) {
+          var actLabel = heatCard.querySelector('.kpi-label');
+          if (actLabel) staggerChars(actLabel, cardsEnd * 0.45);
+          Array.prototype.slice.call(heatCard.querySelectorAll('.pv-text')).forEach(function (w, i) {
+            staggerChars(w, cardsEnd * 0.55 + i * 120);
+          });
+        }
+
+        // The heat wave opens a beat before the cards have finished landing, so
+        // the two overlap instead of queueing up.
+        var n = cells.length;
+        if (!n) return;
+        var wave = 1500;   // left-to-right spread of the whole wave
+        var jitter = 640;  // how far ahead of the wave any one cell may start
+        var open = Math.max(0, cardsEnd - 280);
+
+        cells.forEach(function (cell, i) {
+          var start = Math.max(0, (i / (n - 1)) * wave - rnd(0, jitter));
+          var dur = rnd(520, 780);
+          tl.add({
+            targets: cell,
+            translateZ: [rnd(-880, -540), 0],
+            translateY: [rnd(-110, -34), 0],
+            rotateX: [rnd(96, 142), 0],
+            rotateZ: [rnd(-26, 26), 0],
+            scale: [0.55, 1],
+            // The colour lands first and the tile finishes tumbling in under
+            // it, so the wave reads as a shape arriving rather than as a row
+            // of grey squares turning into colour.
+            opacity: { value: [0, 1], duration: dur * 0.45, easing: 'linear' },
+            duration: dur,
+            easing: 'cubicBezier(0.22, 1, 0.36, 1)'
+          }, open + start);
+        });
+      }
+
+      // The intro overlay covers the hero on a first visit, so wait for it to
+      // clear rather than playing the whole choreography behind the curtain.
+      if (document.documentElement.classList.contains('lander-skipped')) {
+        play();
+      } else {
+        var mo = new MutationObserver(function () {
+          if (!document.documentElement.classList.contains('lander-skipped')) return;
+          mo.disconnect();
+          play();
+        });
+        mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      }
+    })();
+
+    // ---- The hero keeps running ----
+    // A screenshot of a dashboard tells you what the product looks like. One
+    // that is quietly updating tells you it is alive and local.
+    //
+    // The figures hold still and then jump, the way a real one does: a new
+    // reading lands every few seconds and the digits roll to it. An earlier
+    // version drifted continuously and always upward, which was wrong twice
+    // over -- a number that never stops moving reads as a screensaver rather
+    // than as data, and one that only ever climbs reads as a lie. Here every
+    // step is signed and the gap between steps is randomised, so two visits
+    // never look the same and no figure is reliably rising.
+    //
+    // The whole block is gated twice over. `canAnimate` covers the device and
+    // the motion preference; the IntersectionObserver means none of it runs
+    // once the hero has scrolled away, which is where the battery cost would
+    // otherwise go.
+    (function () {
+      if (!canAnimate) return;
+      var dash = document.querySelector('.preview-dash');
+      if (!dash) return;
+      if (typeof anime === 'undefined') return;
+
+      var clock = document.getElementById('pvClock');
+      var vals = Array.prototype.slice.call(dash.querySelectorAll('.kpi-val'));
+      var cells = Array.prototype.slice.call(dash.querySelectorAll('#miniHeat .hcell'));
+      if (!clock && !vals.length && !cells.length) return;
+
+      // Parse "48.2M" / "$312.40" / "5,847" into an affix, a number and a unit,
+      // so an updating figure keeps reading exactly like a real one.
+      function parseFigure(el) {
+        var text = el.textContent.trim();
+        var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
+        if (!m) return null;
+        var raw = m[2];
+        var end = parseFloat(raw.replace(/,/g, ''));
+        if (!isFinite(end)) return null;
+        return {
+          pre: m[1], post: m[3], end: end,
+          decimals: ((raw.split('.')[1] || '').match(/\d/g) || []).length,
+          grouped: raw.indexOf(',') !== -1
+        };
+      }
+      function writeFigure(f, v) {
+        var n = f.grouped ? Math.round(v).toLocaleString('en-US') : v.toFixed(f.decimals);
+        return f.pre + n + f.post;
+      }
+
+      var running = true;
+
+      // Each figure keeps its own anchor, which is what it wanders around, and
+      // its own value, which is what is on screen. Separating them is what
+      // stops the drift compounding: a long run of same-signed steps decays
+      // toward the anchor instead of walking off.
+      var tickers = vals.map(function (el, i) {
+        var f = parseFigure(el);
+        if (!f) return null;
+        return {
+          el: el, f: f, value: f.end, anchor: f.end,
+          // Different figures land at different times, so the four never
+          // change in unison -- synchronised motion reads as a loop.
+          next: 2600 + i * 1500 + Math.random() * 3200
+        };
+      }).filter(Boolean);
+
+      function step(t) {
+        // Signed, so the figure is as likely to fall as to rise.
+        var pct = (Math.random() * 2 - 1) * 0.028;
+        var target = t.anchor * (1 + pct);
+        var box = { v: t.value };
+        anime({
+          targets: box,
+          v: target,
+          duration: 620,
+          easing: 'cubicBezier(0.22, 1, 0.36, 1)',
+          update: function () {
+            if (!running) return;
+            t.el.textContent = writeFigure(t.f, box.v);
+          },
+          complete: function () {
+            t.value = target;
+            t.anchor += (t.anchor - target) * 0.35;   // decay toward the anchor
+            if (running) t.el.textContent = writeFigure(t.f, target);
+          }
+        });
+      }
+
+      function schedule(t) {
+        setTimeout(function () {
+          if (running) step(t);
+          // Re-randomised every time, so the gaps between readings are not
+          // themselves a pattern the eye can lock onto.
+          t.next = 2400 + Math.random() * 5200;
+          schedule(t);
+        }, t.next);
+      }
+      tickers.forEach(schedule);
+
+      // The clock runs in real time. It was previously scaled up about
+      // threefold, which meant five seconds of the page passing cost fifteen
+      // seconds of the clock -- the giveaway that the panel was not real.
+      var clockBase = 9 * 3600 + 41 * 60 + 7;   // a plausible mid-morning start
+      var clockFrom = performance.now();
+      function paintClock() {
+        if (!running) return;
+        var total = Math.floor(clockBase + (performance.now() - clockFrom) / 1000) % 86400;
+        var hh = String(Math.floor(total / 3600)).padStart(2, '0');
+        var mm = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+        var ss = String(Math.floor(total % 60)).padStart(2, '0');
+        clock.textContent = 'tokdash · localhost:55423 · ' + hh + ':' + mm + ':' + ss;
+      }
+      paintClock();
+      setInterval(paintClock, 1000);
+
+      // The heatmap gets one settle and then stops. It was looping every three
+      // seconds, which meant a hundred and forty cells were perpetually
+      // re-fading -- the single most attention-grabbing thing on the page, and
+      // the least like a dashboard that has just finished loading.
+      if (cells.length) {
+        var order = cells.map(function (_, i) { return i; });
+        for (var s = order.length - 1; s > 0; s--) {
+          var j = Math.floor(Math.random() * (s + 1));
+          var tmp = order[s]; order[s] = order[j]; order[j] = tmp;
+        }
+        cells.forEach(function (c) { c.style.opacity = '0.22'; });
+        anime({
+          targets: cells,
+          opacity: 1,
+          duration: 420,
+          easing: 'linear',
+          delay: anime.stagger(6, { from: 0 })
+        });
+      }
+
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          running = entries.some(function (e) { return e.isIntersecting; });
+        }, { threshold: 0.05 });
+        io.observe(dash);
+      }
+      document.addEventListener('visibilitychange', function () {
+        running = !document.hidden && dash.getBoundingClientRect().bottom > 0;
+      });
+    })();
+
+    // ---- Scroll-linked depth ----
+    // Flat sections read as a stack of cards. Giving each framed mockup a small
+    // counter-move against the scroll is what makes the page feel like it has
+    // a plane the reader is travelling across. Amplitudes are tiny on purpose:
+    // anything larger stops reading as depth and starts reading as a bug.
+    (function () {
+      if (!canAnimate) return;
+      var hero = document.querySelector('.preview-wrap');
+      var bands = Array.prototype.slice.call(document.querySelectorAll('.band .surface, #companion .surface'));
+      if (!hero && !bands.length) return;
+
+      function depth(el, strength) {
+        // Geometry is read once, on resize, and never again. The scroll frame
+        // gets viewport position by subtracting the scroll offset from a
+        // stored document position, which is arithmetic. Asking for a rect per
+        // frame instead would force a synchronous layout on every one of them,
+        // which is the single easiest way to make a scroll feel like it is
+        // dragging something behind it.
+        var docTop = 0, height = 0;
+        onScroll.onResize(function () {
+          var r = el.getBoundingClientRect();
+          docTop = r.top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+          height = r.height;
+        });
+        onScroll.add(function (p, y, vh) {
+          var top = docTop - y;
+          if (top + height < -200 || top > vh + 200) return;   // off-screen: leave it
+          // -1 .. 1 as the element crosses the viewport, 0 when centred.
+          var through = (top + height / 2 - vh / 2) / (vh / 2 + height / 2);
+          through = Math.max(-1, Math.min(1, through));
+          el.style.transform = 'translate3d(0,' + (through * strength).toFixed(2) + 'px,0)';
+        });
+      }
+      if (hero) depth(hero, 46);
+      bands.forEach(function (el) { depth(el, 18); });
+    })();
+
+    // ---- Scroll mini-map ----
+    (function () {
+      var map = document.querySelector('.minimap');
+      if (!map) return;
+      var nodes = Array.prototype.slice.call(map.querySelectorAll('.minimap-node'));
+      if (!nodes.length) return;
+      var ids = ['top', 'features', 'servers', 'optimize', 'companion', 'install'];
+
+      var sections = ids.map(function (id) { return document.getElementById(id); });
+      if (sections.some(function (s) { return !s; })) return;
+
+      var marks = [];
+      var tips = nodes.map(function (n) { return n.querySelector('.minimap-tip'); });
+      var bars = nodes.map(function (n) { return n.querySelector('.minimap-bar'); });
+
+      // Tip labels are borrowed from copy the page already carries rather than
+      // spelled out in English here. A rail that reads "Companion app" on a
+      // Japanese page is worse than no rail at all. Each section's eyebrow
+      // chip is the shortest label it already has; the nav link covers the
+      // sections with no chip; the heading is the last resort. The two ends
+      // are named rather than derived, so they carry their own keys and are
+      // left alone here.
+      function eyebrowText(sec) {
+        var chip = sec.querySelector('[data-i18n$="eyebrow"]');
+        return chip ? chip.textContent.trim() : '';
+      }
+      function navText(id) {
+        var a = document.querySelector('.site-nav a[href="#' + id + '"]');
+        return a ? a.textContent.trim() : '';
+      }
+      function headingText(sec) {
+        var h = sec.querySelector('h1, h2');
+        return h ? h.textContent.trim() : '';
+      }
+      function labelFor(sec, id) {
+        return eyebrowText(sec) || navText(id) || headingText(sec);
+      }
+      function refreshTips() {
+        sections.forEach(function (sec, i) {
+          var tip = tips[i];
+          // data-i18n owns its own text; do not overwrite what the applier
+          // just put there.
+          if (tip && !tip.hasAttribute('data-i18n')) tip.textContent = labelFor(sec, ids[i]);
+        });
+      }
+      refreshTips();
+      document.addEventListener('tokdash:lang', refreshTips);
+
+      function measure() {
+        var vh = window.innerHeight;
+        var range = Math.max(1, document.documentElement.scrollHeight - vh);
+        marks = sections.map(function (sec, i) {
+          // The first section is where you already are when the page opens,
+          // so it counts as reached from the very top. Running it through the
+          // rule below would put its mark a third of the way down the page and
+          // leave the rail with nothing highlighted at scroll zero.
+          if (i === 0) return 0;
+          var r = sec.getBoundingClientRect();
+          var top = r.top + window.pageYOffset;
+          // Where the section is "reached" is a third of the way down it: by
+          // then its heading is on screen and its content is what you read.
+          return Math.min(1, Math.max(0, ((top + r.height * 0.34) - vh * 0.5) / range));
+        });
+      }
+      // The driver's own ResizeObserver covers everything this used to poll
+      // for: a late webfont, a language switch, the heatmap filling in, a
+      // rotate. Re-reading scrollHeight every frame instead was a forced
+      // layout on every frame of every scroll.
+      onScroll.onResize(measure);
+
+      // Bar lengths come from two things. A fixed shape gives the rail its
+      // silhouette: short at both ends, fullest in the middle, so the eye
+      // follows one curve rather than a column of equal dashes. Proximity
+      // then pulls the bar you are near, or about to reach, out towards full
+      // length. The section you are reading overrides to full outright, so
+      // the peak travels down the rail as you read and the shape moves with
+      // it rather than jumping.
+      var SHAPE = [0.40, 0.62, 0.80, 0.70, 0.52, 0.32];
+      var FLOOR = 0.26;   // shortest any bar ever gets
+      var REST = 0.80;    // the fullest the silhouette goes on its own
+
+      // The resting length of bar i, before proximity is taken into account.
+      var base = SHAPE.map(function (s) { return FLOOR + (REST - FLOOR) * s; });
+
+      var active = -1, lastActive = -1;
+
+      // How long bar i should be right now, as a fraction of its full width.
+      function lengthFor(i, p) {
+        if (i === active) return 1;
+        // Distance from where this section sits in the page to where you
+        // actually are, softened near the two ends of the scroll so the first
+        // and last sections are not pinned to a bare minimum.
+        var d = Math.abs(p - marks[i]) / Math.max(0.08, Math.min(p, 1 - p) + 0.08);
+        var near = 1 - Math.min(1, d);
+        return base[i] + (1 - base[i]) * near;
+      }
+
+      // Bars move to a target rather than jumping to it. Following the scroll
+      // directly is smooth enough, but the section you are reading changing
+      // hands is a step change: the bar you are leaving snapped from full
+      // straight back to two thirds in a single frame, which read as a glitch
+      // rather than as the wave moving. Easing the value fixes that and takes
+      // the last of the chatter off the scroll tracking as well.
+      //
+      // The loop only exists while something is still moving. Once every bar
+      // has arrived it stops, so a page sitting still costs nothing.
+      var shown = new Array(nodes.length);
+      var want = new Array(nodes.length);
+      var easingId = 0;
+      var SETTLED = 0.0015;   // close enough to stop, in fractions of a bar
+
+      function ease() {
+        easingId = 0;
+        var moving = false;
+        for (var i = 0; i < bars.length; i++) {
+          var d = want[i] - shown[i];
+          if (Math.abs(d) < SETTLED) shown[i] = want[i];
+          else { shown[i] += d * 0.22; moving = true; }
+          bars[i].style.transform = 'scaleX(' + shown[i].toFixed(3) + ')';
+        }
+        if (moving) easingId = requestAnimationFrame(ease);
+      }
+      function nudge() { if (!easingId) easingId = requestAnimationFrame(ease); }
+
+      // First pass has to land the bars where they belong rather than easing
+      // them in from nothing, or the rail grows out of the floor on every load.
+      var primed = false;
+
+      onScroll.add(function (p) {
+        // The active section is the one whose mark you have just passed, so
+        // it can only be known after the pass that finds it.
+        for (var i = 0; i < nodes.length; i++) {
+          var reached = p >= marks[i] - 0.02;
+          nodes[i].classList.toggle('on', reached);
+          if (reached) active = i;
+        }
+        for (var j = 0; j < nodes.length; j++) want[j] = lengthFor(j, p);
+        if (active !== lastActive) {
+          if (lastActive >= 0) nodes[lastActive].classList.remove('active');
+          if (active >= 0) nodes[active].classList.add('active');
+          lastActive = active;
+        }
+        if (!primed) {
+          primed = true;
+          for (var k = 0; k < bars.length; k++) {
+            shown[k] = want[k];
+            bars[k].style.transform = 'scaleX(' + shown[k].toFixed(3) + ')';
+          }
+          return;
+        }
+        nudge();
+      });
+
+      // Each bar is a real link, so it has to land where it says it does.
+      // Lenis owns the scroll, and a bare hash jump would fight it and land
+      // under the fixed header, so the offset is applied here.
+      map.addEventListener('click', function (e) {
+        var a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        var target = document.getElementById(a.getAttribute('href').slice(1));
+        if (!target) return;
+        e.preventDefault();
+        if (window.__lenis) window.__lenis.scrollTo(target, { offset: -72, duration: 1.1 });
+        else target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      map.classList.add('ready');
+      // Late-arriving content (fonts, the heatmap) changes where the sections
+      // start, so take one more reading once the page has settled. Everything
+      // after this is the driver's ResizeObserver.
+      window.addEventListener('load', function () { onScroll.remeasure(); });
+    })();
+
+    // ---- Cursor and magnetic controls ----
+    (function () {
+      if (!canAnimate || !hasFinePointer) return;
+      var dot = document.querySelector('.cursor-dot');
+      var ring = document.querySelector('.cursor-ring');
+      if (!dot || !ring) return;
+
+      var dx = window.innerWidth / 2, dy = window.innerHeight / 2;
+      var rx = dx, ry = dy, shown = false;
+
+      // The ring closes the gap quickly and then coasts. Chasing the pointer
+      // at a constant lag reads as a broken cursor, because it is always
+      // behind; easing in hard and settling out slowly reads as weight.
+      var RING_EASE = 0.38;
+
+      window.addEventListener('mousemove', function (e) {
+        if (!shown) { shown = true; rx = e.clientX; ry = e.clientY; document.documentElement.classList.add('cursor-on'); }
+        dx = e.clientX; dy = e.clientY;
+      }, { passive: true });
+
+      document.addEventListener('mouseleave', function () { document.documentElement.classList.remove('cursor-on'); shown = false; });
+      document.addEventListener('mouseenter', function () { if (shown) document.documentElement.classList.add('cursor-on'); });
+
+      // The intro lander is the first thing a returning visitor sees, and it
+      // paints at z-index 10010. The cursor used to sit at 9000, which put it
+      // underneath the one screen where a first impression is being made.
+      document.addEventListener('pointerdown', function () {
+        if (!shown) return;
+        document.documentElement.classList.add('cursor-on');
+      }, { passive: true });
+
+      var HOT = 'a, button, select, [data-cmd], .tool-pill, .surface, .minimap-node, .chip, .cmd';
+      document.addEventListener('mouseover', function (e) {
+        var t = e.target.closest ? e.target.closest(HOT) : null;
+        document.documentElement.classList.toggle('cursor-hot', !!t);
+      }, { passive: true });
+
+      // Magnetic pull: interactive elements drift toward the pointer while it
+      // is within reach, and spring back to rest once it leaves. Capped at 7px
+      // so the pull reads as responsiveness rather than as broken layout.
+      //
+      // Geometry is cached in document space and re-read only on resize. Asking
+      // each button for a rect every frame meant thirty-two forced layouts,
+      // sixty times a second, for the entire time the page was open -- not just
+      // while scrolling, but while someone sat and read. Subtracting the scroll
+      // offset from a stored position is arithmetic, and the pointer and the
+      // scroll offset are both already on hand.
+      var magnets = [], magnetTheme = null;
+      function syncMagnets() {
+        magnets = Array.prototype.slice.call(document.querySelectorAll('.btn, .tool-pill')).map(function (el) {
+          var r = el.getBoundingClientRect();
+          var y0 = window.pageYOffset || document.documentElement.scrollTop || 0;
+          return { el: el, cx: r.left + r.width / 2, cy: r.top + y0 + r.height / 2, hw: r.width / 2, hh: r.height / 2 };
+        });
+      }
+      function refreshMagnets() {
+        var themed = document.documentElement.classList.contains('dark');
+        if (themed === magnetTheme) { syncMagnets(); return; }
+        magnetTheme = themed;
+        syncMagnets();
+      }
+      onScroll.onResize(refreshMagnets);
+
+      // Radius within which an element starts to be drawn, measured from its
+      // edge. Wider than the 7px pull so the button starts moving before the
+      // pointer is on it -- that lead time is the whole effect.
+      var REACH = 46;
+      var PULL = 7;
+      var lastMX = -1, lastMY = -1, lastY = -1, still = 0;
+      // Hover is a scale rather than a width/height change, eased here rather
+      // than by a CSS transition: the transform is already being rewritten
+      // every frame, and a transition on it would fight that rather than blend
+      // with it. 1.8 takes the 30px ring to the 54px it used to become.
+      //
+      // The scale is a real spring rather than a fixed share of the remaining
+      // gap each frame. A fixed share is really tied to the frame rate and
+      // knows nothing about speed, so the ring can only creep towards its new
+      // size. A spring carries its momentum, goes about two percent past and
+      // comes back, and that is the part which reads as weight rather than as
+      // a fade. These numbers give the same settling time the old share did,
+      // so a hover still feels immediate. The ring is stepped in small
+      // increments of real time rather than one big jump per frame, so a
+      // frame that arrives late cannot fling the ring across the screen.
+      var RING_STIFF = 380;   // how hard it is pulled towards the new size
+      var RING_DAMP = 30;     // how fast that pull is handed back
+      var RING_EPS = 0.002;   // close enough to call it arrived
+      var ringScale = 1, ringVel = 0, ringLast = 0;
+
+      function loop() {
+        var now = performance.now();
+        var dt = ringLast ? Math.min(0.05, (now - ringLast) / 1000) : 0.004;
+        ringLast = now;
+        rx += (dx - rx) * RING_EASE;
+        ry += (dy - ry) * RING_EASE;
+        dot.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0)';
+        var want = document.documentElement.classList.contains('cursor-hot') ? 1.8 : 1;
+        var left = dt;
+        while (left > 0) {
+          var h = left < 1 / 240 ? left : 1 / 240;
+          ringVel += ((want - ringScale) * RING_STIFF - ringVel * RING_DAMP) * h;
+          ringScale += ringVel * h;
+          left -= h;
+        }
+        // Rest on the exact size once it is close, so the ring does not sit a
+        // hair under 1.8 for the rest of the session and does not carry a
+        // leftover speed into the next hover.
+        if (Math.abs(want - ringScale) < RING_EPS && Math.abs(ringVel) < RING_EPS) {
+          ringScale = want;
+          ringVel = 0;
+        }
+        ring.style.transform = 'translate3d(' + rx.toFixed(2) + 'px,' + ry.toFixed(2) + 'px,0) scale(' + ringScale.toFixed(3) + ')';
+
+        var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+        // Neither the pointer nor the page has moved, so no button can be in a
+        // new place relative to either. A pointer sitting still should not cost
+        // thirty style writes a frame -- but a scroll with a still pointer does
+        // move the buttons, so it counts as motion.
+        if (dx === lastMX && dy === lastMY && y === lastY) {
+          if (++still > 3) { requestAnimationFrame(loop); return; }
+        } else { still = 0; }
+        lastMX = dx; lastMY = dy; lastY = y;
+
+        var vh = window.innerHeight;
+        for (var i = 0; i < magnets.length; i++) {
+          var m = magnets[i], ox = 0, oy = 0;
+          var cx = m.cx, cy = m.cy - y;
+          if (cy + m.hh > -REACH && cy - m.hh < vh + REACH) {
+            ox = (dx - cx) * 0.18;
+            oy = (dy - cy) * 0.22;
+            // Falloff is measured from the button's own edge, not per axis.
+            // Normalising each axis separately would mean that lining up with
+            // the button's row is enough to pull it at full strength from a
+            // hundred pixels away, which turns a whole nav into jelly. The
+            // pointer being over the button is distance zero, and the pull
+            // fades to nothing one reach-radius out from there.
+            var gapX = Math.max(0, Math.abs(dx - cx) - m.hw);
+            var gapY = Math.max(0, Math.abs(dy - cy) - m.hh);
+            var fall = 1 - Math.min(1, Math.hypot(gapX, gapY) / REACH);
+            ox *= fall; oy *= fall;
+            var mag = Math.hypot(ox, oy);
+            if (mag > PULL) { ox = ox / mag * PULL; oy = oy / mag * PULL; }
+          }
+
+          var oxs = ox.toFixed(2) + 'px', oys = oy.toFixed(2) + 'px';
+          // Written through a custom property so the pull composes with the
+          // hover lift instead of overwriting it -- the button's own
+          // transform stays in charge of where it sits.
+          if (m.el.style.getPropertyValue('--mx') !== oxs) {
+            m.el.style.setProperty('--mx', oxs);
+            m.el.style.setProperty('--my', oys);
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      // The custom cursor replaces the native one, which would otherwise leave
+      // a text site with no I-beam over its own body copy. Give the real cursor
+      // back for the duration of a drag-select and for form fields, where
+      // two cursors on one target is worse than either alone.
+      function selecting(on) { document.documentElement.classList.toggle('cursor-selecting', on); }
+      document.addEventListener('mousedown', function (e) {
+        selecting(!!(e.target.closest && e.target.closest('input, textarea, [contenteditable]')));
+      }, { passive: true });
+      document.addEventListener('mouseup', function () { selecting(false); }, { passive: true });
+      document.addEventListener('selectstart', function (e) {
+        if (e.target && e.target.tagName === 'INPUT') selecting(true);
+      }, { passive: true });
+    })();
+
     // ---- Scroll-driven Staggered Reveal Engine ----
     (function () {
       var root = document.documentElement;
@@ -2532,17 +3819,36 @@
       root.classList.add('anim-active');
       var handledSet = new WeakSet();
 
+      // Per-property timing, which is the one thing here worth taking from the
+      // library's own notes. Travelling and fading on one curve means the text
+      // is still arriving at the same moment the card is, so the eye follows
+      // the movement and reads nothing until it stops. Letting the opacity
+      // finish early and the position settle on a spring means the words are
+      // already legible while the card is still finding its place, and the
+      // spring leaves it with about a pixel of overshoot on the way, which is
+      // what separates an arrival from a slide.
+      //
+      // Under reduced motion both collapse to one plain fade, and the spring
+      // is not used at all.
+      function lift(el, travel, duration, delay) {
+        var p = { targets: el, duration: isReduced ? 550 : duration };
+        if (isReduced) {
+          p.opacity = [0, 1];
+          p.easing = 'linear';
+        } else {
+          p.opacity = { value: [0, 1], duration: duration * 0.5, easing: 'linear' };
+          p.translateY = { value: [travel, 0], easing: 'spring(1, 120, 14, 0)' };
+        }
+        if (delay != null) p.delay = delay;
+        return p;
+      }
+
       // Spring-lift animation for a single element
       function animateSingle(el) {
         if (!el || handledSet.has(el) || el.classList.contains('in')) return;
         handledSet.add(el);
 
-        anime({
-          targets: el,
-          opacity: [0, 1],
-          translateY: isReduced ? [0, 0] : [26, 0],
-          duration: isReduced ? 550 : 750,
-          easing: isReduced ? 'linear' : 'cubicBezier(0.22, 1, 0.36, 1)',
+        anime(Object.assign(lift(el, 26, 750), {
           begin: function () {
             el.style.willChange = 'transform, opacity';
           },
@@ -2551,7 +3857,7 @@
             el.style.willChange = '';
             el.style.transform = '';
           }
-        });
+        }));
       }
 
       // Cascading stagger animation for a group/grid of cards
@@ -2563,13 +3869,8 @@
 
         unhandled.forEach(function (el) { handledSet.add(el); });
 
-        anime({
-          targets: unhandled,
-          opacity: [0, 1],
-          translateY: isReduced ? [0, 0] : [28, 0],
-          duration: isReduced ? 550 : 750,
-          delay: anime.stagger(isReduced ? 25 : (staggerMs || 55), { start: 40 }),
-          easing: isReduced ? 'linear' : 'cubicBezier(0.22, 1, 0.36, 1)',
+        var params = lift(unhandled, 28, 750, anime.stagger(isReduced ? 25 : (staggerMs || 55), { start: 40 }));
+        Object.assign(params, {
           begin: function (anim) {
             anim.animatables.forEach(function (a) {
               a.target.style.willChange = 'transform, opacity';
@@ -2583,6 +3884,7 @@
             });
           }
         });
+        anime(params);
       }
 
       // Detect grid/group containers that have 2 or more direct reveal children
@@ -2742,12 +4044,18 @@
         }
 
         if (fills.length > 0) {
+          // Filled shapes used an ease-in curve, so they were invisible for
+          // the first two hundred and forty milliseconds of their six hundred
+          // and then arrived all at once, just as the outline finished. A
+          // fill that is there early and an outline drawn on top of it read
+          // as one object being assembled; a fill that arrives last read as a
+          // second object turning up.
           anime({
             targets: fills,
             opacity: [0, 1],
             duration: 600,
             delay: anime.stagger(80, { start: 400 }),
-            easing: 'easeInOutExpo'
+            easing: 'easeOutQuad'
           });
         }
       }
@@ -2796,6 +4104,8 @@
           'nav.tools': `Tools`,
           'nav.privacy': `Privacy`,
           'nav.companion': `Companion`,
+          'rail.first': `Quickstart`,
+          'rail.last': `Setup`,
           'nav.install': `Install`,
           'nav.demo': `Demo`,
           'hero.eyebrow': `<span class="dot"></span> Open source · Local-first · MIT`,
@@ -2804,6 +4114,10 @@
           'hero.tag1': `<span class="dot"></span> Twenty-four agents, one dashboard`,
           'hero.tag2': `WSL, macOS and Linux servers, combined`,
           'hero.cta_demo': `View live demo`,
+          'hero.proof1': `<b>24</b> coding agents`,
+          'hero.proof2': `<b>6</b> UI languages`,
+          'hero.proof3': `<b>17</b> themes`,
+          'hero.scroll': `Scroll`,
           'trust.local.h': `100% local`,
           'trust.local.p': `Reads logs already on your disk. Nothing is ever uploaded.`,
           'trust.telemetry.h': `Zero telemetry`,
@@ -2914,6 +4228,8 @@
           'nav.tools': `支持工具`,
           'nav.privacy': `隐私`,
           'nav.companion': `状态栏`,
+          'rail.first': `快速开始`,
+          'rail.last': `安装设置`,
           'nav.install': `安装`,
           'nav.demo': `演示`,
           'hero.eyebrow': `<span class="dot"></span> 开源 · 本地优先 · MIT`,
@@ -2922,6 +4238,10 @@
           'hero.tag1': `<span class="dot"></span> 二十四款工具，一个仪表盘`,
           'hero.tag2': `WSL、macOS、Linux 服务器合并统计`,
           'hero.cta_demo': `查看在线演示`,
+          'hero.proof1': `<b>24</b> 款 AI 编码工具`,
+          'hero.proof2': `<b>6</b> 种界面语言`,
+          'hero.proof3': `<b>17</b> 款主题`,
+          'hero.scroll': `向下滚动`,
           'trust.local.h': `100% 本地`,
           'trust.local.p': `直接读取你磁盘上已有的日志，任何数据都不会上传。`,
           'trust.telemetry.h': `零遥测`,
@@ -3032,6 +4352,8 @@
           'nav.tools': `対応ツール`,
           'nav.privacy': `プライバシー`,
           'nav.companion': `コンパニオン`,
+          'rail.first': `クイックスタート`,
+          'rail.last': `セットアップ`,
           'nav.install': `インストール`,
           'nav.demo': `デモ`,
           'hero.eyebrow': `<span class="dot"></span> オープンソース · ローカルファースト · MIT`,
@@ -3040,6 +4362,10 @@
           'hero.tag1': `<span class="dot"></span> 24 ツール、ひとつのダッシュボード`,
           'hero.tag2': `WSL・macOS・Linux サーバーを合算`,
           'hero.cta_demo': `ライブデモを見る`,
+          'hero.proof1': `<b>24</b> 種のコーディングツール`,
+          'hero.proof2': `<b>6</b> 言語の UI`,
+          'hero.proof3': `<b>17</b> のテーマ`,
+          'hero.scroll': `スクロール`,
           'trust.local.h': `100% ローカル`,
           'trust.local.p': `ディスク上にあるログを読み取るだけ。何もアップロードされません。`,
           'trust.telemetry.h': `テレメトリゼロ`,
@@ -3150,6 +4476,8 @@
           'nav.tools': `지원 도구`,
           'nav.privacy': `프라이버시`,
           'nav.companion': `컴패니언`,
+          'rail.first': `빠른 시작`,
+          'rail.last': `설정하기`,
           'nav.install': `설치`,
           'nav.demo': `데모`,
           'hero.eyebrow': `<span class="dot"></span> 오픈소스 · 로컬 우선 · MIT`,
@@ -3158,6 +4486,10 @@
           'hero.tag1': `<span class="dot"></span> 24개 도구, 하나의 대시보드`,
           'hero.tag2': `WSL·macOS·Linux 서버 합산`,
           'hero.cta_demo': `라이브 데모 보기`,
+          'hero.proof1': `<b>24</b>개의 코딩 도구`,
+          'hero.proof2': `<b>6</b>개 UI 언어`,
+          'hero.proof3': `<b>17</b>개의 테마`,
+          'hero.scroll': `스크롤`,
           'trust.local.h': `100% 로컬`,
           'trust.local.p': `이미 디스크에 있는 로그를 읽어옵니다. 어떤 데이터도 업로드되지 않습니다.`,
           'trust.telemetry.h': `텔레메트리 제로`,
@@ -3268,6 +4600,8 @@
           'nav.tools': `Herramientas`,
           'nav.privacy': `Privacidad`,
           'nav.companion': `Companion`,
+          'rail.first': `Inicio rápido`,
+          'rail.last': `Configuración`,
           'nav.install': `Instalación`,
           'nav.demo': `Demo`,
           'hero.eyebrow': `<span class="dot"></span> Código abierto · Local-first · MIT`,
@@ -3276,6 +4610,10 @@
           'hero.tag1': `<span class="dot"></span> Veinticuatro agentes, un panel`,
           'hero.tag2': `Servidores WSL, macOS y Linux combinados`,
           'hero.cta_demo': `Ver demo en vivo`,
+          'hero.proof1': `<b>24</b> agentes de codificación`,
+          'hero.proof2': `<b>6</b> idiomas de interfaz`,
+          'hero.proof3': `<b>17</b> temas`,
+          'hero.scroll': `Desplázate`,
           'trust.local.h': `100% local`,
           'trust.local.p': `Lee los logs que ya están en tu disco. Nunca se sube nada.`,
           'trust.telemetry.h': `Cero telemetría`,
@@ -3386,6 +4724,8 @@
           'nav.tools': `Ferramentas`,
           'nav.privacy': `Privacidade`,
           'nav.companion': `Companion`,
+          'rail.first': `Início rápido`,
+          'rail.last': `Configuração`,
           'nav.install': `Instalação`,
           'nav.demo': `Demo`,
           'hero.eyebrow': `<span class="dot"></span> Código aberto · Local-first · MIT`,
@@ -3394,6 +4734,10 @@
           'hero.tag1': `<span class="dot"></span> Vinte e quatro agentes, um painel`,
           'hero.tag2': `Servidores WSL, macOS e Linux combinados`,
           'hero.cta_demo': `Ver demo ao vivo`,
+          'hero.proof1': `<b>24</b> agentes de codificação`,
+          'hero.proof2': `<b>6</b> idiomas de interface`,
+          'hero.proof3': `<b>17</b> temas`,
+          'hero.scroll': `Role para baixo`,
           'trust.local.h': `100% local`,
           'trust.local.p': `Lê logs que já estão no seu disco. Nada é enviado para fora.`,
           'trust.telemetry.h': `Telemetria zero`,
@@ -3527,6 +4871,12 @@
         var sel = document.getElementById('langToggle');
         if (sel && document.activeElement !== sel) sel.value = selectedLang();
         window.__lang = lang;
+        // The applier above just rewrote every translated node, so anything
+        // that reads copy out of the DOM to reuse it -- the scroll mini-map
+        // derives its labels from section headings and nav links -- has to be
+        // told to re-read. One event, rather than a second copy of the
+        // dictionary to keep in step with the first.
+        try { document.dispatchEvent(new CustomEvent('tokdash:lang', { detail: { lang: lang } })); } catch (e) {}
       }
 
       window.__syncLanderTokens = function (lang) {
@@ -3615,19 +4965,32 @@
       var REVEAL_DELAY = 50; // ms
       var SETTLE_RATE = 50;  // ms settle window
 
-      function easeOutExpo(x) {
-        return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+      // The scramble needs one named curve, and this used to ask the library
+      // for it on every frame of every character, which meant building and
+      // parsing the easing again each time. Ask once, keep the function.
+      //
+      // The hand-written copy below is the same curve, checked against the
+      // library's own values at a dozen points, so a page where the library
+      // did not load reads the same rather than differently. The old fallback
+      // was easeOutExpo while the primary was easeInOutExpo, which meant the
+      // failure path quietly changed the feel of the text.
+      function easeInOutExpo(x) {
+        if (x === 0 || x === 1) return x;
+        return x < 0.5
+          ? 0.5 * Math.pow(2, 20 * x - 10)
+          : 1 - 0.5 * Math.pow(2, -20 * x + 10);
       }
+      var SCRAMBLE_EASE = (function () {
+        if (typeof anime === 'undefined' || !anime.easing) return null;
+        try {
+          // anime.js v3 names: 'easeInOutExpo', not v4's 'inOutExpo'.
+          var fn = anime.easing('easeInOutExpo');
+          return typeof fn === 'function' ? fn : null;
+        } catch (e) { return null; }
+      })();
 
       function getEase(p) {
-        if (typeof anime !== 'undefined' && anime.easing) {
-          try {
-            // anime.js v3 names: 'easeInOutExpo', not v4's 'inOutExpo'.
-            var fn = anime.easing('easeInOutExpo');
-            if (typeof fn === 'function') return fn(p);
-          } catch (e) {}
-        }
-        return easeOutExpo(p);
+        return SCRAMBLE_EASE ? SCRAMBLE_EASE(p) : easeInOutExpo(p);
       }
 
       // --- Headings: Fast Char-by-Char Fade-in (No cursor, no scramble) ---
@@ -3934,7 +5297,11 @@
             // 1. Container badge shape morph: circle -> squircle, scale, rotate, glowing pulse
             anime({
               targets: icon,
-              opacity: [0, 1],
+              // The badge is readable while it is still turning into a
+              // squircle. On the full 850ms curve it spent the first third
+              // of a second at almost no strength and the reader waited for
+              // the shape to arrive before they could read the line beside it.
+              opacity: { value: [0, 1], duration: 300, easing: 'linear' },
               scale: [0.35, 1],
               rotate: [-35, 0],
               borderRadius: ['50%', '9px'],
@@ -4076,6 +5443,12 @@
           if (ic && ic.classList.contains('morphed') && typeof anime !== 'undefined') {
             var strokables = getStrokables(ic.querySelector('svg'));
             if (strokables.length > 0) {
+              // Leaving a row while its lines are still drawing and coming
+              // back used to start a second draw on top of the first, so the
+              // line jumped backwards to wherever the old tween had got to
+              // and then drew again. Stopping what is already running first
+              // is what the logo morph above already does.
+              anime.remove(strokables);
               anime({
                 targets: strokables,
                 strokeDashoffset: [anime.setDashoffset, 0],
@@ -4127,12 +5500,16 @@
       if (typeof Lenis === 'undefined') return;
 
       var lenis = new Lenis({
-        lerp: 0.0821,
-        wheelMultiplier: 0.95,
+        lerp: 0.062,
+        wheelMultiplier: 0.88,
         touchMultiplier: 1.2,
         smoothWheel: true,
         gestureOrientation: 'vertical',
       });
+      // The mini-map links have to land where they say, and a hash jump would
+      // fight the smooth scroller and land under the fixed header. One handle
+      // on the instance is cheaper than leaving scroll ownership ambiguous.
+      window.__lenis = lenis;
 
       function raf(time) {
         lenis.raf(time);
@@ -4182,7 +5559,14 @@
       }
 
       function resize() {
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        // Capped below the display's own ratio, unlike every other layer on
+        // the page. This one is redrawn in full on every frame, forever, over
+        // the whole viewport -- at 2x on a retina screen that is four times
+        // the pixels, every frame, competing with the scroll. Measured by
+        // scrolling 3000px: the canvas was costing about a third of the total
+        // frame time. The particles are soft dots and faint lines, so 1.5x is
+        // indistinguishable from 2x and gives back 44% of the fill.
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         width = window.innerWidth;
         height = window.innerHeight;
         canvas.width = Math.floor(width * dpr);
@@ -4230,9 +5614,18 @@
         ctx.clearRect(0, 0, width, height);
 
         var dark = isDark();
-        var blueDot = dark ? 'rgba(96, 165, 250, ' : 'rgba(59, 130, 246, ';
-        var amberDot = dark ? 'rgba(251, 191, 36, ' : 'rgba(245, 158, 11, ';
-        var lineBase = dark ? 'rgba(148, 163, 184, ' : 'rgba(100, 116, 139, ';
+        // Light mode used to draw these dimmer than dark mode, on the
+        // reasoning that saturated blue on white reads stronger. That is true
+        // for the hue but not for the result: on a near-white canvas a 0.19
+        // alpha dot disappears into the panel behind it, so the network was
+        // effectively off in light mode and loud in dark. Both themes now
+        // draw at a strength you can actually see, with light using deeper
+        // colours because pale ones vanish against a light field.
+        var blueDot = dark ? 'rgba(96, 165, 250, ' : 'rgba(37, 99, 235, ';
+        var amberDot = dark ? 'rgba(251, 191, 36, ' : 'rgba(217, 119, 6, ';
+        var lineBase = dark ? 'rgba(148, 163, 184, ' : 'rgba(71, 85, 105, ';
+        var dotGain = dark ? 0.75 : 0.62;
+        var lineGain = dark ? 0.18 : 0.155;
 
         var len = particles.length;
         for (var i = 0; i < len; i++) {
@@ -4258,7 +5651,7 @@
           // Draw dot
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = (p.isAmber ? amberDot : blueDot) + (p.alpha * (dark ? 0.75 : 0.55)) + ')';
+          ctx.fillStyle = (p.isAmber ? amberDot : blueDot) + (p.alpha * dotGain) + ')';
           ctx.fill();
 
           // Connect nearby dots
@@ -4268,7 +5661,7 @@
             var dy = p.y - p2.y;
             var dist = Math.hypot(dx, dy);
             if (dist < maxDistance) {
-              var lineAlpha = (1 - dist / maxDistance) * (dark ? 0.18 : 0.12);
+              var lineAlpha = (1 - dist / maxDistance) * lineGain;
               ctx.beginPath();
               ctx.moveTo(p.x, p.y);
               ctx.lineTo(p2.x, p2.y);
