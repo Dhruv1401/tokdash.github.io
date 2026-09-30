@@ -244,10 +244,6 @@
       transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease, background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease;
     }
     .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28); }
-    /* Magnetic offset, rewritten every frame by the cursor loop. It lives in
-       its own custom property and is folded into each element's own transform
-       so the pull composes with the hover lift instead of fighting it. */
-    .btn, .tool-pill { --mx: 0px; --my: 0px; transform: translate3d(var(--mx, 0px), var(--my, 0px), 0); }
     /* Pale at rest, solid on hover: the tint keeps the page calm until a
        pointer actually lands on the action. */
     .btn-primary {
@@ -285,13 +281,6 @@
       border-color: rgba(96, 165, 250, 0.75);
       box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38), 0 3px 6px rgba(37, 99, 235, 0.2);
     }
-    /* The lifts above are the repo's own and are left exactly as they were.
-       These two re-state the same selectors with the offset folded in, purely
-       so the magnetic pull survives a hover instead of being replaced by it.
-       At (0,2,0) they win over the plain .btn rule, without editing the rules
-       they compose with. Same values, same order of effects. */
-    .btn-primary:hover { transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 2px), 0); }
-    .btn-primary:active { transform: translate3d(var(--mx, 0px), var(--my, 0px), 0); }
 
     /* The arrow leans into the direction of travel, and a sheen rides across
        the primary button as it fills. The sheen is white on purpose: it only
@@ -311,7 +300,7 @@
       background: rgba(15, 23, 42, 0.04); color: var(--color-text);
       border: 1px solid rgba(226,232,240,0.9);
     }
-    .btn-ghost:hover { background: rgba(15, 23, 42, 0.08); transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0); border-color: rgba(30,64,175,0.3); }
+    .btn-ghost:hover { background: rgba(15, 23, 42, 0.08); transform: translateY(-1px); border-color: rgba(30,64,175,0.3); }
     html.dark .btn-ghost { background: var(--glass); border-color: var(--glass-line); }
     html.dark .btn-ghost:hover { background: var(--wash, rgba(255,255,255,0.06)); border-color: color-mix(in srgb, var(--color-primary) 40%, var(--glass-line)); }
 
@@ -539,7 +528,7 @@
        pills and nine chips re-sampling a flat card sixty times a second is
        what turned a smooth scroll into a stutter, in exchange for an effect
        that was not visible to begin with. The fill stands in for it. */
-    .tool-pill:hover { transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 2px), 0); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); box-shadow: var(--shadow-md); }
+    .tool-pill:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); box-shadow: var(--shadow-md); }
     .tool-logo { transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--t-med) ease; }
     .tool-pill:hover .tool-logo { transform: scale(1.12) rotate(-3deg); }
     /* Card icon lifts a touch as its card does, so the two read as one object. */
@@ -637,7 +626,6 @@
     .minimap-node.active .minimap-bar { background: var(--color-text); }
     .minimap-tip {
       position: absolute; right: calc(100% + 12px); top: 50%;
-      font-family: "Rubik", ui-sans-serif, system-ui, sans-serif;
       font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--color-text); white-space: nowrap;
       max-width: 240px; overflow: hidden; text-overflow: ellipsis;
@@ -654,48 +642,9 @@
     @media (max-width: 1023px) { .minimap { display: none; } }
     html:not(.js) .minimap { display: none; }
 
-    /* ---- Cursor ----
-       A dot that tracks the pointer exactly and a ring that lags behind it.
-       The lag is the whole effect: two elements at different rates read as
-       something with weight, one element just reads as a bigger dot. */
-    .cursor-dot, .cursor-ring {
-      position: fixed; top: 0; left: 0; z-index: 10020;
-      pointer-events: none; border-radius: 50%;
-      opacity: 0; will-change: transform;
-      transition: opacity 0.3s ease;
-    }
-    .cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--color-text); }
-    .cursor-ring {
-      width: 30px; height: 30px; margin: -15px 0 0 -15px;
-      border: 1px solid color-mix(in srgb, var(--color-text) 45%, transparent);
-      transition: opacity 0.3s ease, width 0.28s ease, height 0.28s ease,
-                  margin 0.28s ease, background 0.28s ease, border-color 0.28s ease;
-    }
-    html.js.cursor-on .cursor-dot, html.js.cursor-on .cursor-ring { opacity: 1; }
-    /* Hover changes the ring's scale, not its size. Animating width/height
-       reflows the element every frame, and the cursor is the one thing on the
-       page that is guaranteed to be moving; the ring script below writes the
-       transform instead, which is the same visual with no layout. */
-    html.js.cursor-on.cursor-hot .cursor-ring {
-      background: color-mix(in srgb, var(--color-text) 7%, transparent);
-      border-color: color-mix(in srgb, var(--color-text) 70%, transparent);
-    }
-    /* The real cursor is only hidden once the replacement is actually on
-       screen, so a device that never gets the effect still has a cursor. */
-    html.js.cursor-on, html.js.cursor-on * { cursor: none !important; }
-    /* Hiding the pointer outright is fine over a control but not over a page
-       of body copy, where the I-beam is the only cue that a word can be
-       selected. Hand the real cursor back for the duration of a text drag
-       and inside form fields. */
-    html.js.cursor-on.cursor-selecting, html.js.cursor-on.cursor-selecting * { cursor: auto !important; }
-    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
-      .cursor-dot, .cursor-ring { display: none; }
-    }
-    /* The rail is not hiding for the same reason as the cursor -- it is
-       pointer-free and legible at rest -- but under reduced motion it is
-       rewritten every frame as the bar lengths track the scroll, which is the
-       thing being asked to stop. The nav's progress hairline still reports
-       position in that case, so nothing is lost by standing this one down. */
+    /* Under reduced motion the rail stands down: its bar lengths are
+       rewritten every frame as they track the scroll, and the nav's
+       progress hairline still reports position. */
     @media (prefers-reduced-motion: reduce) {
       .minimap { display: none; }
     }
@@ -763,6 +712,9 @@
     html.js .reveal { opacity: 0; transform: translateY(24px); }
     html.js:not(.anim-active) .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
     html.js .reveal.in { opacity: 1; transform: none; }
+    /* .reveal.in outranks .surface:hover, which left every revealed card with
+       no hover lift at all. Give it back to the cards that are meant to lift. */
+    html.js .surface.reveal.in:not(.surface-static):hover { transform: translateY(-3px); }
     @media (prefers-reduced-motion: reduce) {
       html.js .reveal { opacity: 1; transform: none; transition: none; }
       html { scroll-behavior: auto; }
@@ -2730,10 +2682,6 @@
     </ul>
   </nav>
 
-  <!-- ============ CURSOR ============ -->
-  <div class="cursor-ring" aria-hidden="true"></div>
-  <div class="cursor-dot" aria-hidden="true"></div>
-
   <!-- ============ FOOTER ============ -->
   <footer class="border-t" style="border-color: color-mix(in srgb, var(--color-border) 70%, transparent);">
     <div class="max-w-[1180px] mx-auto px-4 sm:px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -2966,8 +2914,6 @@
       if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return false;
       return true;
     })();
-    // Pointer-driven flourishes additionally need a real pointer.
-    var hasFinePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
 
     var onScroll = (function () {
       var subs = [], resizers = [], queued = false;
@@ -3107,6 +3053,11 @@
       var played = false;
       if (!kpis.length) return;
 
+      // Hold every piece back until the entrance plays. The intro fades out
+      // over the hero, so without this the finished dashboard shows through
+      // the fade, then blanks and plays in again.
+      kpis.concat(cells, texts).forEach(function (el) { el.style.opacity = '0'; });
+
       function rnd(min, max) { return min + Math.random() * (max - min); }
 
       // Split into .heading-char spans and reveal them left to right, exactly
@@ -3155,6 +3106,7 @@
       function countUp(el, delay) {
         if (!el) return;
         var text = el.textContent.trim();
+        el.dataset.value = text;   // the real figure, for the ticker below
         var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
         if (!m) return;
         var pre = m[1], raw = m[2], post = m[3];
@@ -3177,6 +3129,9 @@
       function play() {
         if (played) return;
         played = true;
+        // Each text is split into hidden characters below, in this same task,
+        // so none of them paints before its reveal starts.
+        texts.forEach(function (el) { el.style.opacity = ''; });
 
         // Ask for the layers the entrance needs, and only for the entrance.
         // The reveal engine already releases its own promotions when it
@@ -3188,6 +3143,10 @@
           easing: 'cubicBezier(0.22, 1, 0.36, 1)',
           complete: function () {
             kpis.concat(cells).forEach(function (el) { el.classList.remove('will-anim'); });
+            // The ticker below waits for this, so it never writes over a
+            // figure that is still rolling in.
+            dash.classList.add('entered');
+            try { document.dispatchEvent(new CustomEvent('tokdash:hero-entered')); } catch (e) {}
           }
         });
 
@@ -3305,13 +3264,12 @@
 
       var clock = document.getElementById('pvClock');
       var vals = Array.prototype.slice.call(dash.querySelectorAll('.kpi-val'));
-      var cells = Array.prototype.slice.call(dash.querySelectorAll('#miniHeat .hcell'));
-      if (!clock && !vals.length && !cells.length) return;
+      if (!clock && !vals.length) return;
 
       // Parse "48.2M" / "$312.40" / "5,847" into an affix, a number and a unit,
       // so an updating figure keeps reading exactly like a real one.
       function parseFigure(el) {
-        var text = el.textContent.trim();
+        var text = (el.dataset.value || el.textContent).trim();
         var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
         if (!m) return null;
         var raw = m[2];
@@ -3334,17 +3292,6 @@
       // its own value, which is what is on screen. Separating them is what
       // stops the drift compounding: a long run of same-signed steps decays
       // toward the anchor instead of walking off.
-      var tickers = vals.map(function (el, i) {
-        var f = parseFigure(el);
-        if (!f) return null;
-        return {
-          el: el, f: f, value: f.end, anchor: f.end,
-          // Different figures land at different times, so the four never
-          // change in unison -- synchronised motion reads as a loop.
-          next: 2600 + i * 1500 + Math.random() * 3200
-        };
-      }).filter(Boolean);
-
       function step(t) {
         // Signed, so the figure is as likely to fall as to rise.
         var pct = (Math.random() * 2 - 1) * 0.028;
@@ -3376,13 +3323,12 @@
           schedule(t);
         }, t.next);
       }
-      tickers.forEach(schedule);
 
       // The clock runs in real time. It was previously scaled up about
       // threefold, which meant five seconds of the page passing cost fifteen
       // seconds of the clock -- the giveaway that the panel was not real.
       var clockBase = 9 * 3600 + 41 * 60 + 7;   // a plausible mid-morning start
-      var clockFrom = performance.now();
+      var clockFrom = 0;
       function paintClock() {
         if (!running) return;
         var total = Math.floor(clockBase + (performance.now() - clockFrom) / 1000) % 86400;
@@ -3391,28 +3337,30 @@
         var ss = String(Math.floor(total % 60)).padStart(2, '0');
         clock.textContent = 'tokdash · localhost:55423 · ' + hh + ':' + mm + ':' + ss;
       }
-      paintClock();
-      setInterval(paintClock, 1000);
 
-      // The heatmap gets one settle and then stops. It was looping every three
-      // seconds, which meant a hundred and forty cells were perpetually
-      // re-fading -- the single most attention-grabbing thing on the page, and
-      // the least like a dashboard that has just finished loading.
-      if (cells.length) {
-        var order = cells.map(function (_, i) { return i; });
-        for (var s = order.length - 1; s > 0; s--) {
-          var j = Math.floor(Math.random() * (s + 1));
-          var tmp = order[s]; order[s] = order[j]; order[j] = tmp;
+      // Nothing starts until the entrance has landed the figures. Started any
+      // earlier, a returning visitor (who skips the intro, so the entrance runs
+      // first) had the ticker read the zeros the count-up starts from and keep
+      // writing them back.
+      function start() {
+        vals.map(function (el, i) {
+          var f = parseFigure(el);
+          if (!f) return null;
+          return {
+            el: el, f: f, value: f.end, anchor: f.end,
+            // Different figures land at different times, so the four never
+            // change in unison -- synchronised motion reads as a loop.
+            next: 2600 + i * 1500 + Math.random() * 3200
+          };
+        }).filter(Boolean).forEach(schedule);
+        if (clock) {
+          clockFrom = performance.now();
+          paintClock();
+          setInterval(paintClock, 1000);
         }
-        cells.forEach(function (c) { c.style.opacity = '0.22'; });
-        anime({
-          targets: cells,
-          opacity: 1,
-          duration: 420,
-          easing: 'linear',
-          delay: anime.stagger(6, { from: 0 })
-        });
       }
+      if (dash.classList.contains('entered')) start();
+      else document.addEventListener('tokdash:hero-entered', start, { once: true });
 
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
@@ -3455,7 +3403,10 @@
           // -1 .. 1 as the element crosses the viewport, 0 when centred.
           var through = (top + height / 2 - vh / 2) / (vh / 2 + height / 2);
           through = Math.max(-1, Math.min(1, through));
-          el.style.transform = 'translate3d(0,' + (through * strength).toFixed(2) + 'px,0)';
+          // The standalone translate property, not transform: the reveal
+          // engine animates transform and a card's :hover lift sets it, and
+          // translate composes with both instead of overriding them.
+          el.style.translate = '0 ' + (through * strength).toFixed(2) + 'px';
         });
       }
       if (hero) depth(hero, 46);
@@ -3633,176 +3584,6 @@
       // start, so take one more reading once the page has settled. Everything
       // after this is the driver's ResizeObserver.
       window.addEventListener('load', function () { onScroll.remeasure(); });
-    })();
-
-    // ---- Cursor and magnetic controls ----
-    (function () {
-      if (!canAnimate || !hasFinePointer) return;
-      var dot = document.querySelector('.cursor-dot');
-      var ring = document.querySelector('.cursor-ring');
-      if (!dot || !ring) return;
-
-      var dx = window.innerWidth / 2, dy = window.innerHeight / 2;
-      var rx = dx, ry = dy, shown = false;
-
-      // The ring closes the gap quickly and then coasts. Chasing the pointer
-      // at a constant lag reads as a broken cursor, because it is always
-      // behind; easing in hard and settling out slowly reads as weight.
-      var RING_EASE = 0.38;
-
-      window.addEventListener('mousemove', function (e) {
-        if (!shown) { shown = true; rx = e.clientX; ry = e.clientY; document.documentElement.classList.add('cursor-on'); }
-        dx = e.clientX; dy = e.clientY;
-      }, { passive: true });
-
-      document.addEventListener('mouseleave', function () { document.documentElement.classList.remove('cursor-on'); shown = false; });
-      document.addEventListener('mouseenter', function () { if (shown) document.documentElement.classList.add('cursor-on'); });
-
-      // The intro lander is the first thing a returning visitor sees, and it
-      // paints at z-index 10010. The cursor used to sit at 9000, which put it
-      // underneath the one screen where a first impression is being made.
-      document.addEventListener('pointerdown', function () {
-        if (!shown) return;
-        document.documentElement.classList.add('cursor-on');
-      }, { passive: true });
-
-      var HOT = 'a, button, select, [data-cmd], .tool-pill, .surface, .minimap-node, .chip, .cmd';
-      document.addEventListener('mouseover', function (e) {
-        var t = e.target.closest ? e.target.closest(HOT) : null;
-        document.documentElement.classList.toggle('cursor-hot', !!t);
-      }, { passive: true });
-
-      // Magnetic pull: interactive elements drift toward the pointer while it
-      // is within reach, and spring back to rest once it leaves. Capped at 7px
-      // so the pull reads as responsiveness rather than as broken layout.
-      //
-      // Geometry is cached in document space and re-read only on resize. Asking
-      // each button for a rect every frame meant thirty-two forced layouts,
-      // sixty times a second, for the entire time the page was open -- not just
-      // while scrolling, but while someone sat and read. Subtracting the scroll
-      // offset from a stored position is arithmetic, and the pointer and the
-      // scroll offset are both already on hand.
-      var magnets = [], magnetTheme = null;
-      function syncMagnets() {
-        magnets = Array.prototype.slice.call(document.querySelectorAll('.btn, .tool-pill')).map(function (el) {
-          var r = el.getBoundingClientRect();
-          var y0 = window.pageYOffset || document.documentElement.scrollTop || 0;
-          return { el: el, cx: r.left + r.width / 2, cy: r.top + y0 + r.height / 2, hw: r.width / 2, hh: r.height / 2 };
-        });
-      }
-      function refreshMagnets() {
-        var themed = document.documentElement.classList.contains('dark');
-        if (themed === magnetTheme) { syncMagnets(); return; }
-        magnetTheme = themed;
-        syncMagnets();
-      }
-      onScroll.onResize(refreshMagnets);
-
-      // Radius within which an element starts to be drawn, measured from its
-      // edge. Wider than the 7px pull so the button starts moving before the
-      // pointer is on it -- that lead time is the whole effect.
-      var REACH = 46;
-      var PULL = 7;
-      var lastMX = -1, lastMY = -1, lastY = -1, still = 0;
-      // Hover is a scale rather than a width/height change, eased here rather
-      // than by a CSS transition: the transform is already being rewritten
-      // every frame, and a transition on it would fight that rather than blend
-      // with it. 1.8 takes the 30px ring to the 54px it used to become.
-      //
-      // The scale is a real spring rather than a fixed share of the remaining
-      // gap each frame. A fixed share is really tied to the frame rate and
-      // knows nothing about speed, so the ring can only creep towards its new
-      // size. A spring carries its momentum, goes about two percent past and
-      // comes back, and that is the part which reads as weight rather than as
-      // a fade. These numbers give the same settling time the old share did,
-      // so a hover still feels immediate. The ring is stepped in small
-      // increments of real time rather than one big jump per frame, so a
-      // frame that arrives late cannot fling the ring across the screen.
-      var RING_STIFF = 380;   // how hard it is pulled towards the new size
-      var RING_DAMP = 30;     // how fast that pull is handed back
-      var RING_EPS = 0.002;   // close enough to call it arrived
-      var ringScale = 1, ringVel = 0, ringLast = 0;
-
-      function loop() {
-        var now = performance.now();
-        var dt = ringLast ? Math.min(0.05, (now - ringLast) / 1000) : 0.004;
-        ringLast = now;
-        rx += (dx - rx) * RING_EASE;
-        ry += (dy - ry) * RING_EASE;
-        dot.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0)';
-        var want = document.documentElement.classList.contains('cursor-hot') ? 1.8 : 1;
-        var left = dt;
-        while (left > 0) {
-          var h = left < 1 / 240 ? left : 1 / 240;
-          ringVel += ((want - ringScale) * RING_STIFF - ringVel * RING_DAMP) * h;
-          ringScale += ringVel * h;
-          left -= h;
-        }
-        // Rest on the exact size once it is close, so the ring does not sit a
-        // hair under 1.8 for the rest of the session and does not carry a
-        // leftover speed into the next hover.
-        if (Math.abs(want - ringScale) < RING_EPS && Math.abs(ringVel) < RING_EPS) {
-          ringScale = want;
-          ringVel = 0;
-        }
-        ring.style.transform = 'translate3d(' + rx.toFixed(2) + 'px,' + ry.toFixed(2) + 'px,0) scale(' + ringScale.toFixed(3) + ')';
-
-        var y = window.pageYOffset || document.documentElement.scrollTop || 0;
-        // Neither the pointer nor the page has moved, so no button can be in a
-        // new place relative to either. A pointer sitting still should not cost
-        // thirty style writes a frame -- but a scroll with a still pointer does
-        // move the buttons, so it counts as motion.
-        if (dx === lastMX && dy === lastMY && y === lastY) {
-          if (++still > 3) { requestAnimationFrame(loop); return; }
-        } else { still = 0; }
-        lastMX = dx; lastMY = dy; lastY = y;
-
-        var vh = window.innerHeight;
-        for (var i = 0; i < magnets.length; i++) {
-          var m = magnets[i], ox = 0, oy = 0;
-          var cx = m.cx, cy = m.cy - y;
-          if (cy + m.hh > -REACH && cy - m.hh < vh + REACH) {
-            ox = (dx - cx) * 0.18;
-            oy = (dy - cy) * 0.22;
-            // Falloff is measured from the button's own edge, not per axis.
-            // Normalising each axis separately would mean that lining up with
-            // the button's row is enough to pull it at full strength from a
-            // hundred pixels away, which turns a whole nav into jelly. The
-            // pointer being over the button is distance zero, and the pull
-            // fades to nothing one reach-radius out from there.
-            var gapX = Math.max(0, Math.abs(dx - cx) - m.hw);
-            var gapY = Math.max(0, Math.abs(dy - cy) - m.hh);
-            var fall = 1 - Math.min(1, Math.hypot(gapX, gapY) / REACH);
-            ox *= fall; oy *= fall;
-            var mag = Math.hypot(ox, oy);
-            if (mag > PULL) { ox = ox / mag * PULL; oy = oy / mag * PULL; }
-          }
-
-          var oxs = ox.toFixed(2) + 'px', oys = oy.toFixed(2) + 'px';
-          // Written through a custom property so the pull composes with the
-          // hover lift instead of overwriting it -- the button's own
-          // transform stays in charge of where it sits.
-          if (m.el.style.getPropertyValue('--mx') !== oxs) {
-            m.el.style.setProperty('--mx', oxs);
-            m.el.style.setProperty('--my', oys);
-          }
-        }
-        requestAnimationFrame(loop);
-      }
-      requestAnimationFrame(loop);
-
-      // The custom cursor replaces the native one, which would otherwise leave
-      // a text site with no I-beam over its own body copy. Give the real cursor
-      // back for the duration of a drag-select and for form fields, where
-      // two cursors on one target is worse than either alone.
-      function selecting(on) { document.documentElement.classList.toggle('cursor-selecting', on); }
-      document.addEventListener('mousedown', function (e) {
-        selecting(!!(e.target.closest && e.target.closest('input, textarea, [contenteditable]')));
-      }, { passive: true });
-      document.addEventListener('mouseup', function () { selecting(false); }, { passive: true });
-      document.addEventListener('selectstart', function (e) {
-        if (e.target && e.target.tagName === 'INPUT') selecting(true);
-      }, { passive: true });
     })();
 
     // ---- Scroll-driven Staggered Reveal Engine ----
@@ -5506,11 +5287,6 @@
         smoothWheel: true,
         gestureOrientation: 'vertical',
       });
-      // The mini-map links have to land where they say, and a hash jump would
-      // fight the smooth scroller and land under the fixed header. One handle
-      // on the instance is cheaper than leaving scroll ownership ambiguous.
-      window.__lenis = lenis;
-
       function raf(time) {
         lenis.raf(time);
         requestAnimationFrame(raf);
