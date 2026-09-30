@@ -3107,6 +3107,11 @@
       var played = false;
       if (!kpis.length) return;
 
+      // Hold every piece back until the entrance plays. The intro fades out
+      // over the hero, so without this the finished dashboard shows through
+      // the fade, then blanks and plays in again.
+      kpis.concat(cells, texts).forEach(function (el) { el.style.opacity = '0'; });
+
       function rnd(min, max) { return min + Math.random() * (max - min); }
 
       // Split into .heading-char spans and reveal them left to right, exactly
@@ -3178,6 +3183,9 @@
       function play() {
         if (played) return;
         played = true;
+        // Each text is split into hidden characters below, in this same task,
+        // so none of them paints before its reveal starts.
+        texts.forEach(function (el) { el.style.opacity = ''; });
 
         // Ask for the layers the entrance needs, and only for the entrance.
         // The reveal engine already releases its own promotions when it
