@@ -361,18 +361,44 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
      window and the column, which is what centres the overflow. */
   width: 100vw;
   margin-left: calc(50% - 50vw);
+  /* The same slab the preview dashboards are built from, so the row reads
+     as part of the same object rather than as a strip of text laid over
+     the page. One panel, one blur, both themes taken from the tokens. */
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: 15px 0;
+  /* A hairline above and a hairline below, rather than a border on all
+     four sides. The row runs off both edges of the window, so a left and
+     right border would be two vertical lines cut off by the viewport and
+     would read as a mistake. Each hairline fades out at both ends, which
+     is what the .divider-grad between the other sections already does.
+     Painted as two 1px backgrounds so the fade can live in the gradient:
+     a border colour cannot fade. */
+  background-image:
+    linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
+    linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
+    linear-gradient(var(--glass), var(--glass));
+  background-size: 100% 1px, 100% 1px, 100% 100%;
+  background-position: 0 0, 0 100%, 0 0;
+  background-repeat: no-repeat;
+  /* The near edge that a raised panel has: light catches the top of it,
+     which is what stops a flat fill reading as paint on the page. */
+  box-shadow: var(--hairline);
 }
-.tick-row { overflow: hidden; }
-/* Fade the cut at each end. Without it a name is sliced off by a hard
-   vertical line, which reads as a clipping bug rather than as a run.
-   The fade is on the row rather than on the track, so it stays put while
-   the names travel underneath it. */
-.ticker::before, .ticker::after {
-  content: ''; position: absolute; top: 0; bottom: 0; width: var(--tick-fade);
-  pointer-events: none; z-index: 2;
+/* The fade at each end is a mask on the row rather than a panel of colour
+   laid over it. A gradient overlay has to know what is behind it, and
+   behind this row is the ambient canvas, which moves: an overlay in the
+   colour of the page would show as a flat patch over a moving background.
+   A mask takes the names out where they should be hidden and leaves the
+   glass itself whole. */
+.tick-row {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--tick-fade), #000 calc(100% - var(--tick-fade)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--tick-fade), #000 calc(100% - var(--tick-fade)), transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
-.ticker::before { left: 0; background: linear-gradient(to right, var(--color-bg), transparent); }
-.ticker::after { right: 0; background: linear-gradient(to left, var(--color-bg), transparent); }
 .tick-track {
   display: flex; align-items: center; width: max-content;
   will-change: transform;
@@ -428,7 +454,9 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
    ordinary centred wrap. */
 @media (prefers-reduced-motion: reduce) {
   .ticker { width: auto; margin-left: auto; margin-right: auto; }
-  .ticker::before, .ticker::after { display: none; }
+  .tick-row {
+    -webkit-mask-image: none; mask-image: none;
+  }
   .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
   .tick-item { margin-right: 0; }
   .tick-item[aria-hidden='true'] { display: none; }
@@ -437,11 +465,11 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
    class to gate on, so the names must not wait on an animation that was
    never going to be allowed to run anyway. */
 html:not(.js) .ticker .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
-html:not(.js) .ticker::before, html:not(.js) .ticker::after { display: none; }
+html:not(.js) .tick-row { -webkit-mask-image: none; mask-image: none; }
 html:not(.js) .ticker .tick-item[aria-hidden='true'] { display: none; }
 /* The page's capability gate has already made this call in JS: a metered or
    memory-constrained connection, two cores or 2GB. The verdict is read off
    <html> rather than asked a second time here. */
 html:not(.can-animate) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
-html:not(.can-animate)::before, html:not(.can-animate)::after { display: none; }
+html:not(.can-animate) .tick-row { -webkit-mask-image: none; mask-image: none; }
 html:not(.can-animate) .tick-item[aria-hidden='true'] { display: none; }
