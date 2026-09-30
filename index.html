@@ -3155,6 +3155,7 @@
       function countUp(el, delay) {
         if (!el) return;
         var text = el.textContent.trim();
+        el.dataset.value = text;   // the real figure, for the ticker below
         var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
         if (!m) return;
         var pre = m[1], raw = m[2], post = m[3];
@@ -3188,6 +3189,10 @@
           easing: 'cubicBezier(0.22, 1, 0.36, 1)',
           complete: function () {
             kpis.concat(cells).forEach(function (el) { el.classList.remove('will-anim'); });
+            // The ticker below waits for this, so it never writes over a
+            // figure that is still rolling in.
+            dash.classList.add('entered');
+            try { document.dispatchEvent(new CustomEvent('tokdash:hero-entered')); } catch (e) {}
           }
         });
 
@@ -3305,13 +3310,12 @@
 
       var clock = document.getElementById('pvClock');
       var vals = Array.prototype.slice.call(dash.querySelectorAll('.kpi-val'));
-      var cells = Array.prototype.slice.call(dash.querySelectorAll('#miniHeat .hcell'));
-      if (!clock && !vals.length && !cells.length) return;
+      if (!clock && !vals.length) return;
 
       // Parse "48.2M" / "$312.40" / "5,847" into an affix, a number and a unit,
       // so an updating figure keeps reading exactly like a real one.
       function parseFigure(el) {
-        var text = el.textContent.trim();
+        var text = (el.dataset.value || el.textContent).trim();
         var m = text.match(/^([^\d.-]*)(-?[\d.,]+)([\s\S]*)$/);
         if (!m) return null;
         var raw = m[2];
@@ -3334,17 +3338,6 @@
       // its own value, which is what is on screen. Separating them is what
       // stops the drift compounding: a long run of same-signed steps decays
       // toward the anchor instead of walking off.
-      var tickers = vals.map(function (el, i) {
-        var f = parseFigure(el);
-        if (!f) return null;
-        return {
-          el: el, f: f, value: f.end, anchor: f.end,
-          // Different figures land at different times, so the four never
-          // change in unison -- synchronised motion reads as a loop.
-          next: 2600 + i * 1500 + Math.random() * 3200
-        };
-      }).filter(Boolean);
-
       function step(t) {
         // Signed, so the figure is as likely to fall as to rise.
         var pct = (Math.random() * 2 - 1) * 0.028;
@@ -3376,13 +3369,12 @@
           schedule(t);
         }, t.next);
       }
-      tickers.forEach(schedule);
 
       // The clock runs in real time. It was previously scaled up about
       // threefold, which meant five seconds of the page passing cost fifteen
       // seconds of the clock -- the giveaway that the panel was not real.
       var clockBase = 9 * 3600 + 41 * 60 + 7;   // a plausible mid-morning start
-      var clockFrom = performance.now();
+      var clockFrom = 0;
       function paintClock() {
         if (!running) return;
         var total = Math.floor(clockBase + (performance.now() - clockFrom) / 1000) % 86400;
@@ -3391,28 +3383,30 @@
         var ss = String(Math.floor(total % 60)).padStart(2, '0');
         clock.textContent = 'tokdash · localhost:55423 · ' + hh + ':' + mm + ':' + ss;
       }
-      paintClock();
-      setInterval(paintClock, 1000);
 
-      // The heatmap gets one settle and then stops. It was looping every three
-      // seconds, which meant a hundred and forty cells were perpetually
-      // re-fading -- the single most attention-grabbing thing on the page, and
-      // the least like a dashboard that has just finished loading.
-      if (cells.length) {
-        var order = cells.map(function (_, i) { return i; });
-        for (var s = order.length - 1; s > 0; s--) {
-          var j = Math.floor(Math.random() * (s + 1));
-          var tmp = order[s]; order[s] = order[j]; order[j] = tmp;
+      // Nothing starts until the entrance has landed the figures. Started any
+      // earlier, a returning visitor (who skips the intro, so the entrance runs
+      // first) had the ticker read the zeros the count-up starts from and keep
+      // writing them back.
+      function start() {
+        vals.map(function (el, i) {
+          var f = parseFigure(el);
+          if (!f) return null;
+          return {
+            el: el, f: f, value: f.end, anchor: f.end,
+            // Different figures land at different times, so the four never
+            // change in unison -- synchronised motion reads as a loop.
+            next: 2600 + i * 1500 + Math.random() * 3200
+          };
+        }).filter(Boolean).forEach(schedule);
+        if (clock) {
+          clockFrom = performance.now();
+          paintClock();
+          setInterval(paintClock, 1000);
         }
-        cells.forEach(function (c) { c.style.opacity = '0.22'; });
-        anime({
-          targets: cells,
-          opacity: 1,
-          duration: 420,
-          easing: 'linear',
-          delay: anime.stagger(6, { from: 0 })
-        });
       }
+      if (dash.classList.contains('entered')) start();
+      else document.addEventListener('tokdash:hero-entered', start, { once: true });
 
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {

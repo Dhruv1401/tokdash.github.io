@@ -363,6 +363,37 @@ with sync_playwright() as p:
         )
         motion.close()
 
+    # The hero figures, for a visitor coming back in the same tab. The intro is
+    # skipped, so the entrance runs before anything else, and the ticker once
+    # read the zeros its count-up starts from and wrote them back for good.
+    # Wait until every figure has taken at least one new reading, then check
+    # each is still its markup value give or take the ticker's few percent.
+    expected = re.findall(r'class="kpi-val"[^>]*>([^<]+)<', (ROOT / "index.html").read_text(encoding="utf-8"))
+    hero = browser.new_context(viewport={"width": 1440, "height": 960})
+    hero.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
+    figures = hero.new_page()
+    figures.route(
+        "**/*",
+        lambda route: route.abort()
+        if route.request.url.startswith("http") and "127.0.0.1" not in route.request.url
+        else route.continue_(),
+    )
+    figures.on("console", on_console)
+    figures.on("pageerror", lambda e: errors.append(str(e)))
+    figures.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    try:
+        figures.wait_for_function("document.querySelector('.preview-dash').classList.contains('entered')", timeout=6000)
+    except PlaywrightTimeoutError:
+        pass
+    figures.wait_for_timeout(11500)
+    shown = figures.locator(".preview-dash .kpi-val").all_text_contents()
+    number = lambda text: float(re.sub(r"[^0-9.]", "", text) or 0)
+    drifted = [(want, got) for want, got in zip(expected, shown) if abs(number(got) - number(want)) > 0.15 * number(want)]
+    assert len(expected) == len(shown) == 4, f"expected four hero figures, found {expected} in markup and {shown} on screen"
+    assert not drifted, f"hero figures left their values for a returning visitor: {drifted}"
+    print("hero figures hold for a returning visitor:", ", ".join(shown))
+    hero.close()
+
     browser.close()
 
 print("console errors:", errors if errors else "none")
