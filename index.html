@@ -626,7 +626,6 @@
     .minimap-node.active .minimap-bar { background: var(--color-text); }
     .minimap-tip {
       position: absolute; right: calc(100% + 12px); top: 50%;
-      font-family: "Rubik", ui-sans-serif, system-ui, sans-serif;
       font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--color-text); white-space: nowrap;
       max-width: 240px; overflow: hidden; text-overflow: ellipsis;
@@ -5288,11 +5287,6 @@
         smoothWheel: true,
         gestureOrientation: 'vertical',
       });
-      // The mini-map links have to land where they say, and a hash jump would
-      // fight the smooth scroller and land under the fixed header. One handle
-      // on the instance is cheaper than leaving scroll ownership ambiguous.
-      window.__lenis = lenis;
-
       function raf(time) {
         lenis.raf(time);
         requestAnimationFrame(raf);
