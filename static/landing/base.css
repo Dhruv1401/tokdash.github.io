@@ -1,0 +1,122 @@
+/* ---- Design tokens (mirrored from the Tokdash dashboard) ---- */
+:root {
+  --color-primary: #1E40AF;
+  --color-secondary: #3B82F6;
+  --color-cta: #F59E0B;
+  --color-bg: #F8FAFC;
+  --color-text: #0F172A;
+  --color-muted: #475569;
+  --color-border: #E2E8F0;
+  --color-cost: #0F766E;
+
+  /* Light panels are near-white on a near-white page, as in the
+     dashboard: a soft border and shadow carry the separation, not a
+     tinted canvas. */
+  --glass: rgba(255, 255, 255, 0.90);
+  /* Small chips and pills, which carry no backdrop filter. Opaque enough to
+     sit on the card behind them without the card showing through as a
+     rectangle, which is the only thing the blur was ever doing here. */
+  --pill-fill: rgba(255, 255, 255, 0.90);
+  --glass-strong: rgba(255, 255, 255, 0.97);
+  --glass-line: rgba(15, 23, 42, 0.12);
+  /* backdrop-filter has to re-sample and re-blur the backdrop behind an
+     element every time anything behind it moves, which during a scroll is
+     every frame. saturate() is a colour-matrix pass on top of that, and
+     24 tool pills do not need a 20px kernel. Two tiers: the wide blur for
+     the few large surfaces where the glass actually reads, and a narrow one
+     for everything small and repeated. */
+  --glass-blur: blur(14px);
+
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --t-fast: 180ms;
+  --t-med: 240ms;
+
+  /* Layered, but light: .surface stacks all three, and on a white page
+     anything heavier reads as a dark halo rather than as lift. */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px -8px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 2px 4px rgba(15, 23, 42, 0.04), 0 18px 40px -20px rgba(15, 23, 42, 0.16);
+  --hairline: inset 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+html.dark {
+  --color-primary: #60A5FA;
+  --color-secondary: #93C5FD;
+  --color-cta: #FBBF24;
+  /* Near-black with a blue cast rather than a blue-grey: at this depth the
+     hue reads as a temperature, not as a colour, and it lets the one blue
+     accent carry all of the emphasis on the page. */
+  --color-bg: #05070E;
+  --color-text: #E8ECF5;
+  --color-muted: #8A94AB;
+  --color-border: #1A2136;
+  --color-cost: #34D399;
+
+  /* Glass over near-black needs a lighter, cooler fill than the light
+     theme's, or the panels disappear into the canvas entirely. Shadows
+     barely register on a near-black page, so separation here comes from
+     the fill lift and the hairline doing the work instead. */
+  --glass: rgba(152, 180, 238, 0.068);
+  --pill-fill: rgba(255, 255, 255, 0.055);
+  --glass-strong: rgba(152, 180, 238, 0.105);
+  --glass-line: rgba(190, 212, 252, 0.24);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.4);
+  --shadow-md: 0 1px 2px rgba(0,0,0,0.55), 0 6px 16px -6px rgba(0,0,0,0.75), 0 16px 36px -14px rgba(0,0,0,0.85);
+  --shadow-lg: 0 2px 6px rgba(0,0,0,0.6), 0 16px 40px -12px rgba(0,0,0,0.9), 0 34px 72px -28px rgba(0,0,0,0.95);
+  --hairline: inset 0 1px 0 rgba(190, 214, 255, 0.07);
+}
+
+/* ---- Lenis smooth scroll ---- */
+html.lenis, html.lenis body { height: auto; }
+html, html.lenis { scroll-behavior: auto !important; overscroll-behavior-y: none; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* GPU layer promotion to prevent paint bottleneck during high-framerate scrolling */
+header, .card, .setup-box {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* min-height (not height:100%): a fixed-height body bounds position:sticky to
+   one viewport, so the nav would stop sticking after the first screen. min-height
+   lets the page grow with content and keeps the nav pinned across the full scroll.
+   clip kills the decorative glow's horizontal overflow without breaking sticky. */
+html, body {
+  min-height: 100%;
+  overflow-x: clip;
+}
+html {
+  scroll-behavior: auto !important;
+  scroll-padding-top: 88px;
+}
+
+body {
+  font-family: "Fira Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
+  /* Barely there, and cool rather than warm: a warm glow on a near-neutral
+     canvas just re-yellows the page the tint was removed from. */
+  background: radial-gradient(1200px 700px at 10% -16%, rgba(88, 116, 176, 0.09), transparent 66%),
+              radial-gradient(900px 560px at 92% 2%, rgba(132, 146, 186, 0.07), transparent 60%),
+              var(--color-bg);
+  background-attachment: fixed;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+html.dark body {
+  /* One cold light in the corner and nothing else. The old pair of large
+     glows was most of what made the page read as blue rather than dark. */
+  background: radial-gradient(1000px 620px at 14% -12%, rgba(56,104,196,0.20), transparent 60%),
+              radial-gradient(760px 460px at 92% 2%, rgba(120,90,220,0.07), transparent 62%),
+              var(--color-bg);
+  background-attachment: fixed;
+}
+/* No fixed vignette over the viewport here: on a content site the bottom
+   of the screen is where the footer and the install command live, and a
+   fixed scrim over them costs more legibility than the depth is worth. */
+
+.mono { font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.text-muted { color: var(--color-muted); }

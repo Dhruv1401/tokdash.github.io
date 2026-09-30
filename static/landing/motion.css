@@ -1,0 +1,185 @@
+/* ---- Reveal-on-scroll (progressive enhancement) ----
+   Opt-in via html.js: with JS disabled the class is never added, so .reveal
+   content renders fully visible instead of staying at opacity 0. */
+html.js .reveal { opacity: 0; transform: translateY(24px); }
+html.js:not(.anim-active) .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
+html.js .reveal.in { opacity: 1; transform: none; }
+/* .reveal.in outranks .surface:hover, which left every revealed card with
+   no hover lift at all. Give it back to the cards that are meant to lift. */
+html.js .surface.reveal.in:not(.surface-static):hover { transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  html.js .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---- Text Scramble Decoder & Heading Char Fade-in ---- */
+html.js [data-i18n="feat.h"],
+html.js [data-i18n="feat.sub"],
+html.js [data-i18n="srv.1.h"],
+html.js [data-i18n="srv.1.p"],
+html.js [data-i18n="srv.2.h"],
+html.js [data-i18n="srv.2.p"],
+html.js [data-i18n="srv.3.h"],
+html.js [data-i18n="srv.3.p"],
+html.js [data-i18n="srv.4.h"],
+html.js [data-i18n="srv.4.p"],
+html.js [data-i18n="opt.1.h"],
+html.js [data-i18n="opt.1.p"],
+html.js [data-i18n="opt.2.h"],
+html.js [data-i18n="opt.2.p"],
+html.js [data-i18n="opt.3.h"],
+html.js [data-i18n="opt.3.p"],
+html.js [data-i18n="opt.4.h"],
+html.js [data-i18n="opt.4.p"],
+html.js [data-i18n="cta.h"] {
+  visibility: hidden;
+}
+html.js [data-i18n="feat.h"].anim-ready,
+html.js [data-i18n="feat.sub"].anim-ready,
+html.js [data-i18n="srv.1.h"].anim-ready,
+html.js [data-i18n="srv.1.p"].anim-ready,
+html.js [data-i18n="srv.2.h"].anim-ready,
+html.js [data-i18n="srv.2.p"].anim-ready,
+html.js [data-i18n="srv.3.h"].anim-ready,
+html.js [data-i18n="srv.3.p"].anim-ready,
+html.js [data-i18n="srv.4.h"].anim-ready,
+html.js [data-i18n="srv.4.p"].anim-ready,
+html.js [data-i18n="opt.1.h"].anim-ready,
+html.js [data-i18n="opt.1.p"].anim-ready,
+html.js [data-i18n="opt.2.h"].anim-ready,
+html.js [data-i18n="opt.2.p"].anim-ready,
+html.js [data-i18n="opt.3.h"].anim-ready,
+html.js [data-i18n="opt.3.p"].anim-ready,
+html.js [data-i18n="opt.4.h"].anim-ready,
+html.js [data-i18n="opt.4.p"].anim-ready,
+html.js [data-i18n="cta.h"].anim-ready {
+  visibility: visible;
+}
+.heading-char {
+  display: inline;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+.heading-char.in {
+  opacity: 1;
+}
+.scramble-box {
+  position: relative;
+}
+.scramble-char {
+  display: inline;
+}
+.scramble-char.active {
+  color: var(--color-primary);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--color-primary) 55%, transparent);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-weight: 600;
+}
+.scramble-char.pending {
+  opacity: 0;
+  visibility: hidden;
+}
+.scramble-cursor {
+  display: inline-block;
+  color: var(--color-primary);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 70%, transparent);
+  margin: 0 1px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: baseline;
+  transition: opacity 0.25s ease;
+}
+.scramble-cursor.blink {
+  animation: cursorBlinkTwice 0.6s steps(1, start) 1 forwards;
+}
+@keyframes cursorBlinkTwice {
+  0% { opacity: 1; }
+  25% { opacity: 0; }
+  50% { opacity: 1; }
+  75% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ---- Logo Morph Engine for .opt-li .opt-ic (synchronized with line beside them) ---- */
+html.js .opt-li .opt-ic {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.35) rotate(-35deg);
+  border-radius: 50%;
+  will-change: transform, opacity, border-radius, box-shadow;
+}
+html.js .opt-li .opt-ic.anim-ready {
+  visibility: visible;
+}
+html.js .opt-li .opt-ic.morphed {
+  opacity: 1;
+  transform: none;
+  border-radius: 9px;
+}
+.opt-li:hover .opt-ic.morphed {
+  border-color: var(--color-cta);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-cta) 45%, transparent);
+  transform: scale(1.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-i18n="feat.h"],
+  html.js [data-i18n="feat.sub"],
+  html.js [data-i18n="srv.1.h"],
+  html.js [data-i18n="srv.1.p"],
+  html.js [data-i18n="srv.2.h"],
+  html.js [data-i18n="srv.2.p"],
+  html.js [data-i18n="srv.3.h"],
+  html.js [data-i18n="srv.3.p"],
+  html.js [data-i18n="srv.4.h"],
+  html.js [data-i18n="srv.4.p"],
+  html.js [data-i18n="opt.1.h"],
+  html.js [data-i18n="opt.1.p"],
+  html.js [data-i18n="opt.2.h"],
+  html.js [data-i18n="opt.2.p"],
+  html.js [data-i18n="opt.3.h"],
+  html.js [data-i18n="opt.3.p"],
+  html.js [data-i18n="opt.4.h"],
+  html.js [data-i18n="opt.4.p"],
+  html.js [data-i18n="cta.h"],
+  html.js .opt-li .opt-ic {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    border-radius: 9px !important;
+  }
+  .heading-char { opacity: 1 !important; transition: none !important; }
+  .scramble-char.pending { opacity: 1 !important; visibility: visible !important; }
+  .scramble-cursor { display: none !important; }
+}
+
+.divider-grad { height: 1px; background: linear-gradient(90deg, transparent, var(--color-border), transparent); }
+
+/* Cost-insights card (optimization section) */
+.bar { height: 8px; border-radius: 6px; background: color-mix(in srgb, var(--color-border) 75%, transparent); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary)); }
+.opt-li { display: flex; gap: 12px; }
+.opt-ic { width: 34px; height: 34px; border-radius: 9px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-cta) 22%, transparent), color-mix(in srgb, var(--color-cta) 10%, transparent));
+  color: var(--color-cta); border: 1px solid color-mix(in srgb, var(--color-cta) 26%, transparent); }
+.readout-box { border-radius: 12px; padding: 14px;
+  background: color-mix(in srgb, var(--color-cost) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-cost) 30%, transparent); }
+
+/* Multi-server card (servers section) */
+.srv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline;
+  padding: 11px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.srv-row.last { border-bottom: 0; }
+.srv-name { font-weight: 700; font-size: 13px; min-width: 0; }
+.srv-host { display: block; font-weight: 500; font-size: 11px; color: var(--color-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srv-fig { font-weight: 700; font-size: 13px; white-space: nowrap; }
+.srv-fig .cost { color: var(--color-cost); margin-left: 8px; }
+.srv-bar { grid-column: 1 / -1; height: 6px; }
+.srv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.srv-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 5px 9px;
+  border-radius: 8px; border: 1px solid var(--glass-line);
+  background: var(--glass); }
+.srv-chip b { font-weight: 700; }
+.srv-chip span { color: var(--color-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }

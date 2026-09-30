@@ -60,7 +60,8 @@ The landing page's "Hi." intro plays on a visitor's first visit only, remembered
 
 |  File                       | Purpose                                                                |
 |  -------------------------- | ---------------------------------------------------------------------- |
-|  `index.html`               | Official marketing landing page (self-contained, reuses the design tokens). |
+|  `index.html`               | Official marketing landing page: the markup, reusing the design tokens. |
+|  `static/landing/`          | The landing page's own styles and scripts, one file per job (below).   |
 |  `static/landing.css`       | Prebuilt Tailwind utilities for the landing page (so it renders without JS). |
 |  `demo/index.html`          | Tokdash dashboard shell — upstream frontend + the demo-only edits listed below. |
 |  `static/themes.css`        | Verbatim copy of the production stylesheet.                            |
@@ -74,6 +75,33 @@ The landing page's "Hi." intro plays on a visitor's first visit only, remembered
 |  `check_demo_sync.py`       | Fails when the demo has fallen behind the upstream UI.                 |
 |  `verify_demo.py`           | Headless-Chromium check of `/demo/` (fleet split, Servers tab, quota).  |
 |  `verify_landing.py`        | Headless-Chromium check of `/` (render, copy, six-language parity, mobile). |
+
+### The landing page's files
+
+`index.html` loads these in order, where each block used to sit inline. There is no build
+step: they are plain CSS and classic scripts that share globals, so load order matters
+(`chrome.js` defines the scroll driver and capability gate the later files use).
+
+| File                 | What it holds                                                                  |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `base.css`           | Design tokens, Lenis, page base                                                |
+| `components.css`     | Cards, buttons, nav, chips, typography, section bands, proof strip, install pill |
+| `sections.css`       | Hero mini-dashboard, minimap rail, entrance stage, terminal, step numbers      |
+| `motion.css`         | Reveal-on-scroll, text scramble and heading fade, row logo morph               |
+| `companion.css`      | Companion app mockups                                                          |
+| `lander.css`         | The first-visit intro                                                          |
+| `chrome.js`          | Theme toggle, copy command, scroll driver and capability gate, nav progress, star count |
+| `hero.js`            | Proof strip, hero heatmap, entrance, live figures                              |
+| `scroll-effects.js`  | Scroll-linked depth, minimap rail                                              |
+| `reveal.js`          | Reveal engine, drawable SVGs                                                   |
+| `i18n.js`            | The six-language dictionary and the applier                                    |
+| `scramble.js`        | Text scramble decoder, heading fade, row logo morph                            |
+| `smooth-scroll.js`   | Lenis setup and anchor scrolling                                               |
+| `ambient.js`         | The background particle network                                                |
+| `split-text.js`      | The word splitter the intro uses                                               |
+| `lander.js`          | The first-visit intro                                                          |
+
+A new file here also goes into `CORE_ASSETS` in `sw.js`, so the page still loads offline.
 
 ### Refreshing the demo from upstream
 
@@ -120,12 +148,12 @@ January to June went unnoticed.
 
 The landing page ships a prebuilt, purged Tailwind v3 stylesheet (`static/landing.css`)
 instead of the runtime JS CDN, so it renders fully with JavaScript disabled. Regenerate it
-after changing classes in `index.html`:
+after changing classes in `index.html` or `static/landing/`:
 
 ```bash
 printf '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' > /tmp/in.css
 npx tailwindcss@3 -i /tmp/in.css -o static/landing.css --minify \
-  --content ./index.html
+  --content './index.html,./static/landing/*.{js,css}'
 ```
 
 (Equivalently, point a `tailwind.config.js` at `index.html` with `darkMode: 'class'`.)
@@ -146,7 +174,7 @@ to the repo root; those are gitignored. `check_demo_sync.py` needs an upstream c
 only to ask the mock which tools it serves.
 
 The landing page's copy lives in a six-language
-dictionary inside `index.html`, and every `data-i18n` key must have an entry in all six —
+dictionary in `static/landing/i18n.js`, and every `data-i18n` key must have an entry in all six —
 `verify_landing.py` fails on drift in either direction.
 
 ## License

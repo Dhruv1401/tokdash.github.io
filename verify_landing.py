@@ -24,13 +24,14 @@ def flatten(markup: str) -> str:
     return " ".join(html_module.unescape(re.sub(r"<[^>]+>", "", markup)).replace("\xa0", " ").split())
 
 
-def english_dictionary(page_html: str) -> dict[str, str]:
-    start = page_html.index("var I18N = {")
-    block = page_html[start:page_html.index("\n      };", start)]
-    en = block[block.index("en: {"):block.index("\n        },")]
+def english_dictionary(i18n_js: str) -> dict[str, str]:
+    """The English entries of the I18N dictionary in static/landing/i18n.js."""
+    start = i18n_js.index("var I18N = {")
+    block = i18n_js[start:i18n_js.index("\n  };", start)]
+    en = block[block.index("en: {"):block.index("\n    },")]
     return {
         m.group(1): flatten(m.group(2))
-        for m in re.finditer(r"^          '([A-Za-z0-9_.]+)': `(.*?)`,$", en, re.M)
+        for m in re.finditer(r"^      '([A-Za-z0-9_.]+)': `(.*?)`,$", en, re.M)
     }
 
 
@@ -175,7 +176,8 @@ with sync_playwright() as p:
     # English fallback markup must match the English dictionary, so the page reads
     # the same before JavaScript runs and with it switched off.
     html = (ROOT / "index.html").read_text(encoding="utf-8")
-    dictionary = english_dictionary(html)
+    dictionary = english_dictionary((ROOT / "static" / "landing" / "i18n.js").read_text(encoding="utf-8"))
+    assert len(dictionary) > 100, f"read only {len(dictionary)} English keys from static/landing/i18n.js"
     drift = [
         f"{key}: markup {text!r} vs dictionary {dictionary[key]!r}"
         for key, text in markup_fallbacks(html).items()
