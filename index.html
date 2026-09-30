@@ -67,7 +67,9 @@
         var dark = saved ? saved === 'dark'
           : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) document.documentElement.classList.add('dark');
-        var landerSeen = sessionStorage.getItem('tokdash_lander_seen');
+        // The intro is for a first visit, so "seen" lives in localStorage and
+        // outlasts the tab. ?intro brings it back, for anyone who wants it again.
+        var landerSeen = localStorage.getItem('tokdash_lander_seen') && !/[?&]intro\b/.test(location.search);
         var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (landerSeen || reducedMotion) document.documentElement.classList.add('lander-skipped');
       } catch (e) {}
@@ -6032,7 +6034,7 @@
       function finishIntro(skipAnim) {
         if (isFinished) return;
         isFinished = true;
-        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
+        try { localStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
 
         if (lensRafId) cancelAnimationFrame(lensRafId);
         if (activeTimeline) activeTimeline.pause();
@@ -6315,7 +6317,7 @@
           return;
         }
         isFinished = true;
-        try { sessionStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
+        try { localStorage.setItem('tokdash_lander_seen', 'true'); } catch (err) {}
 
         if (activeTimeline) activeTimeline.pause();
 

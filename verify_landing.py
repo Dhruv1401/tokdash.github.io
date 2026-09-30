@@ -223,7 +223,8 @@ with sync_playwright() as p:
     )
     assert not overflow, f"mobile overflow in the new sections: {overflow[:6]}"
 
-    intro = browser.new_page(viewport={"width": 1440, "height": 960})
+    visitor = browser.new_context(viewport={"width": 1440, "height": 960})
+    intro = visitor.new_page()
     intro.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
     intro.wait_for_function(
         "getComputedStyle(document.querySelector('#landerExploreWrap')).opacity === '1'",
@@ -240,7 +241,18 @@ with sync_playwright() as p:
     assert not intro.locator("body").evaluate(
         "el => el.classList.contains('lander-locked')"
     ), "Explore must unlock scrolling after the exit animation"
-    intro.close()
+    # The intro is for a first visit only: a new tab skips it, ?intro brings it back.
+    again = visitor.new_page()
+    again.goto(f"http://127.0.0.1:{PORT}/", wait_until="domcontentloaded")
+    assert again.evaluate(
+        "document.documentElement.classList.contains('lander-skipped')"
+    ), "a visitor who has seen the intro must not get it again in a new tab"
+    again.goto(f"http://127.0.0.1:{PORT}/?intro", wait_until="domcontentloaded")
+    assert not again.evaluate(
+        "document.documentElement.classList.contains('lander-skipped')"
+    ), "?intro must bring the intro back"
+    visitor.close()
+    print("intro shows on a first visit only: skipped in a new tab, back with ?intro")
 
     # The intro on a phone and on a short landscape screen. Every line must fit the
     # stage, the heading must not start above the scroll origin, and the stage must
@@ -299,7 +311,7 @@ with sync_playwright() as p:
       && [...document.querySelectorAll('.heading-char')].every((c) => c.classList.contains('in'))"""
     for viewport in ({"width": 1440, "height": 960}, {"width": 390, "height": 844}):
         motion = browser.new_context(viewport=viewport)
-        motion.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
+        motion.add_init_script("localStorage.setItem('tokdash_lander_seen', 'true')")
         moving = motion.new_page()
         moving.route(
             "**/*",
@@ -370,7 +382,7 @@ with sync_playwright() as p:
     # each is still its markup value give or take the ticker's few percent.
     expected = re.findall(r'class="kpi-val"[^>]*>([^<]+)<', (ROOT / "index.html").read_text(encoding="utf-8"))
     hero = browser.new_context(viewport={"width": 1440, "height": 960})
-    hero.add_init_script("sessionStorage.setItem('tokdash_lander_seen', 'true')")
+    hero.add_init_script("localStorage.setItem('tokdash_lander_seen', 'true')")
     figures = hero.new_page()
     figures.route(
         "**/*",

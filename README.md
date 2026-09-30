@@ -53,6 +53,9 @@ python3 -m http.server 8000
 # open http://localhost:8000/demo/  (dashboard demo)
 ```
 
+The landing page's "Hi." intro plays on a visitor's first visit only, remembered in
+`localStorage`. Add `?intro` to the URL to play it again.
+
 ## How it works
 
 |  File                       | Purpose                                                                |
