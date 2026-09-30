@@ -1,0 +1,422 @@
+/* ---- companion mock (ported from UI_CONCEPT.html) ----
+   Static "connected" rendering of the macOS menu-bar popover and the Windows
+   tray flyout. Every rule is scoped under .comp-mock so nothing leaks into
+   page classes (.dot, .bar, .surface, .chip) or vice versa; the prototype's
+   ".mac-frame.dark" / ".win-frame.dark" variants are rewired to the site
+   theme as "html.dark .comp-mock ...". Mock text stays English. */
+.comp-mock { position: relative; overflow: hidden; user-select: none; container-type: inline-size; }
+.comp-mock .os-frame { position: relative; overflow: hidden; height: 580px; font-size: 14px; line-height: 1.45; }
+@media (prefers-reduced-transparency: reduce) {
+  .comp-mock .mac-pop, .comp-mock .win-fly { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+
+/* shared: connection dot (page .dot is only styled inside .chip) */
+.comp-mock .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+.comp-mock .dot.ok { background: #30A74C; }
+.comp-mock .dot.warn, .comp-mock .dot.busy { background: #FF9F0A; }
+.comp-mock .dot.err { background: #FF453A; }
+
+/* ===== macOS frame ===== */
+.comp-mock .mac-frame { background: linear-gradient(160deg, #8FA8B8 0%, #6E8899 34%, #51697C 62%, #3B4F61 100%); }
+html.dark .comp-mock .mac-frame { background: linear-gradient(160deg, #37444F 0%, #2A3540 45%, #1C242D 100%); }
+
+.comp-mock .mac-menubar {
+  position: absolute; top: 0; left: 0; right: 0; height: 26px;
+  display: flex; align-items: center; gap: 14px; padding: 0 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 13px; color: rgba(0,0,0,0.85);
+  background: rgba(246, 246, 248, 0.52);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  white-space: nowrap; overflow: hidden;
+}
+html.dark .comp-mock .mac-menubar { color: rgba(255,255,255,0.92); background: rgba(148, 176, 232, 0.06); }
+.comp-mock .mac-menubar .app { font-weight: 700; flex: none; }
+.comp-mock .mac-menubar .dim { opacity: 0.75; }
+.comp-mock .mac-menubar .mi { min-width: 0; overflow: hidden; }
+.comp-mock .mac-menubar .apple, .comp-mock .mac-menubar .clock { flex: none; }
+.comp-mock .mac-menubar .spacer { flex: 1; min-width: 2px; }
+.comp-mock .mac-menubar .mb-right { display: flex; align-items: center; gap: 12px; flex: none; }
+.comp-mock .mac-menubar svg { display: block; }
+@container (max-width: 560px) {
+  .comp-mock .mac-menubar .mi { display: none; }
+}
+
+/* menu-bar extra (open state = active) */
+.comp-mock .mac-extra {
+  position: relative; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 22px; margin: 0 -4px;
+  border: 0; background: transparent; border-radius: 4px;
+  cursor: pointer; color: inherit; padding: 0;
+}
+.comp-mock .mac-extra:hover, .comp-mock .mac-extra.active { background: rgba(0,0,0,0.10); }
+html.dark .comp-mock .mac-extra:hover, html.dark .comp-mock .mac-extra.active { background: rgba(255,255,255,0.14); }
+
+.comp-mock .mac-tip {
+  position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 12px; padding: 3px 8px; border-radius: 5px;
+  background: rgba(240, 240, 242, 0.96); color: #1D1D1F;
+  border: 0.5px solid rgba(0,0,0,0.15);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  pointer-events: none; opacity: 0; transition: opacity 120ms ease;
+  z-index: 30;
+}
+html.dark .comp-mock .mac-tip { background: rgba(56,56,58,0.97); color: #F2F2F2; border-color: rgba(255,255,255,0.18); }
+.comp-mock .mac-extra:hover .mac-tip { opacity: 1; }
+
+/* popover (MenuBarExtra .window style) */
+.comp-mock .mac-pop {
+  position: absolute; top: 34px; right: 10px; width: 352px; max-width: calc(100% - 20px);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  color: #1D1D1F;
+  background: rgba(242, 242, 245, 0.74);
+  backdrop-filter: blur(30px) saturate(1.7);
+  -webkit-backdrop-filter: blur(30px) saturate(1.7);
+  border: 0.5px solid rgba(0,0,0,0.22);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 1px 4px rgba(0,0,0,0.12);
+  z-index: 20;
+}
+html.dark .comp-mock .mac-pop { color: #F2F2F2; background: rgba(148, 176, 232, 0.085); border-color: rgba(160, 190, 245, 0.16); }
+@media (prefers-reduced-transparency: reduce) {
+  .comp-mock .mac-pop { background: #F2F2F5; }
+  html.dark .comp-mock .mac-pop { background: #222225; }
+}
+.comp-mock .mac-pop .inner { padding: 4px 0; }
+.comp-mock .mac-pop section { padding: 12px 16px; }
+.comp-mock .mac-pop .hairline { border-top: 0.5px solid rgba(60,60,67,0.16); }
+html.dark .comp-mock .mac-pop .hairline { border-top-color: rgba(235,235,245,0.14); }
+
+.comp-mock .mac-head { display: flex; align-items: center; gap: 8px; }
+.comp-mock .mac-head .wordmark { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; white-space: nowrap; flex: none; }
+.comp-mock .mac-head .conn { font-size: 12px; color: rgba(60,60,67,0.75); display: flex; align-items: center; gap: 5px; white-space: nowrap; min-width: 0; overflow: hidden; }
+html.dark .comp-mock .mac-head .conn { color: rgba(235,235,245,0.62); }
+.comp-mock .mac-head .grow { flex: 1; min-width: 2px; }
+
+.comp-mock .mac-icon-btn {
+  appearance: none; border: 0; background: transparent; color: rgba(60,60,67,0.8); flex: none;
+  width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.comp-mock .mac-icon-btn:hover { background: rgba(0,0,0,0.07); }
+html.dark .comp-mock .mac-icon-btn { color: rgba(235,235,245,0.75); }
+html.dark .comp-mock .mac-icon-btn:hover { background: rgba(255,255,255,0.10); }
+
+.comp-mock .mac-hero .kicker {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  color: rgba(60,60,67,0.62); text-transform: uppercase; margin: 0 0 2px;
+}
+html.dark .comp-mock .mac-hero .kicker { color: rgba(235,235,245,0.55); }
+.comp-mock .mac-hero .big { font-size: 30px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.15; margin: 0; }
+.comp-mock .mac-hero .sub { font-size: 12.5px; color: rgba(60,60,67,0.78); margin: 2px 0 0; }
+html.dark .comp-mock .mac-hero .sub { color: rgba(235,235,245,0.65); }
+.comp-mock .mac-hero .cmp { font-size: 12.5px; margin: 5px 0 0; display: flex; align-items: center; gap: 4px; }
+.comp-mock .mac-frame .cmp.down { color: #248A3D; }
+.comp-mock .mac-frame .cmp.up { color: #D70015; }
+html.dark .comp-mock .mac-frame .cmp.down { color: #32D74B; }
+html.dark .comp-mock .mac-frame .cmp.up { color: #FF6961; }
+
+.comp-mock .mac-month { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; }
+.comp-mock .mac-month .kicker {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: rgba(60,60,67,0.62);
+}
+html.dark .comp-mock .mac-month .kicker { color: rgba(235,235,245,0.55); }
+.comp-mock .mac-month .val { font-weight: 600; }
+.comp-mock .mac-month .muted { color: rgba(60,60,67,0.72); }
+html.dark .comp-mock .mac-month .muted { color: rgba(235,235,245,0.6); }
+
+.comp-mock .mac-quota .kicker {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: rgba(60,60,67,0.62); margin: 0 0 8px;
+}
+html.dark .comp-mock .mac-quota .kicker { color: rgba(235,235,245,0.55); }
+.comp-mock .qrow { margin: 0 0 10px; }
+.comp-mock .qrow:last-child { margin-bottom: 0; }
+.comp-mock .qrow .qtop { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.comp-mock .qrow .qname { font-weight: 500; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.comp-mock .qrow .qleft { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.comp-mock .qrow .qreset { color: rgba(60,60,67,0.65); font-size: 12px; white-space: nowrap; }
+html.dark .comp-mock .mac-frame .qrow .qreset { color: rgba(235,235,245,0.55); }
+.comp-mock .qrow .est { font-size: 10.5px; color: rgba(60,60,67,0.55); border: 0.5px solid rgba(60,60,67,0.3); border-radius: 4px; padding: 0 4px; white-space: nowrap; flex: none; }
+html.dark .comp-mock .mac-frame .qrow .est { color: rgba(235,235,245,0.5); border-color: rgba(235,235,245,0.3); }
+.comp-mock .qbar { height: 4px; border-radius: 2px; background: rgba(60,60,67,0.14); margin-top: 5px; overflow: hidden; }
+html.dark .comp-mock .mac-frame .qbar { background: rgba(235,235,245,0.16); }
+.comp-mock .qbar > i { display: block; height: 100%; border-radius: 2px; }
+.comp-mock .mac-frame .qbar > i.fine { background: #30A74C; }
+.comp-mock .mac-frame .qbar > i.mid { background: #FF9F0A; }
+.comp-mock .mac-frame .qbar > i.low { background: #FF453A; }
+
+.comp-mock .mac-activity { font-size: 12px; color: rgba(60,60,67,0.68); }
+html.dark .comp-mock .mac-activity { color: rgba(235,235,245,0.55); }
+.comp-mock .mac-activity b { font-weight: 500; color: rgba(29,29,31,0.85); }
+html.dark .comp-mock .mac-activity b { color: rgba(242,242,242,0.8); }
+
+.comp-mock .mac-actions { display: flex; gap: 8px; align-items: center; }
+.comp-mock .mac-btn {
+  appearance: none; font: inherit; font-size: 13px; cursor: pointer;
+  border-radius: 6px; border: 0.5px solid rgba(0,0,0,0.16);
+  background: rgba(255,255,255,0.62); color: #1D1D1F;
+  padding: 3px 12px 4px; box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.08);
+}
+.comp-mock .mac-btn:hover { background: rgba(255,255,255,0.85); }
+html.dark .comp-mock .mac-btn { background: rgba(160, 190, 245, 0.10); color: #F2F2F2; border-color: rgba(160, 190, 245, 0.12); }
+html.dark .comp-mock .mac-btn:hover { background: rgba(255,255,255,0.22); }
+.comp-mock .mac-btn.primary { background: #0A6CFF; border-color: transparent; color: #fff; font-weight: 500; }
+.comp-mock .mac-btn.primary:hover { background: #0A5FE8; }
+html.dark .comp-mock .mac-btn.primary { background: #0A84FF; }
+html.dark .comp-mock .mac-btn.primary:hover { background: #2E94FF; }
+.comp-mock .mac-btn.icon { padding: 3px 7px 4px; display: inline-flex; align-items: center; }
+
+.comp-mock .mac-foot { display: flex; align-items: center; padding-top: 8px !important; padding-bottom: 10px !important; }
+.comp-mock .mac-foot .fresh { font-size: 11px; color: rgba(60,60,67,0.55); }
+html.dark .comp-mock .mac-foot .fresh { color: rgba(235,235,245,0.45); }
+.comp-mock .mac-foot .grow { flex: 1; }
+.comp-mock .mac-foot .quit {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: 11px; color: rgba(60,60,67,0.55); padding: 2px 4px; border-radius: 4px;
+}
+.comp-mock .mac-foot .quit:hover { color: #1D1D1F; background: rgba(0,0,0,0.06); }
+html.dark .comp-mock .mac-foot .quit { color: rgba(235,235,245,0.45); }
+html.dark .comp-mock .mac-foot .quit:hover { color: #F2F2F2; background: rgba(255,255,255,0.1); }
+
+/* quota section header + Low/All segmented control */
+.comp-mock .qhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.comp-mock .qhead .kicker { margin: 0; }
+.comp-mock .qseg { display: inline-flex; border-radius: 6px; padding: 1px; background: rgba(60,60,67,0.10); flex: none; }
+html.dark .comp-mock .qseg { background: rgba(235,235,245,0.12); }
+.comp-mock .qseg button {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: 11px; padding: 1px 9px 2px; border-radius: 5px;
+  color: rgba(60,60,67,0.75);
+}
+html.dark .comp-mock .qseg button { color: rgba(235,235,245,0.65); }
+.comp-mock .qseg button[aria-pressed="true"] {
+  background: rgba(255,255,255,0.95); color: #1D1D1F; font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+html.dark .comp-mock .mac-frame .qseg button[aria-pressed="true"] { background: rgba(99,99,102,0.85); color: #F2F2F2; }
+.comp-mock .win-fly .qseg { border-radius: 4px; }
+.comp-mock .win-fly .qseg button { border-radius: 3px; }
+.comp-mock .win-fly .qseg button[aria-pressed="true"] { background: #fff; color: #1B1B1B; font-weight: 600; }
+html.dark .comp-mock .win-fly .qseg button[aria-pressed="true"] { background: rgba(255,255,255,0.18); color: #F3F3F3; }
+
+/* ===== Windows frame ===== */
+.comp-mock .win-frame {
+  background:
+    radial-gradient(700px 380px at 30% 30%, rgba(90,140,200,0.24), transparent 70%),
+    radial-gradient(600px 400px at 75% 65%, rgba(70,110,160,0.20), transparent 70%),
+    linear-gradient(150deg, #1E3448 0%, #17293B 50%, #111F2E 100%);
+}
+html.dark .comp-mock .win-frame {
+  background:
+    radial-gradient(700px 380px at 30% 30%, rgba(56,88,132,0.18), transparent 70%),
+    linear-gradient(150deg, #101A24 0%, #0A121A 55%, #060B11 100%);
+}
+.comp-mock .win-frame, .comp-mock .win-frame * { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+
+.comp-mock .win-taskbar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 48px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  background: rgba(238, 243, 249, 0.78);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  z-index: 25; overflow: hidden;
+}
+html.dark .comp-mock .win-taskbar { background: rgba(28, 32, 38, 0.82); border-top-color: rgba(255,255,255,0.09); }
+.comp-mock .win-tb-btn {
+  appearance: none; border: 0; background: transparent; cursor: pointer; flex: none;
+  width: 40px; height: 40px; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.comp-mock .win-tb-btn:hover { background: rgba(0,0,0,0.06); }
+html.dark .comp-mock .win-tb-btn:hover { background: rgba(255,255,255,0.09); }
+@container (max-width: 560px) {
+  .comp-mock .win-tb-btn.tb-opt { display: none; }
+}
+/* The tray is absolutely positioned over the taskbar's right edge (z 26 > 25).
+   Pad the taskbar so the centered pinned group centers in the space left of
+   the tray instead of sliding underneath it at narrow frame widths. */
+@container (max-width: 660px) {
+  .comp-mock .win-taskbar { padding-right: 190px; }
+}
+
+.comp-mock .win-tray {
+  position: absolute; right: 0; bottom: 0; height: 48px;
+  display: flex; align-items: center; gap: 2px; padding-right: 4px;
+  z-index: 26;
+}
+.comp-mock .win-tray .sys { display: flex; align-items: center; gap: 2px; flex: none; }
+.comp-mock .win-clock {
+  appearance: none; border: 0; background: transparent; cursor: pointer; flex: none;
+  font: inherit; font-size: 12px; line-height: 1.25; text-align: right;
+  color: #1B1B1B; padding: 4px 8px; border-radius: 5px;
+}
+html.dark .comp-mock .win-clock { color: #F3F3F3; }
+.comp-mock .win-clock:hover { background: rgba(0,0,0,0.06); }
+html.dark .comp-mock .win-clock:hover { background: rgba(255,255,255,0.09); }
+.comp-mock .win-tray-icon {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  width: 32px; height: 40px; border-radius: 5px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative; flex: none;
+}
+.comp-mock .win-tray-icon:hover { background: rgba(0,0,0,0.06); }
+html.dark .comp-mock .win-tray-icon:hover { background: rgba(255,255,255,0.09); }
+.comp-mock .win-tray-icon.active { background: rgba(0,0,0,0.10); }
+html.dark .comp-mock .win-tray-icon.active { background: rgba(255,255,255,0.14); }
+.comp-mock .win-desktop-edge { position: absolute; right: 0; bottom: 0; width: 4px; height: 48px; border-left: 1px solid rgba(0,0,0,0.15); z-index: 27; }
+
+.comp-mock .win-tip {
+  position: absolute; bottom: 52px; right: 0; transform: translateX(30%);
+  white-space: nowrap; font-size: 12px; padding: 5px 9px;
+  background: #F9F9F9; color: #1B1B1B;
+  border: 1px solid #767676; border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  pointer-events: none; opacity: 0; transition: opacity 100ms ease;
+  z-index: 50;
+}
+html.dark .comp-mock .win-tip { background: #2B2B2B; color: #F3F3F3; border-color: #8A8A8A; }
+.comp-mock .win-tray-icon:hover .win-tip { opacity: 1; }
+
+/* Acrylic flyout */
+.comp-mock .win-fly {
+  position: absolute; right: 8px; bottom: 56px; width: 384px; max-width: calc(100% - 16px);
+  color: #1B1B1B;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+    rgba(242, 244, 247, 0.80);
+  backdrop-filter: blur(32px) saturate(1.25);
+  -webkit-backdrop-filter: blur(32px) saturate(1.25);
+  border: 1px solid rgba(0,0,0,0.22);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 40;
+}
+html.dark .comp-mock .win-fly {
+  color: #F3F3F3;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+    rgba(148, 176, 232, 0.085);
+  border-color: rgba(160, 190, 245, 0.13);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .comp-mock .win-fly { background: #F2F4F7; }
+  html.dark .comp-mock .win-fly { background: #26292F; }
+}
+.comp-mock .win-fly .inner { display: flex; flex-direction: column; }
+.comp-mock .win-fly section { padding: 14px 16px; }
+.comp-mock .win-fly .divider { border-top: 1px solid rgba(0,0,0,0.07); }
+html.dark .comp-mock .win-fly .divider { border-top-color: rgba(255,255,255,0.08); }
+
+.comp-mock .win-head { display: flex; align-items: center; gap: 8px; }
+.comp-mock .win-head .wordmark { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex: none; }
+.comp-mock .win-head .conn { font-size: 12px; color: #5F5F5F; display: flex; align-items: center; gap: 6px; white-space: nowrap; min-width: 0; overflow: hidden; }
+html.dark .comp-mock .win-head .conn { color: #B5B5B5; }
+.comp-mock .win-head .grow { flex: 1; min-width: 2px; }
+.comp-mock .win-icon-btn {
+  appearance: none; border: 0; background: transparent; cursor: pointer; color: inherit; flex: none;
+  width: 30px; height: 30px; border-radius: 4px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.comp-mock .win-icon-btn:hover { background: rgba(0,0,0,0.06); }
+.comp-mock .win-icon-btn:active { background: rgba(0,0,0,0.10); }
+html.dark .comp-mock .win-icon-btn:hover { background: rgba(255,255,255,0.09); }
+html.dark .comp-mock .win-icon-btn:active { background: rgba(255,255,255,0.13); }
+
+.comp-mock .win-hero .kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #5F5F5F; margin: 0 0 2px; }
+html.dark .comp-mock .win-hero .kicker { color: #B0B0B0; }
+.comp-mock .win-hero .big { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; margin: 0; }
+.comp-mock .win-hero .sub { font-size: 12.5px; color: #4D4D4D; margin: 3px 0 0; }
+html.dark .comp-mock .win-hero .sub { color: #C2C2C2; }
+.comp-mock .win-hero .cmp { font-size: 12.5px; margin: 6px 0 0; display: flex; align-items: center; gap: 5px; }
+.comp-mock .win-frame .cmp.down { color: #0F7B0F; }
+.comp-mock .win-frame .cmp.up { color: #C42B1C; }
+html.dark .comp-mock .win-frame .cmp.down { color: #6CCB5F; }
+html.dark .comp-mock .win-frame .cmp.up { color: #FF99A4; }
+
+.comp-mock .win-month { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; }
+.comp-mock .win-month .kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #5F5F5F; }
+html.dark .comp-mock .win-month .kicker { color: #B0B0B0; }
+.comp-mock .win-month .val { font-weight: 600; }
+.comp-mock .win-month .muted { color: #4D4D4D; }
+html.dark .comp-mock .win-month .muted { color: #C2C2C2; }
+
+.comp-mock .win-quota .kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #5F5F5F; margin: 0 0 10px; }
+html.dark .comp-mock .win-quota .kicker { color: #B0B0B0; }
+.comp-mock .win-fly .qrow { margin: 0 0 12px; }
+.comp-mock .win-fly .qrow:last-child { margin-bottom: 0; }
+.comp-mock .win-fly .qrow .qreset { color: #5F5F5F; font-size: 12px; }
+html.dark .comp-mock .win-fly .qrow .qreset { color: #B0B0B0; }
+.comp-mock .win-fly .qrow .est { font-size: 10.5px; color: #5F5F5F; border: 1px solid #ADADAD; border-radius: 3px; }
+html.dark .comp-mock .win-fly .qrow .est { color: #B0B0B0; border-color: #6E6E6E; }
+.comp-mock .win-fly .qbar { height: 4px; border-radius: 2px; background: rgba(0,0,0,0.10); margin-top: 6px; }
+html.dark .comp-mock .win-fly .qbar { background: rgba(255,255,255,0.14); }
+.comp-mock .win-fly .qbar > i.fine { background: #0F7B0F; }
+.comp-mock .win-fly .qbar > i.mid { background: #CA5010; }
+.comp-mock .win-fly .qbar > i.low { background: #C42B1C; }
+html.dark .comp-mock .win-fly .qbar > i.fine { background: #6CCB5F; }
+html.dark .comp-mock .win-fly .qbar > i.mid { background: #F7630C; }
+html.dark .comp-mock .win-fly .qbar > i.low { background: #FF99A4; }
+
+.comp-mock .win-activity { font-size: 12px; color: #5F5F5F; }
+html.dark .comp-mock .win-activity { color: #B0B0B0; }
+.comp-mock .win-activity b { font-weight: 600; color: #2B2B2B; }
+html.dark .comp-mock .win-activity b { color: #E0E0E0; }
+
+.comp-mock .win-actions { display: flex; gap: 8px; align-items: center; }
+.comp-mock .win-btn {
+  appearance: none; font: inherit; font-size: 13px; cursor: pointer;
+  border-radius: 4px; border: 1px solid rgba(0,0,0,0.14);
+  border-bottom-color: rgba(0,0,0,0.28);
+  background: rgba(255,255,255,0.7); color: #1B1B1B;
+  padding: 5px 14px 6px;
+}
+.comp-mock .win-btn:hover { background: rgba(0,0,0,0.04); }
+html.dark .comp-mock .win-btn {
+  background: rgba(255,255,255,0.09); color: #F3F3F3;
+  border-color: rgba(255,255,255,0.10); border-bottom-color: rgba(255,255,255,0.20);
+}
+html.dark .comp-mock .win-btn:hover { background: rgba(255,255,255,0.13); }
+.comp-mock .win-btn.primary {
+  background: #0067C0; border-color: transparent; border-bottom-color: rgba(0,0,0,0.30);
+  color: #fff;
+}
+.comp-mock .win-btn.primary:hover { background: #1975C5; }
+html.dark .comp-mock .win-btn.primary { background: #4CC2FF; color: #0F1A24; font-weight: 600; }
+html.dark .comp-mock .win-btn.primary:hover { background: #69CDFF; }
+
+.comp-mock .win-foot {
+  display: flex; align-items: center;
+  background: rgba(0,0,0,0.03);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-radius: 0 0 8px 8px;
+  padding: 8px 16px !important;
+}
+html.dark .comp-mock .win-foot { background: rgba(255,255,255,0.04); border-top-color: rgba(255,255,255,0.08); }
+.comp-mock .win-foot .fresh { font-size: 11px; color: #767676; }
+html.dark .comp-mock .win-foot .fresh { color: #9A9A9A; }
+.comp-mock .win-foot .grow { flex: 1; min-width: 4px; }
+/* ===== Claude Code statusline mock (third companion figure) =====
+   Reuses the page's .terminal pattern; only scoped tweaks live here.
+   (.comp-wide spans the section's sm:grid-cols-2 grid, because landing.css is
+   purged and has no col-span utility, so the span lives here.) */
+@media (min-width: 640px) {
+  .comp-wide { grid-column: 1 / -1; }
+}
+.comp-mock .terminal { border-radius: 0; box-shadow: none; }
+.comp-mock .terminal-body { padding: 16px 18px; font-size: 12.5px; line-height: 1.9; overflow-x: auto; }
+.comp-mock .terminal-body::-webkit-scrollbar { height: 5px; }
+.comp-mock .terminal-body::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 3px; }
+.comp-mock .sl { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); white-space: nowrap; }
+.comp-mock .sl-dim { opacity: 0.6; }
+.comp-mock .sl-sep { color: #5C6370; }
+.comp-mock .sl-cyan { color: #56B6C2; }
+.comp-mock .sl-green { color: #98C379; }
+.comp-mock .sl-magenta { color: #C678DD; }
+.comp-mock .sl-yellow { color: #E5C07B; }
+.comp-mock .sl-red { color: #E06C75; }
+.comp-mock .sl-claude { color: #FF8700; }
+.comp-mock .sl-codex { color: #00AF87; }

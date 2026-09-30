@@ -1,0 +1,337 @@
+/* ---- Card system ---- */
+.surface {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm), var(--shadow-md), var(--shadow-lg), var(--hairline);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: transform var(--t-med) ease, box-shadow var(--t-med) ease, border-color var(--t-med) ease, background var(--t-med) ease;
+}
+.surface:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+  box-shadow: var(--shadow-md), var(--hairline);
+  transform: translateY(-3px);
+}
+html.dark .surface {
+  background: var(--glass);
+  border-color: var(--glass-line);
+  box-shadow: var(--shadow-sm), var(--shadow-md), var(--hairline);
+}
+html.dark .surface:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--glass-line));
+  box-shadow: var(--shadow-md), var(--shadow-lg), var(--hairline);
+}
+/* Static surface, no lift on hover (used for the hero preview & terminal) */
+.surface-static:hover { transform: none; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border-radius: 10px; padding: 12px 18px; min-height: 48px;
+  font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;
+  position: relative; overflow: hidden;
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease, background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28); }
+/* Pale at rest, solid on hover: the tint keeps the page calm until a
+   pointer actually lands on the action. */
+.btn-primary {
+  background: rgba(37, 99, 235, 0.07);
+  color: var(--color-primary);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.btn-primary svg path {
+  stroke: currentColor;
+  transition: stroke var(--t-fast) ease;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+  color: #ffffff;
+  border-color: rgba(59, 130, 246, 0.85);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.28), 0 3px 6px rgba(37, 99, 235, 0.16);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+html.dark .btn-primary {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93C5FD;
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+html.dark .btn-primary:hover {
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  color: #ffffff;
+  border-color: rgba(96, 165, 250, 0.75);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38), 0 3px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* The arrow leans into the direction of travel, and a sheen rides across
+   the primary button as it fills. The sheen is white on purpose: it only
+   becomes visible on hover, where the pale tint has already become the
+   solid blue fill it reads well against. */
+.btn svg, .cmd .copy-ic { transition: transform var(--t-fast) cubic-bezier(0.22, 1, 0.36, 1); }
+.btn:hover svg { transform: translateX(3px); }
+.btn:active svg { transform: translateX(1px); }
+.btn-primary::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-120%); opacity: 0;
+}
+.btn-primary:hover::after { transform: translateX(120%); opacity: 1; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease; }
+
+.btn-ghost {
+  background: rgba(15, 23, 42, 0.04); color: var(--color-text);
+  border: 1px solid rgba(226,232,240,0.9);
+}
+.btn-ghost:hover { background: rgba(15, 23, 42, 0.08); transform: translateY(-1px); border-color: rgba(30,64,175,0.3); }
+html.dark .btn-ghost { background: var(--glass); border-color: var(--glass-line); }
+html.dark .btn-ghost:hover { background: var(--wash, rgba(255,255,255,0.06)); border-color: color-mix(in srgb, var(--color-primary) 40%, var(--glass-line)); }
+
+/* Microsoft Store badge: Microsoft ships a dark badge for light backgrounds and a
+   light badge for dark ones. Keyed off html.dark so it follows the site toggle. */
+.ms-badge { display: inline-flex; border-radius: 6px; transition: transform .18s ease; }
+.ms-badge:hover { transform: translateY(-2px); }
+.ms-badge img { display: block; height: 44px; width: auto; }
+.ms-badge .ms-badge-d { display: none; }
+html.dark .ms-badge .ms-badge-l { display: none; }
+html.dark .ms-badge .ms-badge-d { display: block; }
+
+/* "Star on GitHub" button */
+.gh-star .gh-starglyph { transition: transform var(--t-fast) ease; }
+.gh-star:hover { border-color: color-mix(in srgb, var(--color-cta) 55%, var(--color-border)); }
+.gh-star:hover .gh-starglyph { transform: scale(1.18) rotate(-8deg); }
+.gh-count {
+  display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; line-height: 1.5;
+  background: color-mix(in srgb, var(--color-cta) 18%, transparent);
+  color: color-mix(in srgb, var(--color-cta) 86%, var(--color-text));
+}
+
+/* ---- Nav ----
+   Frosted glass, but the blur is only switched on once the bar is actually
+   sitting over content. At the top of the hero there is nothing behind it
+   to blur, so paying for a full-width backdrop filter there would be cost
+   with no visible return, and a backdrop filter on a fixed-width element
+   has to re-blur on every frame the page moves under it. */
+.site-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--color-bg) 62%, transparent);
+  border-bottom: 1px solid transparent;
+  transition: background var(--t-med) ease, box-shadow var(--t-med) ease,
+              border-color var(--t-med) ease, backdrop-filter var(--t-med) ease;
+}
+/* Once the hero starts leaving, the bar earns a real edge and the glass
+   switches on. */
+.site-nav.scrolled {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 6px 18px -12px rgba(15, 23, 42, 0.14);
+}
+html.dark .site-nav.scrolled {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-nav, .site-nav.scrolled { background: var(--color-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.nav-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; pointer-events: none; }
+.nav-progress > i {
+  display: block; height: 100%; width: 100%;
+  transform: scaleX(0); transform-origin: 0 50%; will-change: transform;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary) 55%, var(--color-cta));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+.nav-link {
+  position: relative;
+  font-size: 14px; font-weight: 600; color: var(--color-muted);
+  padding: 8px 12px; border-radius: 8px;
+  transition: color var(--t-fast) ease, background var(--t-fast) ease;
+}
+.nav-link:hover { color: var(--color-text); background: rgba(30,64,175,0.06); }
+/* Underline grows from the centre, so the nav reads as one considered set. */
+.nav-link::after {
+  content: ""; position: absolute; left: 18%; right: 18%; bottom: 2px; height: 2px;
+  border-radius: 2px; background: var(--color-primary);
+  transform: scaleX(0); transform-origin: 50% 50%;
+  transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-link:hover::after, .nav-link:focus-visible::after { transform: scaleX(1); }
+html.dark .nav-link:hover { background: rgba(96, 165, 250, 0.10); }
+
+/* ---- Eyebrow chip ---- */
+/* A blue wash on the light page, as in the dashboard. The dark page keeps
+   the accent in the text only, where a wash would read as a smudge. */
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  letter-spacing: 0.02em; color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+html.dark .chip { background: var(--pill-fill); border-color: var(--glass-line); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-cta); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-cta) 22%, transparent); }
+
+/* ---- Gradient headline accent ---- */
+.grad-text {
+  background: linear-gradient(120deg, var(--color-primary), var(--color-secondary) 60%, var(--color-cta));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---- Typographic polish ----
+   balance evens out the ragged last line of a heading; pretty stops the
+   browser leaving a single word stranded on the final line of a paragraph. */
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* Section headings share one scale so the page keeps a single voice.
+   Defined here rather than as Tailwind utilities so the prebuilt,
+   purged static/landing.css does not have to be regenerated for it. */
+.sec-title { font-size: 1.875rem; line-height: 1.14; }
+@media (min-width: 640px) { .sec-title { font-size: 2.5rem; } }
+
+/* Keyboard focus, everywhere. .btn keeps its own ring, so it opts out. */
+:where(a, button, select, input, summary):not(.btn):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ---- Section pacing ----
+   A barely-there tint every other section gives the long page a rhythm
+   instead of one undifferentiated white column. */
+/* z-index: 0 makes the section its own stacking context, so the -1
+   pseudo paints above the page background instead of behind it. */
+.band { position: relative; z-index: 0; }
+.band::before {
+  content: ""; position: absolute; z-index: -1;
+  top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100vw;
+  /* A faint blue wash, the same idea as the dark theme's: a grey one
+     reads as a dirty band on the white page. */
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--color-primary) 3.5%, transparent),
+    color-mix(in srgb, var(--color-primary) 1%, transparent));
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+}
+html.dark .band::before {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--color-primary) 7%, transparent),
+    color-mix(in srgb, var(--color-primary) 2.5%, transparent));
+  border-top-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* ---- Hero proof strip ---- */
+.proof {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px;
+  margin-top: 30px; padding-top: 22px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+.proof-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13.5px; font-weight: 600; color: var(--color-muted);
+}
+.proof-item b {
+  color: var(--color-text); font-weight: 800; font-size: 16px;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.proof-item .tick {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--color-cost);
+  background: color-mix(in srgb, var(--color-cost) 14%, transparent);
+}
+
+/* ---- Scroll hint ---- */
+.scroll-hint {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 26px; color: var(--color-muted);
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.scroll-hint.gone { opacity: 0; transform: translateY(10px); pointer-events: none; }
+.scroll-hint-mouse {
+  width: 20px; height: 32px; border-radius: 11px; flex: none; position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--color-muted) 55%, transparent);
+}
+.scroll-hint-mouse > i {
+  position: absolute; left: 50%; top: 6px; width: 3px; height: 7px; margin-left: -1.5px;
+  border-radius: 2px; background: var(--color-primary);
+  animation: hint-wheel 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes hint-wheel {
+  0%   { transform: translateY(0);    opacity: 0; }
+  25%  { opacity: 1; }
+  70%  { transform: translateY(11px); opacity: 0; }
+  100% { transform: translateY(11px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .scroll-hint-mouse > i { animation: none; } }
+
+/* ---- Install command pill ---- */
+.cmd {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 12px 14px 12px 18px; border-radius: 12px; min-height: 48px;
+  background: var(--color-text); color: #fff;
+  font-family: "Fira Code", monospace; font-size: 14.5px; font-weight: 500;
+  box-shadow: var(--shadow-md); cursor: pointer; border: none;
+  transition: transform var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); }
+.cmd:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.cmd .prompt { color: var(--color-cta); }
+.cmd .copy-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255,255,255,0.12); color: #fff; font-size: 12px; flex: none;
+}
+.cmd.copied .copy-ic { background: var(--color-cost); }
+
+/* ---- Feature / tool cards ---- */
+.feature-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 16%, transparent), color-mix(in srgb, var(--color-secondary) 12%, transparent));
+  color: var(--color-primary); border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+.tool-pill {
+  display: flex; align-items: center; gap: 11px; padding: 12px 16px;
+  border-radius: 12px; border: 1px solid var(--glass-line);
+  background: var(--pill-fill);
+  font-weight: 600; font-size: 14.5px; color: var(--color-text); text-decoration: none;
+  transition: transform var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease, background var(--t-fast) ease;
+}
+/* Deliberately no backdrop-filter here, and the same goes for .chip below.
+   Both sit on an already-opaque card, behind a veil of 4-7% in dark and 90%
+   in light -- at which strength there is nothing behind them left to blur.
+   All 34 of them did have one, and a backdrop filter has to re-sample what
+   is behind the element on every frame the page scrolls. Twenty-five tool
+   pills and nine chips re-sampling a flat card sixty times a second is
+   what turned a smooth scroll into a stutter, in exchange for an effect
+   that was not visible to begin with. The fill stands in for it. */
+.tool-pill:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); box-shadow: var(--shadow-md); }
+.tool-logo { transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--t-med) ease; }
+.tool-pill:hover .tool-logo { transform: scale(1.12) rotate(-3deg); }
+/* Card icon lifts a touch as its card does, so the two read as one object. */
+.feature-icon { transition: transform var(--t-med) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--t-med) ease; }
+.surface:hover .feature-icon { transform: translateY(-2px) scale(1.06); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-primary) 60%, transparent); }
+/* The hero preview used to carry a 9s infinite box-shadow "breath".
+   box-shadow is paint-only, so that animated forever even at rest and even
+   with nothing on screen: a permanent repaint loop for a decorative hint.
+   The same life is now carried by the JS-driven figure drift further down,
+   which costs nothing while the hero is scrolled away. */
+/* White logo chip, keeping every mark (incl. dark monochrome glyphs) legible in light & dark. */
+.tool-logo { width: 30px; height: 30px; flex: none; object-fit: contain; border-radius: 7px; background: #fff; padding: 4px; box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06); }
+/* Same chip for marks that are wordmarks: they carry the name, so the pill prints no label. */
+.tool-logo.is-wordmark { width: auto; height: 26px; max-width: 100%; padding: 4px 8px; }
+.tool-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }

@@ -1,0 +1,160 @@
+/* ---- Hero preview mini-dashboard ---- */
+.preview-topbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); background: rgba(255,255,255,0.45); }
+html.dark .preview-topbar { background: rgba(255,255,255,0.025); }
+.dot-r { width: 11px; height: 11px; border-radius: 50%; }
+/* The KPI cards are a layer inside the dashboard, not panels on the page,
+   so they sit a step further back than the dashboard that contains them. */
+/* Inset a step, so it reads as a layer inside the panel rather than a
+   second panel. Dark: lighter than nothing. Light: a faint grey wash,
+   because a second white veil on a white panel would not register. */
+.kpi { padding: 14px; border-radius: 12px; border: 1px solid var(--glass-line); background: rgba(11, 16, 32, 0.022); }
+html.dark .kpi { background: rgba(148, 176, 232, 0.035); }
+.kpi-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
+.kpi-val { font-size: 22px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
+
+/* mini heatmap */
+.mini-heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.hcell { width: 12px; height: 12px; border-radius: 3px; border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.l0 { background: #EEF2F7; } .l1 { background: #C7D2FE; } .l2 { background: #A5B4FC; }
+.l3 { background: #818CF8; } .l4 { background: #60A5FA; } .l5 { background: #3B82F6; }
+.l6 { background: #2563EB; } .l7 { background: #1D4ED8; } .l8 { background: #1E40AF; } .l9 { background: #172554; }
+html.dark .l0 { background: #172033; } html.dark .l1 { background: #1E293B; } html.dark .l2 { background: #1D4ED8; }
+html.dark .l3 { background: #2563EB; } html.dark .l4 { background: #3B82F6; } html.dark .l5 { background: #60A5FA; }
+html.dark .l6 { background: #93C5FD; } html.dark .l7 { background: #BFDBFE; } html.dark .l8 { background: #DBEAFE; } html.dark .l9 { background: #EFF6FF; }
+
+/* ---- Scroll mini-map ----
+   Fixed, pointer-only and desktop-only: below 1024px the header nav already
+   carries the same information and the column would sit on top of the
+   content. The blur is deliberately not used here: this is a fixed
+   full-height element, so a backdrop filter on it would re-run every frame
+   for the entire scroll. */
+.minimap {
+  position: fixed; z-index: 40;
+  right: clamp(10px, 1.4vw, 24px); top: 50%; transform: translateY(-50%);
+  pointer-events: none; user-select: none;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+html.js .minimap.ready { opacity: 1; }
+.minimap-rail {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 5px; align-items: flex-end;
+}
+/* The bar owns the whole 64px and the label floats beside it, out of flow.
+   In flow, an invisible-but-space-taking label would push the bar off its
+   anchor by whatever that language happens to be long. */
+.minimap-node {
+  position: relative;
+  display: flex; align-items: center;
+  height: 7px; width: 64px;
+  pointer-events: auto;
+}
+/* The bar is 7px tall, which is not something anyone can aim at. The link
+   is stretched well past it without disturbing the layout, so the rail is
+   as easy to hit as it looks to be. */
+.minimap-node > a {
+  position: absolute; inset: -6px -6px -6px 0;
+  display: flex; align-items: center;
+  text-decoration: none; color: inherit; border-radius: 4px;
+}
+.minimap-node > a:focus-visible {
+  outline: 2px solid var(--color-primary); outline-offset: 2px;
+}
+/* Pointing anywhere at the rail lifts the whole thing, not just the bar
+   under the pointer. It reads as the rail leaning in to meet you, and it
+   gives the labels room to be read without a per-bar animation. */
+.minimap-rail { transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 100% 50%; }
+.minimap:hover .minimap-rail,
+.minimap:focus-within .minimap-rail { transform: scale(1.12); }
+/* Bars grow leftwards from a spine on the right, so the rail has one edge
+   the eye can follow instead of a ragged one, and length reads as distance
+   travelled into the content rather than away from it. */
+.minimap-bar {
+  display: block; height: 4px; width: 64px; border-radius: 999px;
+  transform: scaleX(0.2); transform-origin: 100% 50%;
+  background: color-mix(in srgb, var(--color-text) 26%, transparent);
+  will-change: transform;
+  transition: background 0.35s ease;
+}
+.minimap-node.on .minimap-bar { background: color-mix(in srgb, var(--color-text) 62%, transparent); }
+.minimap-node.active .minimap-bar { background: var(--color-text); }
+.minimap-tip {
+  position: absolute; right: calc(100% + 12px); top: 50%;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--color-text); white-space: nowrap;
+  max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+  padding: 4px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  border: 1px solid var(--glass-line);
+  opacity: 0; transform: translate(6px, -50%);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.minimap-node:hover .minimap-bar,
+.minimap-node:focus-visible .minimap-bar { background: var(--color-text); transform: scaleX(1) !important; }
+.minimap-node:hover .minimap-tip,
+.minimap-node:focus-visible .minimap-tip { opacity: 1; transform: translate(0, -50%); }
+@media (max-width: 1023px) { .minimap { display: none; } }
+html:not(.js) .minimap { display: none; }
+
+/* Under reduced motion the rail stands down: its bar lengths are
+   rewritten every frame as they track the scroll, and the nav's
+   progress hairline still reports position. */
+@media (prefers-reduced-motion: reduce) {
+  .minimap { display: none; }
+}
+
+/* ---- Mini-dashboard entrance stage ----
+   perspective only reaches direct children, so the KPI grid and the
+   heatmap each get their own 3D context rather than one on .preview-wrap. */
+.kpi-stage { perspective: 900px; }
+#miniHeat { perspective: 620px; }
+/* Layer promotion for the entrance, and only for the entrance.
+   will-change is a standing instruction to the compositor, not a hint for
+   the next few frames: a promoted element holds its own texture until the
+   property is taken away again. Left on permanently, 140 heatmap cells
+   and 4 KPI cards meant 144 extra composited layers for the rest of the
+   page's life -- which is what turned a smooth scroll into a stutter, and
+   it is invisible until someone scrolls. The script adds `.will-anim`
+   before the timeline runs and drops it the moment the timeline ends. */
+.kpi-in, .hcell { backface-visibility: hidden; }
+.kpi-in.will-anim, .hcell.will-anim { will-change: transform, opacity; }
+
+/* floating glow behind preview */
+.preview-wrap { position: relative; }
+.preview-wrap::before {
+  content: ""; position: absolute; inset: -8% -6% -12% -6%; z-index: -1;
+  background: radial-gradient(60% 60% at 70% 10%, rgba(56,104,196,0.15), transparent 70%),
+              radial-gradient(50% 50% at 10% 90%, rgba(245,158,11,0.07), transparent 70%);
+  filter: blur(22px);
+}
+
+/* ---- Terminal block ---- */
+/* A terminal is a dark object in both themes. On the dark page it is
+   glass; on the light page it stays dark, but takes the same edge and the
+   same elevation so it reads as a deliberate slab rather than a hole. */
+.terminal {
+  background: #0D1322; border-radius: 14px; overflow: hidden;
+  /* A light hairline, because a dark fill under a dark hairline has no
+     edge at all; this is the one surface that stays dark in light mode. */
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: var(--shadow-lg);
+}
+html.dark .terminal {
+  background: rgba(148, 176, 232, 0.045);
+  border-color: var(--glass-line);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+.terminal-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.terminal-body { padding: 20px 22px; font-family: "Fira Code", monospace; font-size: 14px; line-height: 2; color: #E2E8F0; }
+.terminal-body .p { color: var(--color-cta); }
+.terminal-body .c { color: #fff; }
+.terminal-body .o { color: #94A3B8; }
+.terminal-body .ok { color: #34D399; }
+
+/* ---- Step number ---- */
+.step-num {
+  width: 30px; height: 30px; border-radius: 9px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: "Fira Code", monospace; font-weight: 700; font-size: 14px;
+  color: #fff; background: linear-gradient(135deg, var(--color-primary), #2563EB);
+}
