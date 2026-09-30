@@ -335,3 +335,99 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
 /* Same chip for marks that are wordmarks: they carry the name, so the pill prints no label. */
 .tool-logo.is-wordmark { width: auto; height: 26px; max-width: 100%; padding: 4px 8px; }
 .tool-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+/* ---- Supported tools, as one row of drifting names ----
+   The tools used to sit in a three-column grid of twenty-five bordered
+   pills, each carrying a logo. The grid read as a wall: every box was the
+   same weight, so the eye had nothing to land on and the section took
+   eleven rows to say what one line of names says.
+
+   One row of names, drifting slowly, says it in one.
+
+   The row is full bleed. The section around it is capped at 1180px and
+   centred, so the ticker has to escape that cap to reach the edges of the
+   window, which is what the 100vw width and the negative margin below are
+   for. It carried the cap as well at first, which is why the row used to
+   start part way across the screen and stop 260px short of the right edge
+   on a 1440px display: the text was laid out inside a centred 1180px box
+   and then clipped by a row that ran the full width. */
+.ticker {
+  --tick-gap: 32px;
+  --tick-fade: 90px;
+  position: relative;
+  margin-top: 40px;
+  /* Break out of the centred column so the names run edge to edge. The
+     negative margin pulls it back by half the difference between the
+     window and the column, which is what centres the overflow. */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+.tick-row { overflow: hidden; }
+/* Fade the cut at each end. Without it a name is sliced off by a hard
+   vertical line, which reads as a clipping bug rather than as a run.
+   The fade is on the row rather than on the track, so it stays put while
+   the names travel underneath it. */
+.ticker::before, .ticker::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: var(--tick-fade);
+  pointer-events: none; z-index: 2;
+}
+.ticker::before { left: 0; background: linear-gradient(to right, var(--color-bg), transparent); }
+.ticker::after { right: 0; background: linear-gradient(to left, var(--color-bg), transparent); }
+.tick-track {
+  display: flex; align-items: center; width: max-content;
+  will-change: transform;
+  animation: tick-drift 52s linear infinite;
+}
+.tick-item {
+  flex: none;
+  display: inline-flex; align-items: center;
+  margin-right: var(--tick-gap);
+  font-weight: 600; font-size: 15px; letter-spacing: -0.005em;
+  color: var(--color-muted); text-decoration: none; white-space: nowrap;
+  transition: color var(--t-fast) ease;
+}
+.tick-item::after {
+  /* The separator travels with the name rather than sitting on the row, so
+     the gap between two names is the same all the way round the loop and
+     does not change at the point where one copy becomes the next. */
+  content: ''; width: 4px; height: 4px; border-radius: 50%;
+  margin-left: var(--tick-gap);
+  background: color-mix(in srgb, var(--color-text) 22%, transparent);
+}
+.tick-item:hover { color: var(--color-text); }
+.tick-item:focus-visible {
+  color: var(--color-text); outline: 2px solid var(--color-primary);
+  outline-offset: 3px; border-radius: 4px;
+}
+/* The row stands still while a name is pointed at, so a link can be hit.
+   A row still drifting under the pointer is worse than no row at all. */
+.tick-row:hover .tick-track { animation-play-state: paused; }
+
+@keyframes tick-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* Reduced motion, no JavaScript, or a device the capability gate turned down:
+   the names stand still and wrap into a plain list. A row that cannot move
+   is not a row, so the two copies collapse to one and the track becomes an
+   ordinary centred wrap. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker { width: auto; margin-left: auto; margin-right: auto; }
+  .ticker::before, .ticker::after { display: none; }
+  .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+  .tick-item { margin-right: 0; }
+  .tick-item[aria-hidden='true'] { display: none; }
+}
+/* html.js is added by the first script on the page. Without it there is no
+   class to gate on, so the names must not wait on an animation that was
+   never going to be allowed to run anyway. */
+html:not(.js) .ticker .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+html:not(.js) .ticker::before, html:not(.js) .ticker::after { display: none; }
+html:not(.js) .ticker .tick-item[aria-hidden='true'] { display: none; }
+/* The page's capability gate has already made this call in JS: a metered or
+   memory-constrained connection, two cores or 2GB. The verdict is read off
+   <html> rather than asked a second time here. */
+html:not(.can-animate) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+html:not(.can-animate)::before, html:not(.can-animate)::after { display: none; }
+html:not(.can-animate) .tick-item[aria-hidden='true'] { display: none; }
