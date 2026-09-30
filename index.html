@@ -435,65 +435,71 @@
         <p class="text-muted mt-3" data-i18n="tools.sub">Tokdash unifies usage across twenty-four AI coding tools, letting you switch agents without losing the bill.</p>
       </div>
 
-      <!-- The supported tools as one row of names, drifting slowly across
-           the full width of the window. The row carries two identical
-           copies of the list so the end of one run is the start of the
-           next, with no seam and no jump. The second copy is hidden from
-           screen readers and out of the tab order, so the names are read
-           once and reached once. -->
+      <!-- The supported tools as one row of marks and names, drifting
+           slowly across the full width of the window. Each name keeps
+           its own logo, so the row still reads as the set of tools it
+           replaced rather than as a list of words.
+
+           The row carries two identical copies of the list so the end
+           of one run is the start of the next, with no seam and no
+           jump. The second copy is hidden from screen readers and out
+           of the tab order, so the names are read once and reached
+           once. The logos carry no alt text: a name sits beside every
+           one of them, so announcing the mark as well would say each
+           tool twice. -->
       <div class="ticker reveal">
         <div class="tick-row">
           <div class="tick-track">
-          <a class="tick-item" href="https://openai.com/codex/" target="_blank" rel="noopener">Codex</a>
-          <a class="tick-item" href="https://www.claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>
-          <a class="tick-item" href="https://opencode.ai/" target="_blank" rel="noopener">OpenCode</a>
-          <a class="tick-item" href="https://github.com/google-gemini/gemini-cli" target="_blank" rel="noopener">Gemini CLI</a>
-          <a class="tick-item" href="https://antigravity.google/" target="_blank" rel="noopener">Antigravity</a>
-          <a class="tick-item" href="https://openclaw.ai/" target="_blank" rel="noopener">OpenClaw</a>
-          <a class="tick-item" href="https://github.com/MoonshotAI/kimi-cli" target="_blank" rel="noopener">Kimi CLI</a>
-          <a class="tick-item" href="https://mimo.xiaomi.com/coder" target="_blank" rel="noopener">MiMo Code</a>
-          <a class="tick-item" href="https://grok.com/build" target="_blank" rel="noopener">Grok Build</a>
-          <a class="tick-item" href="https://pi.dev/" target="_blank" rel="noopener">Pi</a>
-          <a class="tick-item" href="https://github.com/features/copilot" target="_blank" rel="noopener">Copilot CLI</a>
-          <a class="tick-item" href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener">Hermes</a>
-          <a class="tick-item" href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">DeepSeek Harness</a>
-          <a class="tick-item" href="https://reasonix.io/" target="_blank" rel="noopener">Reasonix</a>
-          <a class="tick-item" href="https://zcode.z.ai/" target="_blank" rel="noopener">ZCode</a>
-          <a class="tick-item" href="https://www.workbuddy.ai/" target="_blank" rel="noopener">WorkBuddy</a>
-          <a class="tick-item" href="https://qoder.com/" target="_blank" rel="noopener">Qoder IDE</a>
-          <a class="tick-item" href="https://qoder.com/" target="_blank" rel="noopener">Qoder CLI</a>
-          <a class="tick-item" href="https://omp.sh/" target="_blank" rel="noopener">omp</a>
-          <a class="tick-item" href="https://kilocode.ai/" target="_blank" rel="noopener">Kilo Code</a>
-          <a class="tick-item" href="https://cline.bot/" target="_blank" rel="noopener">Cline</a>
-          <a class="tick-item" href="https://zed.dev/" target="_blank" rel="noopener">Zed</a>
-          <a class="tick-item" href="https://github.com/QwenLM/qwen-code" target="_blank" rel="noopener">Qwen Code</a>
-          <a class="tick-item" href="https://charm.land/crush" target="_blank" rel="noopener">Crush</a>
-          <a class="tick-item" href="https://dev.meta.ai/docs/muse-code" target="_blank" rel="noopener">Muse Code</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://openai.com/codex/" target="_blank" rel="noopener">Codex</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://www.claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://opencode.ai/" target="_blank" rel="noopener">OpenCode</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/google-gemini/gemini-cli" target="_blank" rel="noopener">Gemini CLI</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://antigravity.google/" target="_blank" rel="noopener">Antigravity</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://openclaw.ai/" target="_blank" rel="noopener">OpenClaw</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/MoonshotAI/kimi-cli" target="_blank" rel="noopener">Kimi CLI</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://mimo.xiaomi.com/coder" target="_blank" rel="noopener">MiMo Code</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://grok.com/build" target="_blank" rel="noopener">Grok Build</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://pi.dev/" target="_blank" rel="noopener">Pi</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/features/copilot" target="_blank" rel="noopener">Copilot CLI</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener">Hermes</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">DeepSeek Harness</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://reasonix.io/" target="_blank" rel="noopener">Reasonix</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://zcode.z.ai/" target="_blank" rel="noopener">ZCode</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://www.workbuddy.ai/" target="_blank" rel="noopener">WorkBuddy</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://qoder.com/" target="_blank" rel="noopener">Qoder IDE</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://qoder.com/" target="_blank" rel="noopener">Qoder CLI</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://omp.sh/" target="_blank" rel="noopener">omp</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://kilocode.ai/" target="_blank" rel="noopener">Kilo Code</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://cline.bot/" target="_blank" rel="noopener">Cline</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://zed.dev/" target="_blank" rel="noopener">Zed</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/QwenLM/qwen-code" target="_blank" rel="noopener">Qwen Code</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://charm.land/crush" target="_blank" rel="noopener">Crush</a>
-          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://dev.meta.ai/docs/muse-code" target="_blank" rel="noopener">Muse Code</a>
+          <a class="tick-item" href="https://openai.com/codex/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/codex.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Codex</span></a>
+          <a class="tick-item" href="https://www.claude.com/product/claude-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/claude.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Claude Code</span></a>
+          <a class="tick-item" href="https://opencode.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/opencode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>OpenCode</span></a>
+          <a class="tick-item" href="https://github.com/google-gemini/gemini-cli" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/gemini.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Gemini CLI</span></a>
+          <a class="tick-item" href="https://antigravity.google/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/antigravity.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Antigravity</span></a>
+          <a class="tick-item" href="https://openclaw.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/openclaw.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>OpenClaw</span></a>
+          <a class="tick-item" href="https://github.com/MoonshotAI/kimi-cli" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/kimi.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Kimi CLI</span></a>
+          <a class="tick-item" href="https://mimo.xiaomi.com/coder" target="_blank" rel="noopener"><img class="tick-logo is-wordmark" src="/static/icons/agents/mimo.svg" alt="" loading="lazy" onerror="this.style.display=\'none\'"></a>
+          <a class="tick-item" href="https://grok.com/build" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/grok.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Grok Build</span></a>
+          <a class="tick-item" href="https://pi.dev/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/pi.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Pi</span></a>
+          <a class="tick-item" href="https://github.com/features/copilot" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/copilot.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Copilot CLI</span></a>
+          <a class="tick-item" href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/hermes.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Hermes</span></a>
+          <a class="tick-item" href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/dsh.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>DeepSeek Harness</span></a>
+          <a class="tick-item" href="https://reasonix.io/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/reasonix.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Reasonix</span></a>
+          <a class="tick-item" href="https://zcode.z.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/zcode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>ZCode</span></a>
+          <a class="tick-item" href="https://www.workbuddy.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/workbuddy.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>WorkBuddy</span></a>
+          <a class="tick-item" href="https://qoder.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qoder.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qoder IDE</span></a>
+          <a class="tick-item" href="https://qoder.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qoder.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qoder CLI</span></a>
+          <a class="tick-item" href="https://omp.sh/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/omp.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>omp</span></a>
+          <a class="tick-item" href="https://kilocode.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/kilocode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Kilo Code</span></a>
+          <a class="tick-item" href="https://cline.bot/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/cline.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Cline</span></a>
+          <a class="tick-item" href="https://zed.dev/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/zed.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Zed</span></a>
+          <a class="tick-item" href="https://github.com/QwenLM/qwen-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qwen_code.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qwen Code</span></a>
+          <a class="tick-item" href="https://charm.land/crush" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/crush.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Crush</span></a>
+          <a class="tick-item" href="https://dev.meta.ai/docs/muse-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/muse.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Muse Code</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://openai.com/codex/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/codex.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Codex</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://www.claude.com/product/claude-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/claude.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Claude Code</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://opencode.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/opencode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>OpenCode</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/google-gemini/gemini-cli" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/gemini.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Gemini CLI</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://antigravity.google/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/antigravity.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Antigravity</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://openclaw.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/openclaw.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>OpenClaw</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/MoonshotAI/kimi-cli" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/kimi.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Kimi CLI</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://mimo.xiaomi.com/coder" target="_blank" rel="noopener"><img class="tick-logo is-wordmark" src="/static/icons/agents/mimo.svg" alt="" loading="lazy" onerror="this.style.display=\'none\'"></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://grok.com/build" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/grok.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Grok Build</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://pi.dev/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/pi.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Pi</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/features/copilot" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/copilot.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Copilot CLI</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/hermes.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Hermes</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/dsh.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>DeepSeek Harness</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://reasonix.io/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/reasonix.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Reasonix</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://zcode.z.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/zcode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>ZCode</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://www.workbuddy.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/workbuddy.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>WorkBuddy</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://qoder.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qoder.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qoder IDE</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://qoder.com/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qoder.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qoder CLI</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://omp.sh/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/omp.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>omp</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://kilocode.ai/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/kilocode.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Kilo Code</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://cline.bot/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/cline.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Cline</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://zed.dev/" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/zed.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Zed</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://github.com/QwenLM/qwen-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/qwen_code.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Qwen Code</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://charm.land/crush" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/crush.png" alt="" loading="lazy" onerror="this.style.display='none'"><span>Crush</span></a>
+          <a class="tick-item" aria-hidden="true" tabindex="-1" href="https://dev.meta.ai/docs/muse-code" target="_blank" rel="noopener"><img class="tick-logo" src="/static/icons/agents/muse.svg" alt="" loading="lazy" onerror="this.style.display='none'"><span>Muse Code</span></a>
           </div>
         </div>
       </div>
