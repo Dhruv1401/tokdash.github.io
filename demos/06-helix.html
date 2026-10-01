@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 6 · helix</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.26);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(1000px 760px at 50% 46%, rgba(30, 48, 108, 0.36), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 660px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* The stage supplies no perspective at all, and that is load-bearing rather
+     than lazy: see the note in the script. */
+  .field {
+    position: relative;
+    width: min(1120px, 94vw);
+    height: min(520px, 58vh);
+    border-radius: 20px;
+    overflow: hidden;
+    background: color-mix(in srgb, #ffffff 3%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(154, 184, 240, 0.10);
+  }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* One slot per mark, placed by script each frame: x is fixed for the whole
+     loop and only the height moves. */
+  .slot {
+    position: absolute; left: 0; top: 0;
+    width: 0; height: 0;
+    will-change: transform;
+  }
+
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    animation: depth var(--period) linear infinite;
+    animation-delay: var(--delay);
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .mark::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; width: 190%; height: 190%;
+    margin: -95% 0 0 -95%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(126, 158, 255, 0.42), rgba(104, 146, 255, 0.12) 52%, transparent 78%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  @keyframes depth {
+    0%, 100% { opacity: 0.2; transform: scale(0.6); }
+    50%      { opacity: 1;   transform: scale(1.16); }
+  }
+  @keyframes depth-glow {
+    0%, 100% { opacity: 0; transform: scale(0.6); }
+    50%      { opacity: 1; transform: scale(1.16); }
+  }
+
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 8px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  .mark:hover, .mark:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--glow); }
+  /* The other mark of the pointed-at pair lifts with it, so the pairing is
+     obvious without having to read the names. */
+  .mark.is-paired:not(:hover):not(:focus-visible) {
+    box-shadow: 0 0 0 1px rgba(150, 186, 255, 0.5),
+                0 0 20px rgba(104, 146, 255, 0.32);
+  }
+
+  figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark, .mark::before { animation: none; }
+    /* Standing still, every mark is at full size and full strength: the
+       helix reads as a diagram of where the marks live rather than as a
+       thing that has stopped. */
+    .mark { opacity: 1; transform: scale(1); }
+    .mark::before { opacity: 0.85; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 6 · helix</h1>
+  <p>The tools as a double helix: twelve on one strand, twelve on the other,
+     each rung a pair, the whole thing turning once every forty-six seconds.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="field" id="field">
+    <canvas id="wires"></canvas>
+  </div>
+  <figcaption>
+    A helix is the one shape here whose strands genuinely cross the viewer's
+    line of sight, and that is exactly why it runs
+    <b>sideways</b>. Every mark's position across the panel is fixed for the
+    whole turn — only its height moves — so the two strands of a rung are
+    <b>45px</b> apart horizontally whatever the twist is doing, and a mark
+    never draws wider than <b>30px</b>. No perspective is used either, because
+    a perspective projection would scale that fixed 45px differently for
+    marks at the front and marks at the back, and the separation would stop
+    being a number anyone could rely on.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // The helix lies along the panel's width. That is the whole trick, and it is
+  // worth spelling out, because the obvious arrangement is a vertical helix
+  // and it cannot be made safe.
+  //
+  // Turned upright, a mark sits at height R*cos(a) where a is its angle round
+  // the axis, and the two marks of a rung are 180 degrees apart, so their
+  // heights are R*cos(a) and -R*cos(a). Every rotation of the helix brings
+  // some pair through cos(a) = 0, at which point both marks of that pair are
+  // at exactly the same height and only 45px of horizontal separation is left
+  // to tell them apart -- and which pair that is changes all the way round.
+  // Offsetting the second strand half a rung down does not save it either,
+  // because then a mark has to clear the other strand's marks by that offset
+  // at the moment they are edge on, and half a rung is barely a mark wide.
+  //
+  // Lying down, the same rotation moves every mark up and down but leaves its
+  // position across the panel untouched. The axis of rotation is the axis the
+  // marks are separated along, so the separation is invariant:
+  //
+  //     two marks on the same rung are RUNG apart, and the second strand is
+  //     offset half a rung, so the least any A-mark and any B-mark are ever
+  //     apart across the panel is RUNG / 2 = 45px;
+  //     two marks on the same strand are a whole rung apart, or more.
+  //
+  // Distance on screen is at least that 45px whatever the height happens to
+  // be, because distance is at least the difference in x. And it holds for
+  // every phase of the turn, not just the ones that happen to look well.
+  //
+  // No perspective is used for the same reason. A projection would scale the
+  // 45px by the front-to-back factor of each mark, so a mark at the back would
+  // sit at 0.96 of the separation and one at the front at 1.04, and the
+  // closest the pair could ever come would no longer be 45px at all but some
+  // number that depends on the phase. Depth comes from each mark swelling and
+  // brightening as it comes to the front instead, which is what the other
+  // designs do and is a cue in its own right.
+  var RUNGS = 12;        // 12 per strand, 24 in all
+  var RUNG = 90;         // px between neighbouring rungs
+  var RADIUS = 168;      // px from the axis to a mark
+  var DEGREES_PER_RUNG = 45;  // 1.5 turns along the helix
+  var PERIOD = 46;       // seconds for one full turn
+
+  var field = document.getElementById('field');
+  var canvas = document.getElementById('wires');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, mid = 0;
+  var strand = [];       // one entry per mark, in the order they were built
+  var reduce = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var LOGOS = '../static/icons/agents/';
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = field.clientWidth;
+    H = field.clientHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mid = H / 2;
+  }
+
+  // Where the helix starts: centred, with room for the widest rung at each
+  // end.
+  function origin() {
+    return Math.max(RADIUS + 20, (W - RUNGS * RUNG) / 2 + RUNG / 2);
+  }
+
+  function build() {
+    var x0 = origin();
+    for (var s = 0; s < 2; s++) {
+      for (var i = 0; i < RUNGS; i++) {
+        var tool = TOOLS[s * RUNGS + i];
+        var x = x0 + i * RUNG + (s ? RUNG / 2 : 0);
+        var a = i * DEGREES_PER_RUNG + (s ? 180 : 0);
+
+        var slot = document.createElement('div');
+        slot.className = 'slot';
+
+        var m = document.createElement('a');
+        m.className = 'mark';
+        m.href = '#';
+        m.dataset.name = tool[0];
+        m.style.setProperty('--period', PERIOD + 's');
+        // Brightest and largest when the mark is at the front of the turn,
+        // which is a quarter of the way round from the top of the helix.
+        m.style.setProperty('--delay',
+          (((90 - a) / 360) * PERIOD - PERIOD / 2).toFixed(2) + 's');
+
+        var img = document.createElement('img');
+        img.src = LOGOS + tool[1];
+        img.alt = '';
+        img.loading = 'lazy';
+        img.onerror = function () { this.style.display = 'none'; };
+        m.appendChild(img);
+
+        var tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = tool[0];
+        m.appendChild(tag);
+
+        slot.appendChild(m);
+        field.appendChild(slot);
+        strand.push({ x: x, a: a, el: slot, node: m, rung: i, side: s });
+      }
+    }
+  }
+
+  // The height a mark is at for a given twist, and how far forward it is.
+  // sin(a) is the depth: +1 is nearest the viewer, -1 is furthest.
+  function height(a) { return mid + RADIUS * Math.cos(a * Math.PI / 180); }
+  function near(a) { return Math.sin(a * Math.PI / 180); }
+
+  // The strands, the rungs and the light between them, all drawn from the
+  // same numbers the marks are placed with, so the curves always run exactly
+  // through their own marks.
+  function draw(turn) {
+    ctx.clearRect(0, 0, W, H);
+    var x0 = origin();
+
+    // The backbone of each strand: one polyline per strand, brightened a
+    // segment at a time by how far forward that segment is, so the near run
+    // of the curve is the bright one and the far run fades back.
+    for (var s = 0; s < 2; s++) {
+      var prev = null;
+      for (var i = 0; i <= 220; i++) {
+        var t = i / 220;
+        var x = x0 + s * (RUNG / 2) + t * RUNGS * RUNG;
+        var a = turn + t * RUNGS * DEGREES_PER_RUNG + (s ? 180 : 0);
+        var y = height(a);
+        if (prev) {
+          var f = (near(a) + 1) / 2;
+          ctx.beginPath();
+          ctx.moveTo(prev[0], prev[1]);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = 'rgba(' +
+            Math.round(120 + 40 * f) + ',' +
+            Math.round(152 + 42 * f) + ',' +
+            Math.round(240 + 15 * f) + ',' +
+            (0.1 + 0.5 * f * f).toFixed(3) + ')';
+          ctx.lineWidth = 1 + 1.6 * f;
+          ctx.stroke();
+        }
+        prev = [x, y];
+      }
+    }
+
+    // The rungs, each one joining the two marks of a pair. They lean, because
+    // the second strand is offset half a rung along the helix.
+    for (var r = 0; r < RUNGS; r++) {
+      var xa = x0 + r * RUNG;
+      var aa = turn + r * DEGREES_PER_RUNG;
+      var xb = xa + RUNG / 2;
+      var ab = aa + 180;
+      var fa = (near(aa) + 1) / 2;
+      var fb = (near(ab) + 1) / 2;
+      var f = Math.min(fa, fb);
+      // The rung of the mark under the pointer is pulled out of the crowd,
+      // which is how you find out which two tools are a pair.
+      var lit = hovered >= 0 && strand[hovered].rung === r;
+      ctx.beginPath();
+      ctx.moveTo(xa, height(aa));
+      ctx.lineTo(xb, height(ab));
+      ctx.strokeStyle = lit
+        ? 'rgba(186, 212, 255, 0.85)'
+        : 'rgba(150, 180, 245, ' + (0.05 + 0.4 * f * f).toFixed(3) + ')';
+      ctx.lineWidth = lit ? 2 : 1 + 1.2 * f;
+      ctx.stroke();
+
+      // A brighter bead where each rung meets the forward strand: the point
+      // on the helix nearest the viewer, and the thing that makes the turn
+      // legible as a turn.
+      for (var k = 0; k < 2; k++) {
+        var px = k ? xb : xa;
+        var pa = k ? ab : aa;
+        var pf = (near(pa) + 1) / 2;
+        if (pf < 0.55 && !lit) continue;
+        var rr = lit ? 34 : 22;
+        var g = ctx.createRadialGradient(px, height(pa), 0, px, height(pa), rr);
+        g.addColorStop(0, 'rgba(190, 216, 255, ' + (lit ? 0.5 : 0.3 * pf).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(190, 216, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(px, height(pa), rr, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      }
+    }
+  }
+
+  function lightPair(i) {
+    for (var k = 0; k < strand.length; k++) {
+      var same = i >= 0 && strand[k].rung === strand[i].rung;
+      strand[k].node.classList.toggle('is-paired', same);
+    }
+  }
+
+  function place(turn) {
+    for (var i = 0; i < strand.length; i++) {
+      var s = strand[i];
+      s.el.style.transform =
+        'translate3d(' + s.x.toFixed(1) + 'px,' + height(s.a + turn).toFixed(1) + 'px,0)';
+    }
+  }
+
+  var hovered = -1;
+  field.addEventListener('pointerover', function (e) {
+    var el = e.target.closest ? e.target.closest('.mark') : null;
+    hovered = el ? strand.map(function (s) { return s.node; }).indexOf(el) : -1;
+    lightPair(hovered);
+  });
+  field.addEventListener('pointerout', function (e) {
+    if (!(e.relatedTarget && e.relatedTarget.closest &&
+          e.relatedTarget.closest('.mark'))) {
+      hovered = -1;
+      lightPair(-1);
+    }
+  });
+
+  var last = 0;
+  function frame(now) {
+    var dt = last ? (now - last) / 1000 : 0;
+    last = now;
+    var turn = ((now / 1000) / PERIOD) * 360;
+    place(turn);
+    draw(turn);
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  build();
+
+  // Standing still, the helix is one arrangement, laid out and wired, with
+  // every mark at full size: a diagram of where the marks live rather than a
+  // helix that has stopped turning.
+  if (reduce) {
+    place(0);
+    draw(0);
+  } else {
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', function () {
+    resize();
+    place(reduce ? 0 : ((performance.now() / 1000) / PERIOD) * 360);
+    draw(reduce ? 0 : ((performance.now() / 1000) / PERIOD) * 360);
+  });
+})();
+</script>
+</body>
+</html>
