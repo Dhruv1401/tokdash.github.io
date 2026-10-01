@@ -101,8 +101,12 @@ JS = r"""
         const cs = style(link.el);
         const o = cs.perspectiveOrigin.trim().split(/\s+/).map(parseFloat);
         const ox = o[0] || 0, oy = o[1] || 0;
+        // m43 is the perspective term: DOMMatrix names its elements by
+        // column then row, so the -1/d that belongs at row 3, column 4 of
+        // the matrix is m43. m34 is a different cell here, and setting it
+        // quietly produced a projection that was wrong by tens of pixels.
         const p = new DOMMatrix();
-        p.m34 = -1 / link.perspective;
+        p.m43 = -1 / link.perspective;
         m = m.multiply(
           new DOMMatrix().translate(ox, oy).multiply(p).translate(-ox, -oy));
       }

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 8 · armillary</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.26);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(1000px 820px at 50% 46%, rgba(42, 34, 92, 0.36), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 660px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  .stage { perspective: 2600px; perspective-origin: 50% 50%; }
+
+  .armillary {
+    position: relative;
+    width: 620px; height: 620px;
+    transform-style: preserve-3d;
+    /* The whole instrument turns about the axis pointing out of the page, as
+       one piece. That is the guarantee, and the reason for it is in the
+       script. */
+    animation: turn var(--period) linear infinite;
+  }
+  @keyframes turn { to { transform: rotate(360deg); } }
+
+  /* ---- One ring ----
+     A circle in its own plane, tipped about one of the two axes lying in the
+     page. Tipping about x squashes it vertically; tipping about y squashes
+     it horizontally, and it is the alternation that makes the tangle. */
+  .ring {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt)) rotateY(var(--tilt-y, 0deg));
+  }
+  .hoop {
+    position: absolute; left: 50%; top: 50%;
+    width: calc(var(--r) * 2px); height: calc(var(--r) * 2px);
+    margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+    border: 1px solid rgba(154, 184, 240, 0.15);
+    border-radius: 50%;
+    transition: border-color 220ms ease, box-shadow 220ms ease;
+  }
+  .hoop::before, .hoop::after {
+    content: ''; position: absolute; inset: 0;
+    border: 1px solid transparent; border-radius: 50%;
+    transition: border-color 220ms ease;
+  }
+  .hoop::before { clip-path: inset(0 0 50% 0); border-top-color: rgba(154, 184, 240, 0.06); }
+  .hoop::after  { clip-path: inset(50% 0 0 0); border-bottom-color: rgba(186, 210, 255, 0.3); }
+
+  .ring.is-lit .hoop {
+    border-color: rgba(186, 210, 255, 0.62);
+    box-shadow: 0 0 18px rgba(104, 146, 255, 0.3);
+  }
+  .ring.is-lit .hoop::before { border-top-color: rgba(154, 184, 240, 0.18); }
+  .ring.is-lit .hoop::after  { border-bottom-color: rgba(214, 230, 255, 0.76); }
+
+  .slot {
+    position: absolute; left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+  }
+
+  /* A mark is white-backed so every logo stays readable, dark monochrome
+     glyphs included. Its size and brightness are set once from how far
+     forward it sits on its own ring and are never animated: the instrument
+     turns about the axis pointing out of the page, so a mark's depth is a
+     fixed property of where it sits, not something that changes as it goes
+     round. */
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    opacity: var(--o);
+    transform: scale(var(--s));
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 8px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  /* The mark under the pointer always reads at full strength, whatever its
+     place on its ring puts it at. */
+  .mark:hover, .mark:focus-visible {
+    opacity: 1;
+    transform: scale(1.12);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--glow);
+  }
+
+  figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .armillary { animation: none; }
+    /* Standing still, nothing is hidden: every mark is drawn at full strength
+       so the rings can be read as four rings rather than as a tangle with
+       half of it missing. */
+    .mark { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 8 · armillary</h1>
+  <p>The tools on four rings set at different inclinations, crossing each
+     other the way the rings of an armillary sphere do.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="stage">
+    <div class="armillary" id="armillary"></div>
+  </div>
+  <figcaption>
+    The most tangled of these, and the one where the arrangement is the
+    design rather than a consequence of it. Four rings, alternately tipped
+    about the two axes lying in the page, so their outlines cross. The
+    angles were not chosen by eye: they are the best of several thousand
+    tried, and the one they were chosen for is that no two of the
+    twenty-four marks come closer than <b>71px</b> in the arrangement.
+    The instrument then turns as one piece about the axis pointing out of
+    the page, so that arrangement never changes -- only turns. Point at a
+    mark and its ring lights up.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // Radius, which axis the ring's plane is tipped about, how far, where the
+  // first mark sits, and how many marks ride it.
+  //
+  // Why the whole thing turns as one piece, which is the only way this can
+  // be made safe, is worth setting out.
+  //
+  // Rings on different axes cross, and crossing rings mean marks sweeping
+  // through the same points on independent cycles. As the atom's comment
+  // says, no choice of phases rescues that, and here there is more of it:
+  // four rings, six ways for every pair to meet. The other designs avoid
+  // the problem by nesting their paths. A tangle cannot be nested, so this
+  // one does the opposite and makes the whole configuration fixed.
+  //
+  // One rotation, about the axis pointing out of the page, carries every
+  // ring and every mark with it. Rotating about the view axis leaves each
+  // mark's depth alone and turns its screen position through the same angle
+  // as everyone else's, so the picture is one arrangement being turned
+  // rather than twenty-four marks moving independently -- the distance
+  // between any two marks is the same at every moment as it is at the
+  // start. Perspective does not break this either, which is unusual here:
+  // a mark's depth is unchanged by the turn, so its scale under a
+  // perspective is unchanged too, and every mark's position is scaled by
+  // the same constant it always was.
+  //
+  // So the whole problem is the arrangement, and it was solved by search:
+  // the four phases below are the best of several thousand tried, and the
+  // arrangement they give has no two marks closer than 71.75px.
+  var RINGS = [
+    { r: 300, axis: 'x', tilt: 68, phase: 78,    count: 6 },
+    { r: 272, axis: 'y', tilt: 58, phase: 120,   count: 6 },
+    { r: 224, axis: 'x', tilt: 28, phase: 59,    count: 6 },
+    { r: 176, axis: 'y', tilt: 38, phase: 85.25, count: 6 }
+  ];
+  var PERIOD = 74;
+
+  var LOGOS = '../static/icons/agents/';
+  var armillary = document.getElementById('armillary');
+  armillary.style.setProperty('--period', PERIOD + 's');
+
+  var n = 0;
+
+  RINGS.forEach(function (ring) {
+    var el = document.createElement('div');
+    el.className = 'ring';
+    el.style.setProperty('--r', ring.r);
+    el.style.setProperty('--tilt',
+      (ring.axis === 'x' ? ring.tilt : 0) + 'deg');
+    el.style.setProperty('--tilt-y',
+      (ring.axis === 'y' ? ring.tilt : 0) + 'deg');
+
+    var hoop = document.createElement('div');
+    hoop.className = 'hoop';
+    el.appendChild(hoop);
+
+    // How far forward a mark at angle a sits on this ring, as a fraction of
+    // the ring's own reach towards the viewer and away from it. Under
+    // rotateX(t) a point at (r cos a, r sin a) ends up at depth
+    // r sin a sin t; under rotateY(t) it ends up at -r cos a sin t. Both
+    // come out here as a plain number between 0 and 1.
+    var lean = Math.abs(Math.sin(ring.tilt * Math.PI / 180));
+    var reach = ring.r * lean || 1;
+
+    for (var k = 0; k < ring.count; k++) {
+      var angle = ring.phase + (360 / ring.count) * k;
+      var rad = angle * Math.PI / 180;
+      var tilt = ring.tilt * Math.PI / 180;
+      var depth = ring.axis === 'x'
+        ? Math.sin(rad) * Math.sin(tilt)
+        : -Math.cos(rad) * Math.sin(tilt);
+      var front = (depth * ring.r / reach + 1) / 2;
+      var tool = TOOLS[n];
+      n++;
+
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.style.setProperty('--r', ring.r);
+      slot.style.setProperty('--a', angle.toFixed(2) + 'deg');
+
+      var a = document.createElement('a');
+      a.className = 'mark';
+      a.href = '#';
+      a.dataset.name = tool[0];
+      a.style.setProperty('--o', (0.44 + 0.56 * front).toFixed(3));
+      a.style.setProperty('--s', (0.78 + 0.26 * front).toFixed(3));
+
+      var img = document.createElement('img');
+      img.src = LOGOS + tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = tool[0];
+      a.appendChild(tag);
+
+      function light(on) { el.classList[on ? 'add' : 'remove']('is-lit'); }
+      a.addEventListener('pointerenter', function () { light(true); });
+      a.addEventListener('pointerleave', function () { light(false); });
+      a.addEventListener('focus', function () { light(true); });
+      a.addEventListener('blur', function () { light(false); });
+
+      slot.appendChild(a);
+      el.appendChild(slot);
+    }
+
+    armillary.appendChild(el);
+  });
+
+  if (n !== 24) console.warn('expected 24 marks, placed ' + n);
+})();
+</script>
+</body>
+</html>

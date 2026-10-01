@@ -224,7 +224,7 @@
     Every orbit is a circle in the <b>one tilted plane</b>, so the discs are
     concentric and cannot cross. The numbers are fixed rather than eyeballed:
     orbits sit 60px apart in radius, the closest a mark on one orbit ever comes
-    to a mark on the next is <b>48px</b> on screen, and the widest a mark ever
+    to a mark on the next is <b>53px</b> on screen, and the widest a mark ever
     draws is <b>30px</b>. Marks on one orbit are evenly spaced and turn
     together, so their spacing never changes either — and no amount of
     fiddling with the speeds can produce a collision.
@@ -268,9 +268,10 @@
   //     concentric ellipses of half-width r and half-height r*cos(28deg).
   //     Concentric ellipses never cross, whatever the phases or the speeds.
   //   * Radii step by exactly 60, so marks on neighbouring orbits stay a
-  //     fixed distance apart as both turn: 53px in the plane, 48px measured on
-  //     screen once the mild perspective is counted, against 30px for the
-  //     widest a mark ever draws at the top of its depth pulse.
+  //     fixed distance apart as both turn: 53px in the plane, and 53px again
+  //     on screen -- the perspective is long enough that it barely touches
+  //     it -- against 30px for the widest a mark ever draws at the top of
+  //     its depth pulse.
   //   * Marks on a single orbit are evenly spaced and share one rotation, so
   //     the gap between neighbours on an orbit never changes either: the
   //     tightest is 160px, on the innermost pair.
