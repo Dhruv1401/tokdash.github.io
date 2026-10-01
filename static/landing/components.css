@@ -499,9 +499,14 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
   color: var(--color-text); outline: 2px solid var(--color-primary);
   outline-offset: 3px; border-radius: 4px;
 }
-/* The row stands still while a name is pointed at, so a link can be hit.
-   A row still drifting under the pointer is worse than no row at all. */
-.tick-row:hover .tick-track { animation-play-state: paused; }
+/* The row eases down to a crawl while a name is pointed at rather than
+   stopping dead. A hard stop reads as a glitch: the eye is following a
+   name, the name stops, and the page looks as though it has caught. Slowing
+   it keeps the motion unbroken, which leaves the pointer something to aim
+   at and keeps the link under it hittable.
+
+   The rate itself lives in ticker.js. CSS cannot slow a running animation
+   without restarting it, and restarting it jumps the row sideways. */
 
 @keyframes tick-drift {
   from { transform: translate3d(0, 0, 0); }
