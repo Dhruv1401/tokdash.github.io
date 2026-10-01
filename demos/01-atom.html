@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 1 · atom</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.26);
+    --axis: rgba(154, 184, 240, 0.10);
+    --glow: rgba(104, 146, 255, 0.55);
+    --mark: 30px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 700px at 50% 42%, rgba(48, 78, 168, 0.28), transparent 68%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    padding: 56px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 620px; }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* The stage supplies the vanishing point. Everything inside is transformed
+     in 3D against it, so a logo at the back of its ring really is further
+     away rather than merely drawn smaller. */
+  .stage {
+    perspective: 1150px;
+    perspective-origin: 50% 46%;
+  }
+
+  .atom {
+    position: relative;
+    width: 620px;
+    height: 620px;
+    transform-style: preserve-3d;
+  }
+
+  /* ---- The axes ----
+     The three rings are the structure; these are the x and y lines through
+     the nucleus that make that structure readable as a set of axes rather
+     than as three decorative hoops. Kept very faint so they never compete
+     with the marks riding the rings. */
+  .axis {
+    position: absolute;
+    left: 50%; top: 0;
+    width: 1px; height: 100%;
+    margin-left: -0.5px;
+    background: linear-gradient(180deg, transparent, var(--axis) 22%, var(--axis) 78%, transparent);
+  }
+  .axis-x {
+    left: 0; top: 50%;
+    width: 100%; height: 1px;
+    margin: -0.5px 0 0 0;
+    background: linear-gradient(90deg, transparent, var(--axis) 22%, var(--axis) 78%, transparent);
+  }
+
+  /* ---- One orbit ----
+     The ring is a plain circle outline rotated about x, so it foreshortens
+     into an ellipse on screen. It never moves: only the marks on it do. */
+  .orbit {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt));
+  }
+  .ring {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: calc(var(--r) * 2px);
+    height: calc(var(--r) * 2px);
+    margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+  }
+
+  /* The spin layer carries the marks and turns about z. Because the marks sit
+     at even angles on a fixed radius, turning this layer moves every mark by
+     the same amount and the spacing never changes. */
+  .spin {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    animation: spin var(--period) linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .slot {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+  }
+
+  /* A mark is white-backed so every logo stays legible, dark monochrome
+     glyphs included. The depth animation is the whole trick: it fades and
+     shrinks the mark as it goes round the back and brings it up as it comes
+     to the front, which is what sells the ring as a circle in space rather
+     than a flat spin. Its delay is set per mark so the bright moment lands
+     exactly when that mark is nearest the viewer. */
+  .mark {
+    position: absolute;
+    left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px;
+    background: #fff;
+    padding: 3px;
+    display: block;
+    text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    animation: depth var(--period) linear infinite;
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  @keyframes depth {
+    0%, 100% { opacity: 0.26; transform: scale(0.62); }
+    50%      { opacity: 1;    transform: scale(1.14); }
+  }
+
+  /* The name appears only for the mark under the pointer, so the field stays
+     a field. It rides above the mark and points back at it. */
+  .mark .tag {
+    position: absolute;
+    left: 50%; top: calc(100% + 9px);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    background: rgba(10, 15, 30, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 10px;
+    opacity: 0;
+    transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  .mark:hover { outline: none; box-shadow: 0 0 0 2px var(--glow); }
+
+  /* ---- The nucleus ---- */
+  .nucleus {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 86px; height: 86px;
+    margin: -43px 0 0 -43px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 46%, rgba(126, 166, 255, 0.42), rgba(12, 20, 44, 0.9) 68%);
+    box-shadow: 0 0 70px var(--glow), inset 0 0 24px rgba(150, 190, 255, 0.3);
+    animation: breathe 7s ease-in-out infinite;
+  }
+  .nucleus img { width: 38px; height: 38px; object-fit: contain; }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
+
+  figcaption { max-width: 640px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spin, .mark, .nucleus { animation: none; }
+    /* Standing still, every mark sits at mid-depth and full strength: the
+       atom reads as a diagram of where the marks live rather than as a
+       thing that has stopped. */
+    .mark { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 1 · atom</h1>
+  <p>Twenty-four tools on three orbits around one nucleus, the way a Bohr
+     diagram draws an atom.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="stage">
+    <div class="atom" id="atom">
+      <div class="axis"></div>
+      <div class="axis-x"></div>
+      <div class="nucleus"><img src="../static/icons/logo.png" alt=""></div>
+    </div>
+  </div>
+  <figcaption>
+    The three rings project to ellipses that are <b>strictly nested</b> — each
+    one wholly inside the next — so no two marks can ever land on the same
+    spot, at any phase or speed. Marks on one ring are evenly spaced and turn
+    together, so their spacing never changes either.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  // The tools, in the order the landing page lists them. Twenty-four, which
+  // is what the page claims in every language.
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // Three orbits: radius, how far the plane is tipped about x, how long one
+  // revolution takes, and how many marks ride it.
+  //
+  // The radii and the tilts are chosen together, and the choice is the whole
+  // design. A ring tipped by t projects to an ellipse of half-width r and
+  // half-height r*cos(t). For no two rings to ever put a mark on top of
+  // another, each ellipse has to sit wholly inside the one outside it -- and
+  // two ellipses that cross will certainly put marks on top of each other
+  // eventually, however the phases are set.
+  //
+  // So the rings grow outward while staying short: 112 tipped 118deg gives a
+  // half-height of 53, which clears inside the 200 tipped 58deg ellipse, and
+  // that clears inside the face-on 300 circle. The gaps between them come out
+  // at 51px and 87px, both comfortably wider than a mark, so the rings can
+  // never collide no matter what phase they are at or how fast they turn.
+  //
+  // The counts follow the circumference, so the gaps between marks on a ring
+  // come out roughly even instead of the outer one looking sparse.
+  var ORBITS = [
+    { r: 112, tilt: 118, period: 16, count: 6  },
+    { r: 200, tilt: 58,  period: 24, count: 8  },
+    { r: 300, tilt: 0,   period: 34, count: 10 }
+  ];
+
+  var LOGOS = '../static/icons/agents/';
+  var atom = document.getElementById('atom');
+  var marks = 0;
+
+  ORBITS.forEach(function (o) {
+    var orbit = document.createElement('div');
+    orbit.className = 'orbit';
+    orbit.style.setProperty('--r', o.r);
+    orbit.style.setProperty('--tilt', o.tilt + 'deg');
+
+    var ring = document.createElement('div');
+    ring.className = 'ring';
+    orbit.appendChild(ring);
+
+    var spin = document.createElement('div');
+    spin.className = 'spin';
+    spin.style.setProperty('--period', o.period + 's');
+
+    for (var k = 0; k < o.count; k++) {
+      var angle = (360 / o.count) * k;
+      marks++;
+
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.style.setProperty('--a', angle + 'deg');
+
+      var a = document.createElement('a');
+      a.className = 'mark';
+      a.href = '#';
+      // Brightest when this mark is nearest the viewer. A mark at angle a
+      // reaches the front a quarter of the way round, so that is when its
+      // depth animation should be at its peak. The depth keyframe peaks at
+      // half a cycle, hence the shift back by half a period.
+      var peak = ((90 - angle) / 360) * o.period;
+      a.style.animationDelay = (peak - o.period / 2) + 's';
+
+      var img = document.createElement('img');
+      img.src = LOGOS + TOOLS[marks - 1][1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = TOOLS[marks - 1][0];
+      a.appendChild(tag);
+
+      slot.appendChild(a);
+      spin.appendChild(slot);
+    }
+
+    orbit.appendChild(spin);
+    atom.appendChild(orbit);
+  });
+
+  if (marks !== 24) console.warn('expected 24 marks, placed ' + marks);
+})();
+</script>
+</body>
+</html>
