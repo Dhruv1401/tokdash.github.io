@@ -21,10 +21,10 @@
   // it used to.
   var SPEED = 82;
   // A fifth of the drift speed. Enough to hold a name still enough to aim
-  // at it, still moving enough that the row does not look seized.
+  // at it, still moving enough that the rows do not look seized.
   var SLOW = 0.2;
-  // Roughly the length of one of the page's own transitions, so the row
-  // settles at the same pace the rest of the site changes state.
+  // Roughly the length of one of the page's own transitions, so the rows
+  // settle at the same pace the rest of the site changes state.
   var SETTLE_MS = 320;
   // A backgrounded tab hands back one enormous frame on return. Letting
   // that through would move every mark metres in a single step.
@@ -32,32 +32,82 @@
 
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
+  // ---- One pace for the pair ----
+  // The two rows cannot be slowed apart. The handover only happens when
+  // both rows are holding a mark that has gone, so a row running at full
+  // speed beside one running slow spends marks off the end of the window
+  // faster than they are replaced: it thins out, and then it is blank.
+  // Pointing at one row has to point at both.
+  //
+  // The count is what makes moving between the rows work. Leaving the upper
+  // row at the moment the pointer has already arrived on the lower one must
+  // not let go of a row that is still being pointed at, or the pair flickers
+  // between slow and full speed crossing the gap between them.
+  function Pace() {
+    this.held = 0;
+    this.speed = 1;
+    this.from = 1;
+    this.to = 1;
+    this.frame = 0;
+    this.started = 0;
+  }
+
+  Pace.prototype.hold = function () {
+    this.held++;
+    if (this.held === 1) this.settle(SLOW);
+  };
+
+  Pace.prototype.release = function () {
+    if (this.held > 0) this.held--;
+    if (this.held === 0) this.settle(1);
+  };
+
+  // Eased rather than applied in one step, so the rows settle into the
+  // slower pace instead of dropping into it.
+  Pace.prototype.settle = function (target) {
+    if (target === this.to && !this.frame) return;
+    this.from = this.speed;
+    this.to = target;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.started = 0;
+    var self = this;
+    this.frame = requestAnimationFrame(function tick(now) {
+      if (!self.started) self.started = now;
+      var t = (now - self.started) / SETTLE_MS;
+      if (t >= 1) {
+        self.speed = self.to;
+        self.frame = 0;
+        return;
+      }
+      self.speed = self.from + (self.to - self.from) * easeOut(t);
+      self.frame = requestAnimationFrame(tick);
+    });
+  };
+
   // ---- One row ----
   // `dir` is -1 for a row drifting left and +1 for one drifting right.
   // Marks are held left to right in `items` whatever order the DOM is in,
   // because that is the order they change hands in: a row drifting left
   // loses the mark at the front, one drifting right loses the mark at the
   // back.
-  function Row(el, track, dir) {
+  //
+  // The row owns where its marks are and nothing else. How fast they are
+  // going belongs to the pace, which both rows share.
+  function Row(el, track, dir, pace) {
     this.el = el;
     this.track = track;
     this.dir = dir;
+    this.pace = pace;
     this.items = [];
     this.gap = 32;
     this.width = 0;
-    this.speed = 1;
-    this.from = 1;
-    this.to = 1;
-    this.frame = 0;
-    this.started = 0;
 
-    var self = this;
-    el.addEventListener('pointerenter', function () { self.settle(SLOW); });
-    el.addEventListener('pointerleave', function () { self.settle(1); });
+    el.addEventListener('pointerenter', function () { pace.hold(); });
+    el.addEventListener('pointerleave', function () { pace.release(); });
     // A row reached by keyboard gets the same treatment, so the two ways
     // of arriving at a name do not behave differently.
-    el.addEventListener('focusin', function () { self.settle(SLOW); });
-    el.addEventListener('focusout', function () { self.settle(1); });
+    el.addEventListener('focusin', function () { pace.hold(); });
+    el.addEventListener('focusout', function () { pace.release(); });
   }
 
   // Read the gap off the row rather than repeating the number here, so the
@@ -126,28 +176,6 @@
     this.track.appendChild(it);
   };
 
-  // Eased rather than applied in one step, so the row settles into the
-  // slower pace instead of dropping into it.
-  Row.prototype.settle = function (target) {
-    if (target === this.to && !this.frame) return;
-    this.from = this.speed;
-    this.to = target;
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.started = 0;
-    var self = this;
-    this.frame = requestAnimationFrame(function tick(now) {
-      if (!self.started) self.started = now;
-      var t = (now - self.started) / SETTLE_MS;
-      if (t >= 1) {
-        self.speed = self.to;
-        self.frame = 0;
-        return;
-      }
-      self.speed = self.from + (self.to - self.from) * easeOut(t);
-      self.frame = requestAnimationFrame(tick);
-    });
-  };
-
   function init() {
     if (!canAnimate) return;
 
@@ -155,10 +183,11 @@
     // Two rows is the whole idea. Anything else is not this component.
     if (rows.length !== 2) return;
 
+    var pace = new Pace();
     var top = new Row(rows[0], rows[0].querySelector('.tick-track'),
-      rows[0].classList.contains('tick-row-back') ? 1 : -1);
+      rows[0].classList.contains('tick-row-back') ? 1 : -1, pace);
     var bottom = new Row(rows[1], rows[1].querySelector('.tick-track'),
-      rows[1].classList.contains('tick-row-back') ? 1 : -1);
+      rows[1].classList.contains('tick-row-back') ? 1 : -1, pace);
 
     function measure() {
       top.readGap();
@@ -183,8 +212,8 @@
       last = now;
       if (dt > MAX_FRAME_MS) dt = MAX_FRAME_MS;
 
-      top.step(-SPEED * top.speed * dt / 1000);
-      bottom.step(SPEED * bottom.speed * dt / 1000);
+      top.step(-SPEED * pace.speed * dt / 1000);
+      bottom.step(SPEED * pace.speed * dt / 1000);
 
       // The handover. A mark leaving the upper row reappears in the lower
       // one at its left edge, and a mark leaving the lower row reappears in
