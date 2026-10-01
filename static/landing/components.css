@@ -496,16 +496,37 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
+/* A track has two states, and the stylesheet only describes the quiet one.
+
+   Standing still it is an ordinary centred wrap: the upper row shows its
+   twelve marks and the lower row its other twelve, so all twenty-four are
+   on the page to read. That is also the whole fallback -- no script, or a
+   device the capability gate turned down, and the marks simply sit there.
+
+   Drifting, ticker.js places every mark itself and moves one row's
+   departure into the other row, so it owns the positions and the
+   stylesheet gets out of the way. It sets .tick-live on <html> only once
+   it has measured everything it needs, so a row is never caught half in
+   one state and half in the other. */
 .tick-track {
-  display: flex; align-items: center; width: max-content;
-  will-change: transform;
-  animation: tick-drift 52s linear infinite;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; row-gap: 10px; width: auto;
 }
-/* The lower row runs the same drift backwards. The track is periodic, so
-   starting one period to the left and settling to zero is the same motion
-   as starting at zero and settling one period to the left: the seam where
-   the loop restarts lands in exactly the same place either way. */
-.tick-row-back .tick-track { animation-name: tick-drift-back; }
+/* Drifting: the track is a plain box and each mark is placed against its
+   left edge, so the only thing that moves a mark is the transform
+   ticker.js writes on it. */
+html.tick-live .tick-track {
+  position: relative;
+  width: 100%;
+  flex-wrap: nowrap;
+  row-gap: 0;
+}
+html.tick-live .tick-item {
+  position: absolute;
+  top: 0; left: 0;
+  margin-right: 0;
+  will-change: transform;
+}
 .tick-item {
   flex: none;
   display: inline-flex; align-items: center; gap: 9px;
@@ -548,40 +569,21 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
    it keeps the motion unbroken, which leaves the pointer something to aim
    at and keeps the link under it hittable.
 
-   The rate itself lives in ticker.js. CSS cannot slow a running animation
-   without restarting it, and restarting it jumps the row sideways. */
+   The rate lives in ticker.js, along with the drift itself, because the
+   drift can no longer be a plain CSS animation: a mark that leaves one row
+   has to be handed to the other, and that only works if the script knows
+   where every mark is on every frame.
 
-@keyframes tick-drift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
-}
-@keyframes tick-drift-back {
-  from { transform: translate3d(-50%, 0, 0); }
-  to { transform: translate3d(0, 0, 0); }
-}
-
-/* Reduced motion, no JavaScript, or a device the capability gate turned down:
-   the names stand still and wrap into a plain list. A row that cannot move
-   is not a row, so the two copies collapse to one and the track becomes an
-   ordinary centred wrap. */
+   Reduced motion, no JavaScript, or a device the capability gate turned
+   down: .tick-live is never set, the mask comes off, and both rows are
+   plain centred lists. All twenty-four marks are still on the page. */
 @media (prefers-reduced-motion: reduce) {
   .ticker { width: auto; margin-left: auto; margin-right: auto; }
-  .tick-row {
-    -webkit-mask-image: none; mask-image: none;
-  }
-  .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
-  .tick-item { margin-right: 0; }
-  .tick-item[aria-hidden='true'] { display: none; }
+  .tick-row { -webkit-mask-image: none; mask-image: none; }
 }
-/* html.js is added by the first script on the page. Without it there is no
-   class to gate on, so the names must not wait on an animation that was
-   never going to be allowed to run anyway. */
-html:not(.js) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
-html:not(.js) .tick-row { -webkit-mask-image: none; mask-image: none; }
-html:not(.js) .tick-item[aria-hidden='true'] { display: none; }
-/* The page's capability gate has already made this call in JS: a metered or
-   memory-constrained connection, two cores or 2GB. The verdict is read off
-   <html> rather than asked a second time here. */
-html:not(.can-animate) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+/* html.js is added by the first script on the page, and the capability gate
+   publishes its verdict as .can-animate. Without both there is no reason to
+   believe the rows will ever drift, so they must not be drawn as though
+   they had. */
+html:not(.js) .tick-row,
 html:not(.can-animate) .tick-row { -webkit-mask-image: none; mask-image: none; }
-html:not(.can-animate) .tick-item[aria-hidden='true'] { display: none; }
