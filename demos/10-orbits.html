@@ -120,6 +120,16 @@
     transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
   }
 
+  /* Only the marks are anything you can point at. A transformed element is
+     hit-tested across its whole projected quad rather than only where it
+     actually paints, so the orbit -- a layer the size of the panel, spinning
+     once every twenty-six seconds -- would otherwise swallow the pointer
+     from every mark on it. Reading a name is the only way to find out what a
+     tool is, so the structure gets out of the way and the marks take the
+     pointer back. */
+  .field, .core-arc, .orbit, .ring, .arc, .slot { pointer-events: none; }
+  .mark { pointer-events: auto; }
+
   /* The tail: the last thirty degrees of the orbit behind the mark, fading
      out. It is what makes a flat ring read as turning rather than as a
      circle of stickers, and it costs nothing but a gradient. */
@@ -139,9 +149,9 @@
     border-radius: 9px; background: #fff; padding: 3px;
     display: block; text-decoration: none;
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
-    opacity: var(--o);
-    transform: scale(var(--s));
-    transition: box-shadow 160ms ease, opacity 160ms ease;
+    opacity: var(--o, 1);
+    transform: scale(var(--s, 1));
+    transition: box-shadow 160ms ease, opacity 200ms ease;
   }
   .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .mark::before {
@@ -153,6 +163,18 @@
       rgba(126, 158, 255, 0.34), rgba(104, 146, 255, 0.1) 52%, transparent 78%);
     z-index: -1;
     pointer-events: none;
+  }
+
+  /* Pointing at a mark stops the orbits, so its name can be read -- a mark on
+     a turning circle is out from under the pointer in a fraction of a second
+     -- and lets the rest of the panel go back so the eye lands on the local
+     shape rather than every orbit at once. The mark under the pointer is
+     left at its own strength, so nothing about it changes but the fact that
+     it stops. */
+  .field.is-pointed .orbit,
+  .field.is-pointed .core-arc { animation-play-state: paused !important; }
+  .field.is-pointed .mark:not(:hover):not(:focus-visible) {
+    opacity: calc(var(--o, 1) * 0.42);
   }
 
   .mark .tag {
@@ -348,6 +370,7 @@
         // The sweep grows from the top of the orbit round to the mark, so
         // pointing at one says both which orbit it is on and where on it.
         orbit.style.setProperty('--lit', (on ? angle + 2 : 0) + 'deg');
+        field.classList[on ? 'add' : 'remove']('is-pointed');
       }
       a.addEventListener('pointerenter', function () { light(true); });
       a.addEventListener('pointerleave', function () { light(false); });

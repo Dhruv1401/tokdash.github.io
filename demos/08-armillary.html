@@ -86,6 +86,16 @@
     transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
   }
 
+  /* Only the marks are anything you can point at. A transformed element is
+     hit-tested across its whole projected quad rather than only where it
+     actually paints, so the rings -- four of them, all crossing each other,
+     each with its own plane cutting through the marks on it -- would
+     otherwise swallow the pointer from most marks. Reading a name is the
+     only way to find out what a tool is, so the structure gets out of the
+     way and the marks take the pointer back. */
+  .armillary, .ring, .hoop, .slot { pointer-events: none; }
+  .mark { pointer-events: auto; }
+
   /* A mark is white-backed so every logo stays readable, dark monochrome
      glyphs included. Its size and brightness are set once from how far
      forward it sits on its own ring and are never animated: the instrument
@@ -122,6 +132,14 @@
     outline: none;
     box-shadow: 0 0 0 2px var(--glow);
   }
+
+  /* Pointing at a mark stops the turn, so its name can be read: the whole
+     instrument turns about the axis pointing out of the page as one piece, so
+     there is no part of it that can be held still while the rest goes on. The
+     turn itself is on .armillary, so the rule has to name .armillary as well
+     as everything inside it. */
+  .armillary.is-paused,
+  .armillary.is-paused * { animation-play-state: paused !important; }
 
   figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
   figcaption b { color: var(--ink); font-weight: 600; }
@@ -286,7 +304,10 @@
       tag.textContent = tool[0];
       a.appendChild(tag);
 
-      function light(on) { el.classList[on ? 'add' : 'remove']('is-lit'); }
+      function light(on) {
+        el.classList[on ? 'add' : 'remove']('is-lit');
+        armillary.classList[on ? 'add' : 'remove']('is-paused');
+      }
       a.addEventListener('pointerenter', function () { light(true); });
       a.addEventListener('pointerleave', function () { light(false); });
       a.addEventListener('focus', function () { light(true); });

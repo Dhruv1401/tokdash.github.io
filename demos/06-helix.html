@@ -104,6 +104,14 @@
                 0 0 20px rgba(104, 146, 255, 0.32);
   }
 
+  /* Pointing at a mark stops the turn, so its name can be read: a mark on a
+     moving helix is out from under the pointer in a fraction of a second. */
+  .field.is-paused .mark, .field.is-paused .mark::before {
+    animation-play-state: paused !important;
+  }
+  .field.is-paused .mark { opacity: 1; transform: scale(1); }
+  .field.is-paused .mark::before { opacity: 0.85; }
+
   figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
   figcaption b { color: var(--ink); font-weight: 600; }
 
@@ -231,10 +239,16 @@
     mid = H / 2;
   }
 
-  // Where the helix starts: centred, with room for the widest rung at each
-  // end.
+  // Where the helix starts: the run of rungs centred across the panel.
+  //
+  // The rung span is what has to fit, and it is RUNG short of RUNGS * RUNG,
+  // because the two strands overlap by half a rung at each end. What does
+  // NOT have to fit is RADIUS of clearance at each end: the helix lies
+  // sideways, so the radius carries a mark up and down the panel, never
+  // along it. Reserving it horizontally pushed the last rung and a half off
+  // the right edge, where the panel's overflow hid them.
   function origin() {
-    return Math.max(RADIUS + 20, (W - RUNGS * RUNG) / 2 + RUNG / 2);
+    return Math.max(RUNG / 2, (W - (RUNGS - 0.5) * RUNG) / 2);
   }
 
   function build() {
@@ -374,26 +388,40 @@
   }
 
   var hovered = -1;
+  // The turn is driven from here rather than by a CSS animation, so pointing
+  // at a mark has to stop it by hand: a mark on a moving helix is out from
+  // under the pointer in a fraction of a second and its name never settles.
+  var stoppedAt = 0;
+  var held = false;
+
+  function hold(on) {
+    if (on === held) return;
+    held = on;
+    field.classList[on ? 'add' : 'remove']('is-paused');
+    if (on) stoppedAt = ((performance.now() / 1000) / PERIOD) * 360;
+  }
+
   field.addEventListener('pointerover', function (e) {
     var el = e.target.closest ? e.target.closest('.mark') : null;
     hovered = el ? strand.map(function (s) { return s.node; }).indexOf(el) : -1;
     lightPair(hovered);
+    hold(hovered !== -1);
   });
   field.addEventListener('pointerout', function (e) {
     if (!(e.relatedTarget && e.relatedTarget.closest &&
           e.relatedTarget.closest('.mark'))) {
       hovered = -1;
       lightPair(-1);
+      hold(false);
     }
   });
 
-  var last = 0;
   function frame(now) {
-    var dt = last ? (now - last) / 1000 : 0;
-    last = now;
-    var turn = ((now / 1000) / PERIOD) * 360;
-    place(turn);
-    draw(turn);
+    // While held, `stoppedAt` is left where it was; otherwise it follows the
+    // clock. That is the whole of the pause.
+    if (!held) stoppedAt = (now / 1000) / PERIOD * 360;
+    place(stoppedAt);
+    draw(stoppedAt);
     requestAnimationFrame(frame);
   }
 

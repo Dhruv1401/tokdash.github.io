@@ -101,6 +101,17 @@
     transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
   }
 
+  /* Only the marks are anything you can point at.
+     A transformed element is hit-tested across its whole projected quad
+     rather than only where it actually paints, so every empty wrapper in
+     here -- a ring, and above all the spin layer, whose plane cuts straight
+     through the marks riding it -- would swallow the pointer from a mark on
+     its far side. Reading a name is the only way to find out what a tool
+     is, so the structure gets out of the way and the marks take the
+     pointer back. */
+  .axis, .axis-x, .nucleus, .orbit, .ring, .spin, .slot { pointer-events: none; }
+  .mark { pointer-events: auto; }
+
   /* A mark is white-backed so every logo stays readable, dark monochrome
      glyphs included. The light behind it is what sells the depth: brightest
      and largest at the near side of the ring, smallest and faintest round
@@ -191,6 +202,16 @@
     0%, 100% { transform: scale(0.9); opacity: 0.6; }
     50%      { transform: scale(1.08); opacity: 1; }
   }
+
+  /* Pointing at a mark stops the whole thing. A mark on a moving orbit slides
+     out from under the pointer in a fraction of a second, so without this
+     the names flash on and off and there is no such thing as reading one.
+     It stops everything -- the spins and the depth pulses together -- and
+     brings every mark up to full strength, so what you stop to look at is
+     the diagram rather than a frozen half of one. */
+  .atom.is-paused * { animation-play-state: paused !important; }
+  .atom.is-paused .mark { opacity: 1; transform: scale(1); }
+  .atom.is-paused .mark::before { opacity: 0.85; }
 
   figcaption { max-width: 680px; text-align: center; font-size: 13.5px; }
   figcaption b { color: var(--ink); font-weight: 600; }
@@ -353,7 +374,10 @@
       tag.textContent = tool[0];
       a.appendChild(tag);
 
-      function light(on) { orbit.classList[on ? 'add' : 'remove']('is-lit'); }
+      function light(on) {
+        orbit.classList[on ? 'add' : 'remove']('is-lit');
+        atom.classList[on ? 'add' : 'remove']('is-paused');
+      }
       a.addEventListener('pointerenter', function () { light(true); });
       a.addEventListener('pointerleave', function () { light(false); });
       a.addEventListener('focus', function () { light(true); });

@@ -55,8 +55,22 @@
     transform-style: preserve-3d;
   }
 
+  /* Only the marks are anything you can point at. A transformed element is
+     hit-tested across its whole projected quad rather than only where it
+     actually paints, so the layer that turns -- a panel's worth of quad,
+     spinning once every forty seconds -- would otherwise swallow the
+     pointer from most of the marks on it. Reading a name is the only way to
+     find out what a tool is, so the structure gets out of the way and the
+     marks take the pointer back. */
+  .field, canvas, .knot { pointer-events: none; }
+  .mark { pointer-events: auto; }
+
+  /* Anchored to the centre of the layer, because that is where the script's
+     x and y are measured from: the ribbon on the canvas is projected about
+     the middle of the field, and the marks have to be about the same middle
+     or the two drift apart by half a panel. */
   .mark {
-    position: absolute; left: 0; top: 0;
+    position: absolute; left: 50%; top: 50%;
     width: var(--mark); height: var(--mark);
     margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
     border-radius: 9px; background: #fff; padding: 3px;
@@ -199,6 +213,10 @@
   var W = 0, H = 0, cx = 0, cy = 0;
   var marks = [];
   var hover = -1;
+  // How far round the knot is turned, in degrees. Pointing at a mark stops
+  // the turn, so its name can be read: a mark on a turning knot is out from
+  // under the pointer in a fraction of a second.
+  var deg = 0;
   var reduce = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -345,7 +363,7 @@
   var start = 0;
   function frame(now) {
     if (!start) start = now;
-    var deg = ((now - start) / 1000 / PERIOD) * 360;
+    if (hover === -1) deg = ((now - start) / 1000 / PERIOD) * 360;
     knot.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)';
     ribbon(deg);
     requestAnimationFrame(frame);
@@ -358,6 +376,7 @@
   // parked at the start of the thread: a picture of a knot rather than a
   // knot that has stopped being drawn.
   if (reduce) {
+    deg = 0;
     ribbon(0);
   } else {
     requestAnimationFrame(frame);

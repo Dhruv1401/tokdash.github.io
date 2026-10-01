@@ -98,6 +98,16 @@
     overflow: visible;
     pointer-events: none;
   }
+
+  /* Only the marks are anything you can point at. A transformed element is
+     hit-tested across its whole projected quad rather than only where it
+     actually paints, so the spin layer -- whose plane cuts straight through
+     every mark riding it -- would otherwise swallow the pointer from any mark
+     on its far side. Reading a name is the only way to find out what a tool
+     is, so the structure gets out of the way and the marks take the pointer
+     back. */
+  .galaxy, .disc, .spin, .slot, .core, .mote { pointer-events: none; }
+  .mark { pointer-events: auto; }
   .arm-glow {
     fill: none;
     stroke: url(#arm-fade);
@@ -205,6 +215,13 @@
     0%, 100% { transform: scale(0.9); opacity: 0.6; }
     50%      { transform: scale(1.08); opacity: 1; }
   }
+
+  /* Pointing at a mark stops the turn, so its name can be read: a mark on a
+     moving orbit is gone from under the pointer in a fraction of a second.
+     Everything stops together and every mark comes up to full strength. */
+  .galaxy.is-paused * { animation-play-state: paused !important; }
+  .galaxy.is-paused .mark { opacity: 1; transform: scale(1); }
+  .galaxy.is-paused .mark::before { opacity: 0.85; }
 
   figcaption { max-width: 690px; text-align: center; font-size: 13.5px; }
   figcaption b { color: var(--ink); font-weight: 600; }
@@ -421,6 +438,23 @@
     star.style.setProperty('--c', TINTS[Math.floor(random() * TINTS.length)]);
     sky.appendChild(star);
   }
+
+  // Pointing at a mark stops the turn, so its name can actually be read: a
+  // mark on a moving orbit is out from under the pointer in a fraction of a
+  // second. The name is brought up by CSS on hover and focus; this only
+  // decides whether the galaxy keeps turning while you look.
+  var galaxy = document.getElementById('galaxy');
+  function holding() { galaxy.classList.add('is-paused'); }
+  function released() { galaxy.classList.remove('is-paused'); }
+  galaxy.addEventListener('pointerover', function (e) {
+    if (e.target.closest && e.target.closest('.mark')) holding();
+  });
+  galaxy.addEventListener('pointerout', function (e) {
+    if (!(e.relatedTarget && e.relatedTarget.closest &&
+          e.relatedTarget.closest('.mark'))) released();
+  });
+  galaxy.addEventListener('focusin', holding);
+  galaxy.addEventListener('focusout', released);
 
   if (n !== 24) console.warn('expected 24 marks, placed ' + n);
 })();
