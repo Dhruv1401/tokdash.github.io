@@ -21,17 +21,25 @@
   initial-value: 0deg;
 }
 
-.tool-field {
-  /* The picture is drawn at a fixed 800px and then scaled down as one piece by
-     a factor the window measures: nothing is re-laid-out, so the arrangement
-     that was measured is the arrangement that is drawn, and the picture only
-     ever gets smaller -- like a model when you step back from it. Capped at
-     one, so it is never blown up past the size it was drawn at. */
+.tool-field { margin: 40px auto 0; }
+
+/* The picture is drawn at a fixed 800px and then scaled down as one piece by a
+   factor the window measures: nothing is re-laid-out, so the arrangement that
+   was measured is the arrangement that is drawn, and the picture only ever
+   gets smaller -- like a model when you step back from it. Capped at one, so
+   it is never blown up past the size it was drawn at.
+
+   This box is sized and clipped, and the script adds .is-instrument only once
+   it has actually built the instrument. Until then the field is an ordinary
+   block around the grid, because a fixed-height clipped box is exactly wrong
+   for the grid: on a phone the grid is a tall two-column list, and a box sized
+   for a picture would cut the bottom of it off -- the no-JS visitor would
+   lose fifteen of the twenty-five links. */
+.tool-field.is-instrument {
   --fit: min(1, calc((100vw - 48px) / 800px), calc((100vh - 220px) / 800px));
   position: relative;
   width: calc(800px * var(--fit));
   height: calc(800px * var(--fit) + 40px);
-  margin: 40px auto 0;
   overflow: hidden;
 }
 

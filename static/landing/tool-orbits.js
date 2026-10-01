@@ -69,6 +69,10 @@
   grid.classList.remove('grid');
   links.forEach(function (a) { a.style.opacity = ''; a.style.transform = ''; });
 
+  // The field becomes a fixed, clipped box for the picture only now, once
+  // there is a picture in it. See .tool-field in the stylesheet.
+  field.classList.add('is-instrument');
+
   var wanted = ORBITS.reduce(function (n, o) { return n + o.count; }, 0);
   if (links.length !== wanted) {
     console.warn('tool orbits: expected ' + wanted + ' marks, found ' + links.length);
