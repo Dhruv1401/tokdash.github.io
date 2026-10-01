@@ -363,10 +363,22 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
   margin-left: calc(50% - 50vw);
   /* The same slab the preview dashboards are built from, so the row reads
      as part of the same object rather than as a strip of text laid over
-     the page. One panel, one blur, both themes taken from the tokens. */
-  background: var(--glass);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+     the page.
+
+     Thinner than the shared --glass, and blurred harder to pay for it.
+     Glass reads as glass because you can see through it, and at the
+     opacity the panels elsewhere use you barely can: a near-opaque white
+     fill over a moving canvas looks like paint sitting on top of the
+     page. Thinning the fill lets the ambient canvas read through the
+     panel, and the extra blur keeps the names sitting on something
+     smooth rather than on whatever happened to be drifting past. The
+     hairline and the marks carry the edges now, which is the point of
+     putting a real surface behind them. */
+  --tick-glass: color-mix(in srgb, var(--glass) 72%, transparent);
+  --tick-blur: blur(22px) saturate(1.6);
+  background: var(--tick-glass);
+  backdrop-filter: var(--tick-blur);
+  -webkit-backdrop-filter: var(--tick-blur);
   padding: 20px 0;
   /* A hairline above and a hairline below, rather than a border on all
      four sides. The row runs off both edges of the window, so a left and
@@ -378,7 +390,7 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
   background-image:
     linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
     linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
-    linear-gradient(var(--glass), var(--glass));
+    linear-gradient(var(--tick-glass), var(--tick-glass));
   background-size: 100% 1px, 100% 1px, 100% 100%;
   background-position: 0 0, 0 100%, 0 0;
   background-repeat: no-repeat;
