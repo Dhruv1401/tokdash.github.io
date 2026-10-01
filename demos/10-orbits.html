@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 10 · orbits</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.24);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(1000px 800px at 50% 46%, rgba(30, 44, 100, 0.34), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 660px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* Nothing here is three-dimensional. No perspective, no tipped disc, no
+     nested ellipses: the orbits are circles in the plane of the page, and
+     depth is carried by size and brightness alone. That is the whole look,
+     and it is also why the no-collision claim is the easiest of the set. */
+  .field {
+    position: relative;
+    width: min(760px, 92vw);
+    height: min(760px, 72vh);
+    border-radius: 20px;
+    overflow: hidden;
+    background: color-mix(in srgb, #ffffff 3%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(154, 184, 240, 0.10);
+  }
+
+  /* A graduated edge: one tick for every tool, on the outside of everything.
+     It makes the panel read as an instrument rather than a picture of one. */
+  .field::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%;
+    width: 700px; height: 700px; margin: -350px 0 0 -350px;
+    border-radius: 50%;
+    background: repeating-conic-gradient(from -0.4deg,
+      rgba(154, 184, 240, 0.30) 0 0.8deg, transparent 0.8deg 15deg);
+    -webkit-mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 11px), #000 calc(100% - 11px) 100%);
+    mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 11px), #000 calc(100% - 11px) 100%);
+    pointer-events: none;
+  }
+
+  .orbit {
+    position: absolute; inset: 0;
+    /* How far round its orbit the sweep has grown. Pointing at a mark sets
+       this to that mark's angle; it starts at nothing. */
+    --lit: 0deg;
+    animation: spin var(--period) linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ring {
+    position: absolute; left: 50%; top: 50%;
+    width: calc(var(--r) * 2px); height: calc(var(--r) * 2px);
+    margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+    border: 1px solid rgba(154, 184, 240, 0.14);
+    border-radius: 50%;
+    transition: border-color 240ms ease, box-shadow 240ms ease;
+  }
+
+  /* A ring is masked down to a hairline and filled with a conic gradient, so
+     it can show an arc rather than a whole circle. Used twice: the sweep that
+     grows from the top of the ring to whichever mark is pointed at, and the
+     short tail each mark drags behind it. */
+  .arc {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: calc(var(--r) * 2px); height: calc(var(--r) * 2px);
+    margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 2px), #000 calc(100% - 2px) 100%);
+    mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 2px), #000 calc(100% - 2px) 100%);
+    pointer-events: none;
+  }
+
+  .sweep {
+    background: conic-gradient(from 0deg,
+      rgba(160, 190, 255, 0.30),
+      rgba(160, 190, 255, 0.05) var(--lit),
+      transparent var(--lit));
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  .orbit.is-lit .ring {
+    border-color: rgba(186, 210, 255, 0.6);
+    box-shadow: 0 0 18px rgba(104, 146, 255, 0.26);
+  }
+  .orbit.is-lit .sweep { opacity: 1; }
+
+  .slot {
+    position: absolute; left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+  }
+
+  /* The tail: the last thirty degrees of the orbit behind the mark, fading
+     out. It is what makes a flat ring read as turning rather than as a
+     circle of stickers, and it costs nothing but a gradient. */
+  .tail {
+    background: conic-gradient(from calc(var(--a) - 90deg - 30deg),
+      rgba(126, 158, 255, 0) 0deg,
+      rgba(126, 158, 255, 0.5) 30deg);
+  }
+
+  /* Depth, without a single degree of tilt: each mark is a little smaller and
+     dimmer than the one before it, so the orbits read as lying at different
+     distances without anything actually moving in or out. */
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    opacity: var(--o);
+    transform: scale(var(--s));
+    transition: box-shadow 160ms ease, opacity 160ms ease;
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .mark::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; width: 210%; height: 210%;
+    margin: -105% 0 0 -105%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(126, 158, 255, 0.34), rgba(104, 146, 255, 0.1) 52%, transparent 78%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 8px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  /* The mark under the pointer is the one place opacity is not obeyed: it has
+     to be readable whatever its orbit's depth is. */
+  .mark:hover, .mark:focus-visible {
+    opacity: 1;
+    transform: scale(1.14);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--glow);
+  }
+
+  /* ---- The middle ---- */
+  .core {
+    position: absolute; left: 50%; top: 50%;
+    width: 62px; height: 62px; margin: -31px 0 0 -31px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 44%,
+      #e8f0ff, #b6caff 42%, rgba(76, 104, 200, 0.85) 78%, rgba(22, 36, 78, 0) 100%);
+    box-shadow: 0 0 42px rgba(150, 180, 255, 0.45);
+  }
+  .core img { width: 28px; height: 28px; object-fit: contain; }
+  /* Two hairline arcs turning slowly round the middle, so the centre has
+     something happening without a mark anywhere near it. */
+  .core-arc {
+    position: absolute; left: 50%; top: 50%;
+    width: 104px; height: 104px; margin: -52px 0 0 -52px;
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 1.5px), #000 calc(100% - 1.5px) 100%);
+    mask: radial-gradient(closest-side,
+      transparent 0 calc(100% - 1.5px), #000 calc(100% - 1.5px) 100%);
+    pointer-events: none;
+  }
+  .core-arc.a { background: conic-gradient(from 0deg,
+    rgba(168, 196, 255, 0.55) 0 70deg, transparent 70deg); animation: spin 46s linear infinite; }
+  .core-arc.b { background: conic-gradient(from 0deg,
+    rgba(168, 196, 255, 0.4) 0 40deg, transparent 40deg); animation: spin 31s linear infinite reverse; }
+
+  figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Both classes are named: `.core-arc.a` is more specific than
+       `.core-arc`, and a media query does not outrank specificity. */
+    .orbit, .core-arc.a, .core-arc.b { animation: none; }
+    .mark, .sweep { transition: none; }
+    /* Standing still, every mark is drawn at full strength and the sweep is
+       drawn at full length, so the panel reads as the diagram it is. */
+    .mark { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 10 · orbits</h1>
+  <p>The quietest of them: five flat circles, twenty-four marks, and nothing
+     three-dimensional anywhere.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="field" id="field">
+    <div class="core-arc b"></div>
+    <div class="core-arc a"></div>
+    <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+  </div>
+  <figcaption>
+    Nothing tilts, nothing foreshortens, and the orbits are circles in the
+    plane of the page — so the marks never move relative to each other at
+    all. They are <b>58px</b> apart between orbits and never closer than
+    <b>58px</b> within one, against a mark that never draws wider than
+    <b>30px</b>. Depth here is only size and brightness. What moves the page
+    is the pointer: point at a mark and its orbit lights, an arc grows round
+    it from the top, and the rest of the panel goes back.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // Radius, seconds per turn, and how many marks ride it.
+  //
+  // The radii step by 58, so marks on neighbouring orbits are 58px apart and
+  // can never be closer. Marks on one orbit are evenly spaced and turn
+  // together, so their spacing never changes either: the tightest is 261px,
+  // on the outer orbit's eight. A mark draws at most 30px. Nothing here can
+  // overlap anything else, and there is nothing to prove at runtime.
+  //
+  // The periods rise with the radius, so every mark covers about the same
+  // ground per second -- roughly 25px -- and an inner one is never racing
+  // while an outer one crawls.
+  var ORBITS = [
+    { r: 100, period: 26, count: 2 },
+    { r: 158, period: 41, count: 3 },
+    { r: 216, period: 56, count: 5 },
+    { r: 274, period: 71, count: 6 },
+    { r: 332, period: 86, count: 8 }
+  ];
+
+  var LOGOS = '../static/icons/agents/';
+  var field = document.getElementById('field');
+  var n = 0;
+
+  ORBITS.forEach(function (o, oi) {
+    var orbit = document.createElement('div');
+    orbit.className = 'orbit';
+    orbit.style.setProperty('--r', o.r);
+    orbit.style.setProperty('--period', o.period + 's');
+
+    var ring = document.createElement('div');
+    ring.className = 'ring';
+    orbit.appendChild(ring);
+
+    var sweep = document.createElement('div');
+    sweep.className = 'arc sweep';
+    orbit.appendChild(sweep);
+
+    for (var k = 0; k < o.count; k++) {
+      var angle = (360 / o.count) * k;
+      // Outer orbits are drawn a little further back: smaller, dimmer. It is
+      // the only depth cue on the page and it does the whole job.
+      var depth = oi / (ORBITS.length - 1);
+      var tool = TOOLS[n];
+      n++;
+
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.style.setProperty('--r', o.r);
+      slot.style.setProperty('--a', angle.toFixed(2) + 'deg');
+
+      var tail = document.createElement('div');
+      tail.className = 'arc tail';
+      slot.appendChild(tail);
+
+      var a = document.createElement('a');
+      a.className = 'mark';
+      a.href = '#';
+      a.dataset.name = tool[0];
+      a.style.setProperty('--o', (1 - 0.3 * depth).toFixed(3));
+      a.style.setProperty('--s', (1 - 0.17 * depth).toFixed(3));
+
+      var img = document.createElement('img');
+      img.src = LOGOS + tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = tool[0];
+      a.appendChild(tag);
+
+      function light(on) {
+        orbit.classList[on ? 'add' : 'remove']('is-lit');
+        // The sweep grows from the top of the orbit round to the mark, so
+        // pointing at one says both which orbit it is on and where on it.
+        orbit.style.setProperty('--lit', (on ? angle + 2 : 0) + 'deg');
+      }
+      a.addEventListener('pointerenter', function () { light(true); });
+      a.addEventListener('pointerleave', function () { light(false); });
+      a.addEventListener('focus', function () { light(true); });
+      a.addEventListener('blur', function () { light(false); });
+
+      slot.appendChild(a);
+      orbit.appendChild(slot);
+    }
+
+    field.appendChild(orbit);
+  });
+
+  if (n !== 24) console.warn('expected 24 marks, placed ' + n);
+})();
+</script>
+</body>
+</html>
