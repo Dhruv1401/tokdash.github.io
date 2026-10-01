@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 4 · galaxy</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.22);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+    /* Tipped far enough back that the disc reads as a disc -- the arms sweep
+       open and the far side is visibly compressed and dimmer -- and not so
+       far that the squash starts eating the gap between marks. Every
+       centimetre of tilt multiplies the vertical separation of two marks by
+       0.69, so this is the angle the marks are spaced against. */
+    --tilt: 46deg;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(1080px 800px at 50% 46%, rgba(34, 26, 86, 0.42), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 640px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- The stage ----
+     No perspective at all, and that is the point of this one. A perspective
+     projection is not a rigid motion, so marks on the far side and marks on
+     the near side would be scaled differently and the distances between them
+     would change as the galaxy turned -- which would mean the arrangement
+     could not be checked once and trusted forever. Drawn orthographically,
+     the whole galaxy is a rigid rotation, every distance between marks is
+     exactly what it is at the start, and the proof below is a single static
+     measurement. */
+  .stage { position: relative; }
+
+  .sky { position: absolute; inset: -40px; pointer-events: none; }
+  .mote {
+    position: absolute;
+    width: var(--s); height: var(--s);
+    margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+    border-radius: 50%;
+    background: var(--c);
+    opacity: var(--o);
+  }
+
+  .galaxy {
+    position: relative;
+    width: 660px; height: 660px;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt));
+  }
+
+  /* The disc itself: a wide haze for the plane the arms sit in and a tighter
+     bulge around the middle, so the arms come out of something rather than
+     starting in the dark. */
+  .disc {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(104, 132, 255, 0.20), rgba(84, 108, 232, 0.09) 38%, rgba(70, 92, 210, 0.03) 66%, transparent 82%);
+  }
+
+  /* One turn for the whole galaxy. Every mark and both arm strokes ride the
+     same layer, which is what keeps the arms the same shape forever: run the
+     inner marks faster and the arms shear into each other within a minute. */
+  .spin {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    animation: spin var(--period) linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* The arms, traced from the same spiral the marks sit on, so they line up
+     exactly. A soft wide copy underneath for the light and a thin bright one
+     on top for the dust. Both fade out towards the rim. */
+  .arms {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .arm-glow {
+    fill: none;
+    stroke: url(#arm-fade);
+    stroke-width: 26;
+    opacity: 0.4;
+    filter: blur(9px);
+  }
+  .arm-line {
+    fill: none;
+    stroke: url(#arm-fade);
+    stroke-width: 2;
+    opacity: 0.85;
+  }
+
+  .slot {
+    position: absolute; left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+  }
+
+  /* A mark is white-backed so every logo stays readable, dark monochrome
+     glyphs included. It swells and brightens along the near side of the disc
+     and shrinks and fades round the back, which is the only depth cue there
+     is here and the reason the flat spiral still reads as a tilted disc. */
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    animation: depth var(--period) linear infinite;
+    animation-delay: var(--delay);
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .mark::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; width: 150%; height: 150%;
+    margin: -75% 0 0 -75%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(126, 156, 255, 0.42), rgba(104, 146, 255, 0.13) 54%, transparent 78%);
+    z-index: -1;
+    animation: depth-glow var(--period) linear infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes depth {
+    0%, 100% { opacity: 0.24; transform: scale(0.62); }
+    50%      { opacity: 1;    transform: scale(1.16); }
+  }
+  @keyframes depth-glow {
+    0%, 100% { opacity: 0; transform: scale(0.62); }
+    50%      { opacity: 1; transform: scale(1.16); }
+  }
+
+  /* The name appears only for the mark under the pointer, so the field stays
+     a field. */
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 9px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  .mark:hover, .mark:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--glow); }
+
+  /* ---- The core ----
+     A small bright centre with two haloes. The wide one is allowed to reach
+     under the innermost marks: light under a mark reads as light, and the
+     marks coming out of the glow is most of the effect. */
+  .core {
+    position: absolute; left: 50%; top: 50%;
+    width: 62px; height: 62px; margin: -31px 0 0 -31px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 44%,
+      #f2f6ff, #b9cdff 40%, rgba(86, 116, 226, 0.85) 76%, rgba(24, 40, 88, 0) 100%);
+    box-shadow: 0 0 40px rgba(150, 180, 255, 0.5);
+    animation: breathe 9s ease-in-out infinite;
+  }
+  .core img { width: 28px; height: 28px; object-fit: contain; position: relative; z-index: 2; }
+  .core::before, .core::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    border-radius: 50%; z-index: -1;
+  }
+  .core::before {
+    width: 118px; height: 118px; margin: -59px 0 0 -59px;
+    background: radial-gradient(closest-side,
+      rgba(132, 162, 255, 0.3), rgba(110, 140, 250, 0.09) 58%, transparent 78%);
+  }
+  .core::after {
+    width: 190px; height: 190px; margin: -95px 0 0 -95px;
+    background: radial-gradient(closest-side,
+      rgba(110, 138, 246, 0.17), rgba(100, 128, 236, 0.05) 52%, transparent 76%);
+    animation: swell 13s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+  @keyframes swell {
+    0%, 100% { transform: scale(0.9); opacity: 0.6; }
+    50%      { transform: scale(1.08); opacity: 1; }
+  }
+
+  figcaption { max-width: 690px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spin, .mark, .mark::before, .core, .core::after { animation: none; }
+    /* Standing still, every mark sits at full size and full strength and its
+       glow is on: the galaxy reads as a diagram of where the marks live
+       rather than as a thing that has stopped. */
+    .mark { opacity: 1; transform: scale(1); }
+    .mark::before { opacity: 0.85; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 4 · galaxy</h1>
+  <p>Twenty-four tools on a two-armed logarithmic spiral, turning once every
+     seventy-two seconds.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="stage">
+    <div class="sky" id="sky" aria-hidden="true"></div>
+    <div class="galaxy" id="galaxy">
+      <div class="disc"></div>
+      <div class="spin" id="spin">
+        <svg class="arms" viewBox="-330 -330 660 660" aria-hidden="true">
+          <defs>
+            <radialGradient id="arm-fade" gradientUnits="userSpaceOnUse"
+                            cx="0" cy="0" r="340">
+              <stop offset="0.22" stop-color="#7d9dff" stop-opacity="0.9" />
+              <stop offset="0.58" stop-color="#6d8df5" stop-opacity="0.44" />
+              <stop offset="1" stop-color="#5d7de8" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <path class="arm-glow" id="arm-glow" />
+          <path class="arm-line" id="arm-line" />
+        </svg>
+        <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+      </div>
+    </div>
+  </div>
+  <figcaption>
+    The whole galaxy turns as <b>one rigid body</b>, drawn without
+    perspective, so the distance between any two marks is the same at every
+    second of the loop as it is at the start and the arrangement can be
+    measured once and trusted for good. Marks are spaced by <b>arc length
+    along the arm</b> in the plane of the disc, not by angle, so the spacing is
+    even where the spiral is steep. Turning the disc squashes its vertical
+    separation, and that — not the spacing — is what sets the limit: across
+    every phase of the turn the closest two marks come is <b>65px</b>, against
+    a mark that never draws wider than <b>30px</b>.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  var ARMS = 2;      // two arms, like a grand-design spiral
+  var PER_ARM = 12;  // 2 x 12 = 24
+  var R0 = 110;      // radius of the innermost mark
+  var R1 = 316;      // radius of the outermost
+  var TURNS = 0.85;  // how far round an arm runs before it ends
+  var PERIOD = 72;   // seconds for the whole galaxy
+
+  var TILT = 46;                      // must match --tilt above
+
+  // The arms are logarithmic spirals, r = R0 * e^(k * theta), with k solved
+  // so an arm runs from R0 out to R1 over TURNS of arc. They stretch as they
+  // come away from the centre, which is most of the difference between a
+  // galaxy and a clock face.
+  var K = Math.log(R1 / R0) / (TURNS * 2 * Math.PI);
+
+  // ---- The spiral, sampled once ----
+  // Marks are spaced along the arm in the PLANE OF THE DISC, not on the
+  // squashed version of it that ends up on screen. That order matters. The
+  // galaxy rotates first and the disc is tipped back second, so the squash
+  // acts on marks that have already turned -- two marks a comfortable 97px
+  // apart in the disc can be drawn much closer together once the disc has
+  // tipped. Spacing on screen instead would be spacing against an angle that
+  // changes all the way round the loop.
+  var STEPS = 900;
+  var path = [];
+  var total = 0;
+  for (var i = 0; i <= STEPS; i++) {
+    var t = TURNS * 2 * Math.PI * (i / STEPS);
+    var r = R0 * Math.exp(K * t);
+    var x = r * Math.cos(t);
+    var y = r * Math.sin(t);
+    if (i) total += Math.hypot(x - path[i - 1].x, y - path[i - 1].y);
+    path.push({ x: x, y: y, at: total });
+  }
+
+  // The nearest sample to a given distance along the arm. Linear search: the
+  // path is short, and this runs twelve times per arm at load.
+  function pointAt(d) {
+    var lo = 0, hi = path.length - 1;
+    while (lo < hi) {
+      var mid = (lo + hi) >> 1;
+      if (path[mid].at < d) lo = mid + 1; else hi = mid;
+    }
+    return path[lo];
+  }
+
+  var LOGOS = '../static/icons/agents/';
+  var spin = document.getElementById('spin');
+  var sky = document.getElementById('sky');
+  spin.style.setProperty('--period', PERIOD + 's');
+
+  // ---- The arm strokes ----
+  // Drawn from the same samples the marks are placed on, so a mark always
+  // sits exactly on its own arm.
+  var d = path.map(function (p, i) {
+    return (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1);
+  }).join(' ');
+  // A second arm is the first one turned through half a turn. Because the
+  // whole layer already turns together, this only has to be drawn once --
+  // but the marks on it do need their own angles.
+  document.getElementById('arm-line').setAttribute('d', d);
+  document.getElementById('arm-glow').setAttribute('d', d);
+
+  var step = total / (PER_ARM - 1);
+  var n = 0;
+
+  for (var arm = 0; arm < ARMS; arm++) {
+    var offset = arm * 180;   // degrees round the disc
+
+    for (var j = 0; j < PER_ARM; j++) {
+      var p = pointAt(j * step);
+      var r = Math.hypot(p.x, p.y);
+      // atan2 on a y-down axis is already the angle CSS rotate() wants, and
+      // adding the arm's half turn keeps the angle inside 0..360.
+      var angle = (Math.atan2(p.y, p.x) * 180 / Math.PI + offset + 360) % 360;
+      var tool = TOOLS[n];
+      n++;
+
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.style.setProperty('--r', r.toFixed(2));
+      slot.style.setProperty('--a', angle.toFixed(2) + 'deg');
+
+      var a = document.createElement('a');
+      a.className = 'mark';
+      a.href = '#';
+      a.dataset.name = tool[0];
+      // Brightest at the near edge of the disc, a quarter of the way round.
+      // The depth keyframe peaks half a cycle in, so the delay shifts back by
+      // half the period.
+      var peak = ((90 - angle) / 360) * PERIOD;
+      a.style.setProperty('--delay', (peak - PERIOD / 2) + 's');
+
+      var img = document.createElement('img');
+      img.src = LOGOS + tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = tool[0];
+      a.appendChild(tag);
+
+      slot.appendChild(a);
+      spin.appendChild(slot);
+    }
+  }
+
+  // ---- The sky behind it ----
+  // A fixed handful of stars, thrown by a tiny repeatable generator so the
+  // page looks the same every time it is opened. They sit outside the turning
+  // layer: the galaxy turns, the sky does not.
+  var seed = 20240917;
+  function random() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+  var TINTS = ['#dfe8ff', '#b9cdff', '#ffffff', '#8fb0ff', '#ffe9c9'];
+  for (var s = 0; s < 110; s++) {
+    var star = document.createElement('i');
+    star.className = 'mote';
+    star.style.left = (random() * 100).toFixed(2) + '%';
+    star.style.top = (random() * 100).toFixed(2) + '%';
+    star.style.setProperty('--s', (0.9 + random() * 1.5).toFixed(2) + 'px');
+    star.style.setProperty('--o', (0.1 + random() * 0.5).toFixed(2));
+    star.style.setProperty('--c', TINTS[Math.floor(random() * TINTS.length)]);
+    sky.appendChild(star);
+  }
+
+  if (n !== 24) console.warn('expected 24 marks, placed ' + n);
+})();
+</script>
+</body>
+</html>
