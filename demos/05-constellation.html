@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 5 · constellation</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.26);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 30px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(900px 700px at 50% 45%, rgba(34, 44, 104, 0.36), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 640px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  .field {
+    position: relative;
+    width: min(960px, 92vw);
+    height: min(560px, 62vh);
+    border-radius: 20px;
+    overflow: hidden;
+    /* The same faint slab the rest of the site draws its glass with, so the
+       lines read as sitting on a surface rather than floating on the page. */
+    background: color-mix(in srgb, #ffffff 3%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(154, 184, 240, 0.10);
+  }
+
+  /* A soft band running across the field behind everything. It gives the
+     empty parts of the panel something to be empty against, and it stops the
+     constellation looking like a diagram of nodes on a rectangle. */
+  .field::before {
+    content: ''; position: absolute; inset: -30%;
+    background:
+      radial-gradient(46% 30% at 28% 62%, rgba(96, 126, 240, 0.13), transparent 70%),
+      radial-gradient(38% 26% at 74% 34%, rgba(126, 108, 230, 0.11), transparent 70%);
+    pointer-events: none;
+  }
+
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .star {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    will-change: transform;
+    transition: box-shadow 160ms ease, opacity 220ms ease;
+  }
+  .star img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  /* The light round a star. It is allowed to overlap another star's light --
+     two glows running together is the look, not a collision -- and it is
+     what keeps a row of white tiles from reading as a row of white tiles. */
+  .star::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; width: 230%; height: 230%;
+    margin: -115% 0 0 -115%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(122, 158, 255, 0.30), rgba(104, 146, 255, 0.09) 50%, transparent 76%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .star .tag {
+    position: absolute; left: 50%; top: calc(100% + 8px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .star:hover .tag, .star:focus-visible .tag { opacity: 1; }
+  .star:hover, .star:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--glow); z-index: 3; }
+
+  /* Pointing at a star lifts the ones it is wired to and lets the rest of the
+     field go back, so the eye lands on the local shape rather than having to
+     trace every line in the panel. */
+  .field.is-pointed .star { opacity: 0.42; }
+  .field.is-pointed .star.is-near,
+  .field.is-pointed .star:hover,
+  .field.is-pointed .star:focus-visible {
+    opacity: 1;
+    box-shadow: 0 0 0 1px rgba(150, 186, 255, 0.5),
+                0 0 20px rgba(104, 146, 255, 0.34);
+  }
+
+  figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 5 · constellation</h1>
+  <p>The tools as stars in a drifting field, each wired to whatever it is
+     nearest at the moment.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="field" id="field">
+    <canvas id="wires"></canvas>
+  </div>
+  <figcaption>
+    The links are not drawn by hand. Every frame each tool is joined to
+    whatever it is nearest, and each link eases in and out rather than
+    appearing, so the shape of the field is always changing under you. No two
+    tools can collide: any pair that comes within <b>50px</b> is pushed apart
+    along the line between them, repeatedly, until nothing is closer than that —
+    and 50px is wider than a mark ever draws, which is 30px.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  var N = TOOLS.length;
+  var MARK = 30;      // a star's width
+  var GAP = 50;       // the closest two stars are ever allowed to come
+  var REACH = 190;    // how close two stars have to be to be wired
+  var DRIFT = 9;      // px a second: the slowest thing on the page
+  var PASSES = 40;    // relaxation sweeps per frame, worst case
+
+  var reduce = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var field = document.getElementById('field');
+  var canvas = document.getElementById('wires');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0;
+  var stars = [];
+  var speckle = [];
+
+  // A tiny repeatable generator, so the field looks the same every time the
+  // page is opened rather than reshuffling on each reload.
+  var seed = 20260114;
+  function random() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  function resize() {
+    // Capped below the display's ratio, for the same reason the landing
+    // page's particle field caps it: this is redrawn in full every frame
+    // over a large area, and at 2x that is four times the fill for lines a
+    // pixel or two wide, which is not visible.
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = field.clientWidth;
+    H = field.clientHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // Drop each star on a jittered grid rather than at random. Random placement
+  // clumps, and clumps then have to be pushed apart hard; a grid starts the
+  // field already spread out, so the relaxation has almost nothing to do.
+  function seedField() {
+    seed = 20260114;
+    var cols = 6, rows = 4;
+    var cw = W / cols, ch = H / rows;
+    var order = [];
+    for (var i = 0; i < N; i++) order.push(i);
+    for (var j = order.length - 1; j > 0; j--) {
+      var k = Math.floor(random() * (j + 1));
+      var t = order[j]; order[j] = order[k]; order[k] = t;
+    }
+    for (var n = 0; n < order.length; n++) {
+      var c = order[n] % cols, r = Math.floor(order[n] / cols);
+      stars.push({
+        tool: TOOLS[n],
+        x: (c + 0.5) * cw + (random() - 0.5) * cw * 0.45,
+        y: (r + 0.5) * ch + (random() - 0.5) * ch * 0.45,
+        vx: random() - 0.5,
+        vy: random() - 0.5,
+        el: null,
+        near: [],
+        wired: new Float32Array(N)   // how strongly each other star is linked
+      });
+    }
+    for (var s = 0; s < 220; s++) {
+      speckle.push({
+        x: random() * W,
+        y: random() * H,
+        r: 0.4 + random() * 1.1,
+        a: 0.05 + random() * 0.28,
+        warm: random() < 0.18
+      });
+    }
+  }
+
+  function build() {
+    stars.forEach(function (s, i) {
+      var a = document.createElement('a');
+      a.className = 'star';
+      a.href = '#';
+      a.setAttribute('aria-label', s.tool[0]);
+      a.dataset.name = s.tool[0];
+
+      var img = document.createElement('img');
+      img.src = '../static/icons/agents/' + s.tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = s.tool[0];
+      a.appendChild(tag);
+
+      s.el = a;
+      field.appendChild(a);
+
+      function point(on) {
+        field.classList[on ? 'add' : 'remove']('is-pointed');
+        for (var j = 0; j < N; j++) stars[j].el.classList.remove('is-near');
+        if (on) s.near.forEach(function (k) { stars[k].el.classList.add('is-near'); });
+      }
+      a.addEventListener('pointerenter', function () { point(true); });
+      a.addEventListener('pointerleave', function () { point(false); });
+      a.addEventListener('focus', function () { point(true); });
+      a.addEventListener('blur', function () { point(false); });
+    });
+  }
+
+  function clamp(s) {
+    s.x = Math.max(GAP, Math.min(W - GAP, s.x));
+    s.y = Math.max(GAP, Math.min(H - GAP, s.y));
+  }
+
+  function move(dt) {
+    for (var i = 0; i < N; i++) {
+      var s = stars[i];
+      s.x += s.vx * DRIFT * dt;
+      s.y += s.vy * DRIFT * dt;
+      // Turn about now and then, so the field never settles into a drift in
+      // one direction.
+      if (random() < dt * 0.3) {
+        s.vx += (random() - 0.5) * 1.6;
+        s.vy += (random() - 0.5) * 1.6;
+        var m = Math.hypot(s.vx, s.vy);
+        if (m > 1) { s.vx /= m; s.vy /= m; }
+        if (m < 0.25) { s.vx = random() - 0.5; s.vy = random() - 0.5; }
+      }
+      // Bounce off the panel rather than being pinned to it, so a star that
+      // drifts into a corner comes back off the wall instead of grinding
+      // along it.
+      if (s.x < GAP) { s.x = GAP + (GAP - s.x) * 0.4; s.vx = Math.abs(s.vx); }
+      if (s.x > W - GAP) { s.x = W - GAP - (s.x - (W - GAP)) * 0.4; s.vx = -Math.abs(s.vx); }
+      if (s.y < GAP) { s.y = GAP + (GAP - s.y) * 0.4; s.vy = Math.abs(s.vy); }
+      if (s.y > H - GAP) { s.y = H - GAP - (s.y - (H - GAP)) * 0.4; s.vy = -Math.abs(s.vy); }
+    }
+  }
+
+  // The guarantee.
+  //
+  // Any pair closer than GAP is pushed apart along the line between them,
+  // each taking half the correction, and the sweeps repeat because one pair's
+  // shove can close another. Each sweep can only push a violating pair out of
+  // violation without pushing some other pair further in, so the process is
+  // a projection onto the set of arrangements with no two stars too close --
+  // and the sweeps run until nothing is violating, or until the cap. The
+  // cap is generous: with 24 stars in a panel this size the arrangement is
+  // nowhere near tight enough to need more than a couple of sweeps a frame.
+  //
+  // GAP is wider than a mark ever draws (30px), so a converged pass means no
+  // two marks can overlap, at any point in the drift, by construction rather
+  // than by luck.
+  function separate() {
+    var violated = true, pass = 0;
+    while (violated && pass < PASSES) {
+      violated = false;
+      pass++;
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var a = stars[i], b = stars[j];
+          var dx = b.x - a.x, dy = b.y - a.y;
+          var d = Math.sqrt(dx * dx + dy * dy);
+          if (d >= GAP) continue;
+          if (d < 0.001) {           // exactly on top of each other
+            dx = 0.01; dy = 0.01; d = 0.0141;
+          }
+          violated = true;
+          var push = (GAP - d) / 2;
+          var ux = dx / d, uy = dy / d;
+          a.x -= ux * push; a.y -= uy * push;
+          b.x += ux * push; b.y += uy * push;
+        }
+      }
+      for (var k = 0; k < N; k++) clamp(stars[k]);
+    }
+  }
+
+  function draw(dt, hovered) {
+    ctx.clearRect(0, 0, W, H);
+
+    // The dust behind the field. Fixed, and redrawn only because the canvas
+    // is cleared -- 220 dots is nothing.
+    for (var s = 0; s < speckle.length; s++) {
+      var p = speckle[s];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = (p.warm ? 'rgba(255,232,200,' : 'rgba(198,216,255,') + p.a + ')';
+      ctx.fill();
+    }
+
+    for (var i = 0; i < N; i++) stars[i].near.length = 0;
+
+    for (var a = 0; a < N; a++) {
+      var pa = stars[a];
+      for (var b = a + 1; b < N; b++) {
+        var qb = stars[b];
+        var dx = qb.x - pa.x, dy = qb.y - pa.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        var target = d < REACH ? 1 - d / REACH : 0;
+
+        // Ease each link towards what it should be, so a pair crossing the
+        // reach fades in and out instead of snapping on and off.
+        var k = 1 - Math.pow(0.0015, dt);
+        var now = pa.wired[b] + (target - pa.wired[b]) * k;
+        pa.wired[b] = now;
+        qb.wired[a] = now;
+        if (now < 0.004) continue;
+
+        if (target > 0) { pa.near.push(b); qb.near.push(a); }
+
+        var lit = hovered === a || hovered === b;
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(qb.x, qb.y);
+        ctx.strokeStyle = lit
+          ? 'rgba(172, 202, 255, ' + (0.1 + now * 0.55).toFixed(3) + ')'
+          : 'rgba(150, 178, 240, ' + (0.03 + now * 0.2).toFixed(3) + ')';
+        ctx.lineWidth = lit ? 1.3 : 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function place() {
+    for (var i = 0; i < N; i++) {
+      var s = stars[i];
+      s.el.style.transform =
+        'translate3d(' + s.x.toFixed(1) + 'px,' + s.y.toFixed(1) + 'px,0)';
+    }
+  }
+
+  var hovered = -1;
+  field.addEventListener('pointerover', function (e) {
+    var el = e.target.closest ? e.target.closest('.star') : null;
+    hovered = el ? stars.indexOf(el) : -1;
+    if (hovered === -1) field.classList.remove('is-pointed');
+  });
+
+  var last = 0;
+  function frame(now) {
+    var dt = last ? (now - last) / 1000 : 0.016;
+    last = now;
+    if (dt > 0.05) dt = 0.05;
+    move(dt);
+    separate();
+    place();
+    draw(dt, hovered);
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  seedField();
+  build();
+
+  // Standing still, the field is one laid-out arrangement: the stars are
+  // placed, held apart, and wired, and nothing moves. It is a diagram of a
+  // constellation rather than a constellation that stopped moving.
+  if (reduce) {
+    separate();
+    place();
+    draw(1, -1);
+  } else {
+    requestAnimationFrame(frame);
+  }
+
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    resize();
+    // A smaller panel means the arrangement has to be resolved again, so the
+    // separation runs rather than the stars being left overlapping until the
+    // next frame happens to fix it.
+    separate();
+    place();
+    draw(1, hovered);
+    clearTimeout(resizeTimer);
+  });
+})();
+</script>
+</body>
+</html>
