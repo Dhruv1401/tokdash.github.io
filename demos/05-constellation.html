@@ -35,10 +35,29 @@
   p { margin: 0; color: var(--muted); }
   p strong { color: var(--ink); font-weight: 600; }
 
-  .field {
+  /* ---- Fitting the window ----
+     The field is a fixed 960 by 560 because the twenty-four stars are relaxed
+     apart inside it, and relaxing them is the whole guarantee. On a narrow
+     window that box does not fit, and since the panel clips, tools disappear
+     rather than merely getting smaller. So the field is laid out once at its
+     natural size and then scaled down as a single piece by a factor the
+     window measures. Nothing is re-laid-out, so no star changes its place
+     relative to another and the constellation stays the constellation; the
+     whole thing simply gets smaller, the way a model gets smaller when you
+     step back from it. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 960px), calc((100vh - 140px) / 560px));
     position: relative;
-    width: min(960px, 92vw);
-    height: min(560px, 62vh);
+    width: calc(960px * var(--fit));
+    height: calc(560px * var(--fit));
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .field {
+    position: absolute; left: 50%; top: 0;
+    width: 960px; height: 560px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
     border-radius: 20px;
     overflow: hidden;
     /* The same faint slab the rest of the site draws its glass with, so the
@@ -127,8 +146,10 @@
 </header>
 
 <figure style="margin:0">
-  <div class="field" id="field">
-    <canvas id="wires"></canvas>
+  <div class="frame">
+    <div class="field" id="field">
+      <canvas id="wires"></canvas>
+    </div>
   </div>
   <figcaption>
     The links are not drawn by hand. Every frame each tool is joined to

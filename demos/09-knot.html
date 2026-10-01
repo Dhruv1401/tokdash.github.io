@@ -35,11 +35,29 @@
   p { margin: 0; color: var(--muted); }
   p strong { color: var(--ink); font-weight: 600; }
 
-  /* No perspective, and the script says why. */
-  .field {
+  /* ---- Fitting the window ----
+     The knot is a fixed 760 by 660 because the torus that carries the marks
+     is fixed, and the twenty-four places on it were searched for rather than
+     spaced. On a narrow window that box does not fit, and since the panel
+     clips, tools disappear rather than merely getting smaller. So the field
+     is laid out once at its natural size and then scaled down as a single
+     piece by a factor the window measures. Nothing is re-laid-out, so no mark
+     changes its place relative to another and the knot stays the knot; the
+     whole thing simply gets smaller, the way a model gets smaller when you
+     step back from it. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 760px), calc((100vh - 140px) / 660px));
     position: relative;
-    width: min(760px, 92vw);
-    height: min(700px, 66vh);
+    width: calc(760px * var(--fit));
+    height: calc(660px * var(--fit));
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .field {
+    position: absolute; left: 50%; top: 0;
+    width: 760px; height: 660px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
     border-radius: 20px;
     overflow: hidden;
     background: color-mix(in srgb, #ffffff 3%, transparent);
@@ -127,9 +145,11 @@
 </header>
 
 <figure style="margin:0">
-  <div class="field" id="field">
-    <canvas id="ribbon"></canvas>
-    <div class="knot" id="knot"></div>
+  <div class="frame">
+    <div class="field" id="field">
+      <canvas id="ribbon"></canvas>
+      <div class="knot" id="knot"></div>
+    </div>
   </div>
   <figcaption>
     The marks sit on one curve, so they were placed by

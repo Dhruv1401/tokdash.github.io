@@ -35,7 +35,33 @@
   p { margin: 0; color: var(--muted); }
   p strong { color: var(--ink); font-weight: 600; }
 
-  .stage { perspective: 2600px; perspective-origin: 50% 50%; }
+  /* ---- Fitting the window ----
+     The four rings are fixed numbers of pixels because the arrangement of
+     them is what was searched for, and a searched arrangement cannot be
+     re-solved in the browser. On a narrow window that geometry does not fit,
+     and since the picture is clipped, tools disappear rather than merely
+     getting smaller. So the picture is laid out once at its natural 620px
+     and then scaled down as a single piece by a factor the window measures.
+     Nothing is re-laid-out, so no mark changes its place relative to another
+     and the tangle stays the tangle; the whole thing simply gets smaller,
+     the way a model gets smaller when you step back from it. The 44px under
+     the picture is room for the name pill below the outermost ring, which is
+     the one thing that hangs over the edge. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 620px), calc((100vh - 140px) / 620px));
+    position: relative;
+    width: calc(620px * var(--fit));
+    height: calc(620px * var(--fit) + 44px);
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .stage {
+    position: absolute; left: 50%; top: 0;
+    width: 620px; height: 620px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
+    perspective: 2600px; perspective-origin: 50% 50%;
+  }
 
   .armillary {
     position: relative;
@@ -162,8 +188,10 @@
 </header>
 
 <figure style="margin:0">
-  <div class="stage">
+  <div class="frame">
+    <div class="stage">
     <div class="armillary" id="armillary"></div>
+    </div>
   </div>
   <figcaption>
     The most tangled of these, and the one where the arrangement is the

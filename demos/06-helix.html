@@ -35,12 +35,29 @@
   p { margin: 0; color: var(--muted); }
   p strong { color: var(--ink); font-weight: 600; }
 
-  /* The stage supplies no perspective at all, and that is load-bearing rather
-     than lazy: see the note in the script. */
-  .field {
+  /* ---- Fitting the window ----
+     The run of rungs is a fixed 1120px wide because the panel of marks it
+     carries is, and the whole argument about the 45px separation is about
+     that fixed geometry. On a narrow window it does not fit, and since the
+     panel clips, tools disappear rather than merely getting smaller. So the
+     picture is laid out once at its natural size and then scaled down as a
+     single piece by a factor the window measures. Nothing is re-laid-out, so
+     no mark changes its place relative to another and the strands stay the
+     strands; the whole thing simply gets smaller, the way a model gets
+     smaller when you step back from it. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 1120px), calc((100vh - 140px) / 520px));
     position: relative;
-    width: min(1120px, 94vw);
-    height: min(520px, 58vh);
+    width: calc(1120px * var(--fit));
+    height: calc(520px * var(--fit));
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .field {
+    position: absolute; left: 50%; top: 0;
+    width: 1120px; height: 520px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
     border-radius: 20px;
     overflow: hidden;
     background: color-mix(in srgb, #ffffff 3%, transparent);
@@ -134,8 +151,10 @@
 </header>
 
 <figure style="margin:0">
-  <div class="field" id="field">
-    <canvas id="wires"></canvas>
+  <div class="frame">
+    <div class="field" id="field">
+      <canvas id="wires"></canvas>
+    </div>
   </div>
   <figcaption>
     A helix is the one shape here whose strands genuinely cross the viewer's

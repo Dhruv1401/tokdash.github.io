@@ -39,10 +39,29 @@
      nested ellipses: the orbits are circles in the plane of the page, and
      depth is carried by size and brightness alone. That is the whole look,
      and it is also why the no-collision claim is the easiest of the set. */
-  .field {
+  /* ---- Fitting the window ----
+     The five orbits are fixed numbers of pixels because 58px between
+     neighbouring orbits is the whole of the no-collision claim. On a narrow
+     window they do not fit, and since the panel clips, tools disappear rather
+     than merely getting smaller. So the picture is laid out once at its
+     natural 760 by 720 and then scaled down as a single piece by a factor the
+     window measures. Nothing is re-laid-out, so no mark changes its place
+     relative to another and the orbits stay the orbits; the whole thing
+     simply gets smaller, the way a model gets smaller when you step back from
+     it. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 760px), calc((100vh - 140px) / 720px));
     position: relative;
-    width: min(760px, 92vw);
-    height: min(760px, 72vh);
+    width: calc(760px * var(--fit));
+    height: calc(720px * var(--fit));
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .field {
+    position: absolute; left: 50%; top: 0;
+    width: 760px; height: 720px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
     border-radius: 20px;
     overflow: hidden;
     background: color-mix(in srgb, #ffffff 3%, transparent);
@@ -247,10 +266,12 @@
 </header>
 
 <figure style="margin:0">
-  <div class="field" id="field">
-    <div class="core-arc b"></div>
-    <div class="core-arc a"></div>
-    <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+  <div class="frame">
+    <div class="field" id="field">
+      <div class="core-arc b"></div>
+      <div class="core-arc a"></div>
+      <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+    </div>
   </div>
   <figcaption>
     Nothing tilts, nothing foreshortens, and the orbits are circles in the

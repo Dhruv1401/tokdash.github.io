@@ -50,9 +50,34 @@
      the whole galaxy is a rigid rotation, every distance between marks is
      exactly what it is at the start, and the proof below is a single static
      measurement. */
-  .stage { position: relative; }
+  /* ---- Fitting the window ----
+     The disc is a fixed 660px because the marks are spaced along it in the
+     plane of the disc and a number that size can be quoted. On a narrow
+     window that geometry does not fit, and since the picture is clipped,
+     tools disappear rather than merely getting smaller. So the picture is
+     laid out once at its natural size and then scaled down as a single piece
+     by a factor the window measures. Nothing is re-laid-out, so no mark
+     changes its place relative to another and the spiral stays the spiral;
+     the whole thing simply gets smaller, the way a model gets smaller when
+     you step back from it. The 44px under the picture is room for the name
+     pill below the outermost mark, which is the one thing that hangs over the
+     edge. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 660px), calc((100vh - 140px) / 660px));
+    position: relative;
+    width: calc(660px * var(--fit));
+    height: calc(660px * var(--fit) + 44px);
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .stage {
+    position: absolute; left: 50%; top: 0;
+    width: 660px; height: 660px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
+  }
 
-  .sky { position: absolute; inset: -40px; pointer-events: none; }
+  .sky { position: absolute; inset: 0; pointer-events: none; }
   .mote {
     position: absolute;
     width: var(--s); height: var(--s);
@@ -245,24 +270,26 @@
 </header>
 
 <figure style="margin:0">
-  <div class="stage">
-    <div class="sky" id="sky" aria-hidden="true"></div>
-    <div class="galaxy" id="galaxy">
-      <div class="disc"></div>
-      <div class="spin" id="spin">
-        <svg class="arms" viewBox="-330 -330 660 660" aria-hidden="true">
-          <defs>
-            <radialGradient id="arm-fade" gradientUnits="userSpaceOnUse"
-                            cx="0" cy="0" r="340">
-              <stop offset="0.22" stop-color="#7d9dff" stop-opacity="0.9" />
-              <stop offset="0.58" stop-color="#6d8df5" stop-opacity="0.44" />
-              <stop offset="1" stop-color="#5d7de8" stop-opacity="0" />
-            </radialGradient>
-          </defs>
-          <path class="arm-glow" id="arm-glow" />
-          <path class="arm-line" id="arm-line" />
-        </svg>
-        <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+  <div class="frame">
+    <div class="stage">
+      <div class="sky" id="sky" aria-hidden="true"></div>
+      <div class="galaxy" id="galaxy">
+        <div class="disc"></div>
+        <div class="spin" id="spin">
+          <svg class="arms" viewBox="-330 -330 660 660" aria-hidden="true">
+            <defs>
+              <radialGradient id="arm-fade" gradientUnits="userSpaceOnUse"
+                              cx="0" cy="0" r="340">
+                <stop offset="0.22" stop-color="#7d9dff" stop-opacity="0.9" />
+                <stop offset="0.58" stop-color="#6d8df5" stop-opacity="0.44" />
+                <stop offset="1" stop-color="#5d7de8" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <path class="arm-glow" id="arm-glow" />
+            <path class="arm-line" id="arm-line" />
+          </svg>
+          <div class="core"><img src="../static/icons/logo.png" alt=""></div>
+        </div>
       </div>
     </div>
   </div>

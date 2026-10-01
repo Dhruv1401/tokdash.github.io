@@ -37,6 +37,33 @@
   p { margin: 0; color: var(--muted); }
   p strong { color: var(--ink); font-weight: 600; }
 
+  /* ---- Fitting the window ----
+     Every number in this demo is a fixed number of pixels, because that is
+     the only way the three shells can be proved to nest. On a narrow window
+     that geometry does not fit, and since the picture is clipped, tools
+     disappear rather than merely getting smaller. So the picture is laid out
+     once at its natural 700px and then scaled down as a single piece by a
+     factor the window measures. Nothing is re-laid-out, so no mark changes
+     its place relative to another and the arrangement stays the
+     arrangement; the whole thing simply gets smaller, the way a model gets
+     smaller when you step back from it. The 44px under the picture is room
+     for the name pill below the lowest mark, which is the one thing that
+     hangs over the edge. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 700px), calc((100vh - 140px) / 700px));
+    position: relative;
+    width: calc(700px * var(--fit));
+    height: calc(700px * var(--fit) + 44px);
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .stage {
+    position: absolute; left: 50%; top: 0;
+    width: 700px; height: 700px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
+  }
+
   /* The stage supplies the vanishing point. Everything inside is transformed
      in 3D against it, so a mark on the back of a ring really is further away
      rather than merely drawn smaller. The perspective is long on purpose:
@@ -235,11 +262,13 @@
 </header>
 
 <figure style="margin:0">
-  <div class="stage">
-    <div class="atom" id="atom">
-      <div class="axis"></div>
-      <div class="axis-x"></div>
-      <div class="nucleus"><img src="../static/icons/logo.png" alt=""></div>
+  <div class="frame">
+    <div class="stage">
+      <div class="atom" id="atom">
+        <div class="axis"></div>
+        <div class="axis-x"></div>
+        <div class="nucleus"><img src="../static/icons/logo.png" alt=""></div>
+      </div>
     </div>
   </div>
   <figcaption>

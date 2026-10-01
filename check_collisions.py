@@ -21,7 +21,7 @@ good enough: a mark inside a `preserve-3d` subtree reports a box whose centre
 drifts by up to 16px as its depth animation runs, so a box can report an
 overlap that is not on screen and a separation that is too large.
 
-Usage: python3 check_collisions.py <demo-file.html> [seconds] [samples]
+Usage: python3 check_collisions.py <demo-file.html> [seconds] [samples] [WxH]
 """
 import sys
 import pathlib
@@ -253,7 +253,8 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(
             args=["--no-sandbox", "--force-device-scale-factor=1"])
-        ctx = browser.new_context(viewport={"width": 1440, "height": 1100})
+        vw, vh = (int(x) for x in sys.argv[4].split("x")) if len(sys.argv) > 4 else (1440, 1100)
+        ctx = browser.new_context(viewport={"width": vw, "height": vh})
         # A container reports one core and no memory, which changes nothing
         # here but would make any capability check inside the page odd.
         ctx.add_init_script(

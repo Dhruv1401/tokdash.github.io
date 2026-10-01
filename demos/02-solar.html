@@ -47,7 +47,31 @@
      below still describes what actually lands on screen. The perspective
      origin sits at the centre of the system, so marks are pushed away from
      the middle symmetrically instead of all sliding one way. */
-  .stage { perspective: 3600px; perspective-origin: 50% 50%; }
+  /* ---- Fitting the window ----
+     Every number in this demo is a fixed number of pixels, because that is
+     the only way the orbits can be proved to nest. On a narrow window that
+     geometry does not fit, and since the picture is clipped, tools disappear
+     rather than merely getting smaller. So the picture is laid out once at
+     its natural 680px and then scaled down as a single piece by a factor the
+     window measures. Nothing is re-laid-out, so no mark changes its place
+     relative to another and the arrangement stays the arrangement; the whole
+     thing simply gets smaller, the way a model gets smaller when you step
+     back from it. */
+  .frame {
+    --fit: min(1, calc((100vw - 64px) / 680px), calc((100vh - 140px) / 680px));
+    position: relative;
+    width: calc(680px * var(--fit));
+    height: calc(680px * var(--fit));
+    overflow: hidden;
+    margin-inline: auto;
+  }
+  .stage {
+    position: absolute; left: 50%; top: 0;
+    width: 680px; height: 680px;
+    transform: translateX(-50%) scale(var(--fit));
+    transform-origin: top center;
+    perspective: 3600px; perspective-origin: 50% 50%;
+  }
 
   .system {
     position: relative;
@@ -230,12 +254,14 @@
 </header>
 
 <figure style="margin:0">
-  <div class="stage">
-    <div class="system" id="system">
-      <div class="plane"></div>
-      <div class="corona c2"></div>
-      <div class="corona c1"></div>
-      <div class="sun"><img src="../static/icons/logo.png" alt=""></div>
+  <div class="frame">
+    <div class="stage">
+      <div class="system" id="system">
+        <div class="plane"></div>
+        <div class="corona c2"></div>
+        <div class="corona c1"></div>
+        <div class="sun"><img src="../static/icons/logo.png" alt=""></div>
+      </div>
     </div>
   </div>
   <figcaption>
