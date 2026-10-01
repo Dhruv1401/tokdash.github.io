@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 9 · knot</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.26);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(1000px 800px at 50% 46%, rgba(28, 40, 96, 0.38), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 660px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* No perspective, and the script says why. */
+  .field {
+    position: relative;
+    width: min(760px, 92vw);
+    height: min(700px, 66vh);
+    border-radius: 20px;
+    overflow: hidden;
+    background: color-mix(in srgb, #ffffff 3%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(154, 184, 240, 0.10);
+  }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* The marks ride inside a layer that turns about the axis pointing out of
+     the page. The canvas is drawn from the same angle in the same frame, so
+     the two never drift apart. */
+  .knot {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+  }
+
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .mark::before {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; width: 200%; height: 200%;
+    margin: -100% 0 0 -100%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(126, 158, 255, 0.36), rgba(104, 146, 255, 0.11) 52%, transparent 78%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Each mark's position, size and brightness are set once by the script,
+     from where it sits on the curve: a mark's depth is fixed for the whole
+     turn, because turning about the axis pointing out of the page cannot
+     change anyone's depth. Only the highlight moves. */
+  .mark.is-lit {
+    box-shadow: 0 0 0 2px var(--glow);
+    z-index: 3;
+  }
+
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 8px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  .mark:hover, .mark:focus-visible { outline: none; opacity: 1; }
+
+  figcaption { max-width: 700px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark .tag { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 9 · knot</h1>
+  <p>The tools threaded once around a trefoil: a single curve, wound three
+     times round the tube and twice round the middle.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="field" id="field">
+    <canvas id="ribbon"></canvas>
+    <div class="knot" id="knot"></div>
+  </div>
+  <figcaption>
+    The marks sit on one curve, so they were placed by
+    <b>picking them apart</b>: start anywhere, then take, one after another,
+    the point of the curve furthest from every mark already placed. Dropped at
+    even intervals instead, a knot this tangled puts marks on top of each
+    other the moment the curve crosses its own path. As placed, the closest
+    two ever come is <b>66px</b>, and a mark never draws wider than
+    <b>30px</b>. The light running along the ribbon is only drawn.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // A trefoil on a torus: p = 2 turns round the middle, q = 3 round the tube.
+  var R = 215, r = 108, P = 2, Q = 3;
+  var TILT = 34;        // degrees the torus is tipped off face-on
+  var PERIOD = 62;      // seconds for one turn of the knot
+  var SAMPLES = 260;    // points around the curve, used to draw the ribbon
+  var BANDS = 7;        // depth bands the ribbon is drawn in
+
+  // Where the twenty-four marks sit, as a fraction of the way round the
+  // curve. Found by starting at the beginning and then repeatedly taking the
+  // point furthest from everything already placed, then swapping pairs for a
+  // while to improve on it. Evenly spaced parameters would have been the
+  // obvious thing and it does not work: the curve crosses its own path, and
+  // wherever it does, marks at even intervals are close together or on top of
+  // each other. What came out has a closest approach of 65.6px.
+  var PLACED = [
+    0.00000, 0.04675, 0.08075, 0.11450, 0.18400, 0.22850,
+    0.29100, 0.31600, 0.33925, 0.36450, 0.39500, 0.42825,
+    0.49675, 0.58600, 0.60800, 0.62700, 0.65800, 0.68625,
+    0.71600, 0.78100, 0.84900, 0.90025, 0.93100, 0.95975
+  ];
+
+  // The knot itself, in three dimensions.
+  function point(t) {
+    var ring = R + r * Math.cos(Q * t);
+    var x = ring * Math.cos(P * t);
+    var y = ring * Math.sin(P * t);
+    var z = r * Math.sin(Q * t);
+    var ct = Math.cos(TILT * Math.PI / 180);
+    var st = Math.sin(TILT * Math.PI / 180);
+    // Tipped once, statically, when the page is built.
+    return [x, y * ct - z * st, y * st + z * ct];
+  }
+
+  var TWO_PI = Math.PI * 2;
+
+  var field = document.getElementById('field');
+  var canvas = document.getElementById('ribbon');
+  var ctx = canvas.getContext('2d');
+  var knot = document.getElementById('knot');
+  var W = 0, H = 0, cx = 0, cy = 0;
+  var marks = [];
+  var hover = -1;
+  var reduce = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = field.clientWidth;
+    H = field.clientHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+  }
+
+  function build() {
+    var reach = R + r;
+    for (var i = 0; i < PLACED.length; i++) {
+      var p = point(PLACED[i] * TWO_PI);
+      var tool = TOOLS[i];
+
+      // A mark's depth is fixed for the whole turn, because the knot turns
+      // about the axis pointing out of the page and a turn about that axis
+      // cannot change anyone's depth. So the shading is set once here rather
+      // than animated.
+      var front = (p[2] / reach + 1) / 2;
+
+      var m = document.createElement('a');
+      m.className = 'mark';
+      m.href = '#';
+      m.dataset.name = tool[0];
+      m.style.opacity = (0.5 + 0.5 * front).toFixed(3);
+      m.style.transform =
+        'translate3d(' + p[0].toFixed(2) + 'px,' + p[1].toFixed(2) + 'px,' +
+        p[2].toFixed(2) + 'px) scale(' + (0.8 + 0.22 * front).toFixed(3) + ')';
+
+      var img = document.createElement('img');
+      img.src = '../static/icons/agents/' + tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      m.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = tool[0];
+      m.appendChild(tag);
+
+      m.addEventListener('pointerenter', function () {
+        hover = marks.indexOf(m);
+        m.classList.add('is-lit');
+      });
+      m.addEventListener('pointerleave', function () {
+        if (hover === marks.indexOf(m)) hover = -1;
+        m.classList.remove('is-lit');
+      });
+      m.addEventListener('focus', function () {
+        hover = marks.indexOf(m);
+        m.classList.add('is-lit');
+      });
+      m.addEventListener('blur', function () { hover = -1; m.classList.remove('is-lit'); });
+
+      marks.push(m);
+      knot.appendChild(m);
+    }
+  }
+
+  // Turn the point about the axis pointing out of the page and drop its
+  // depth. Orthographic, so this is exactly what the CSS does to the marks.
+  function project(p, cos, sin) {
+    return [cx + p[0] * cos - p[1] * sin, cy + p[0] * sin + p[1] * cos, p[2]];
+  }
+
+  // The ribbon, drawn a band at a time by depth so the near run of the curve
+  // is bright and thick and the far run is dim and fine. One stroke per band
+  // rather than one per segment, which is what keeps a full redraw of this
+  // every frame affordable.
+  function ribbon(deg) {
+    var a = deg * Math.PI / 180;
+    var cos = Math.cos(a), sin = Math.sin(a);
+    var reach = R + r;
+    var paths = [];
+    for (var b = 0; b < BANDS; b++) paths.push([]);
+    var head = [];
+    var headAt = (deg / 360 + 1) % 1;
+
+    for (var i = 0; i <= SAMPLES; i++) {
+      var s = i / SAMPLES;
+      var q = project(point(s * TWO_PI), cos, sin);
+      var band = Math.min(BANDS - 1,
+        Math.floor(((q[2] / reach + 1) / 2) * BANDS));
+      var b2 = paths[band];
+      if (b2.length === 0) b2.push(q[0], q[1]);
+      else { b2.push(q[0], q[1]); }
+      // The travelling highlight: a short run of curve that wraps with the
+      // turn, so the curve reads as a thread being drawn rather than a shape
+      // sitting still.
+      var away = Math.abs(s - headAt);
+      away = Math.min(away, 1 - away);
+      if (away < 0.055) head.push(q[0], q[1]);
+    }
+
+    for (var k = 0; k < BANDS; k++) {
+      var flat = paths[k];
+      if (flat.length < 4) continue;
+      var f = (k + 0.5) / BANDS;
+      ctx.beginPath();
+      ctx.moveTo(flat[0], flat[1]);
+      for (var j = 2; j < flat.length; j += 2) ctx.lineTo(flat[j], flat[j + 1]);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(' +
+        Math.round(96 + 70 * f) + ',' +
+        Math.round(126 + 76 * f) + ',' +
+        Math.round(214 + 38 * f) + ',' +
+        (0.1 + 0.62 * f * f).toFixed(3) + ')';
+      ctx.lineWidth = 2 + 6 * f;
+      ctx.stroke();
+    }
+
+    if (head.length >= 4) {
+      ctx.beginPath();
+      ctx.moveTo(head[0], head[1]);
+      for (var h = 2; h < head.length; h += 2) ctx.lineTo(head[h], head[h + 1]);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(226, 238, 255, 0.85)';
+      ctx.lineWidth = 3.4;
+      ctx.stroke();
+    }
+
+    // A ring on the ribbon under the mark being pointed at, so the mark and
+    // the curve it is threaded on are visibly one thing.
+    if (hover >= 0) {
+      var q = project(point(PLACED[hover] * TWO_PI), cos, sin);
+      var g = ctx.createRadialGradient(q[0], q[1], 6, q[0], q[1], 34);
+      g.addColorStop(0, 'rgba(196, 220, 255, 0.34)');
+      g.addColorStop(1, 'rgba(196, 220, 255, 0)');
+      ctx.beginPath();
+      ctx.arc(q[0], q[1], 34, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  var start = 0;
+  function frame(now) {
+    if (!start) start = now;
+    var deg = ((now - start) / 1000 / PERIOD) * 360;
+    knot.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)';
+    ribbon(deg);
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  build();
+
+  // Standing still, the knot is drawn once, complete, with the highlight
+  // parked at the start of the thread: a picture of a knot rather than a
+  // knot that has stopped being drawn.
+  if (reduce) {
+    ribbon(0);
+  } else {
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', function () {
+    resize();
+    if (reduce) ribbon(0);
+  });
+})();
+</script>
+</body>
+</html>
