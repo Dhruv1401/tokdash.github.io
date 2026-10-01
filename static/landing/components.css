@@ -353,7 +353,12 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
    and then clipped by a row that ran the full width. */
 .ticker {
   --tick-gap: 32px;
-  --tick-fade: 90px;
+  /* How far in from each edge the names take to arrive. Scaled to the
+     window rather than held at a fixed length, so the run is the same
+     proportion of the row on a phone and on a wide desktop, and floored
+     and capped so it neither eats the whole row on a small screen nor
+     swallows a third of it on a large one. */
+  --tick-fade: clamp(72px, 12vw, 200px);
   position: relative;
   margin-top: 40px;
   /* Break out of the centred column so the names run edge to edge. The
@@ -386,10 +391,24 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
      would read as a mistake. Each hairline fades out at both ends, which
      is what the .divider-grad between the other sections already does.
      Painted as two 1px backgrounds so the fade can live in the gradient:
-     a border colour cannot fade. */
+     a border colour cannot fade.
+
+     They run out on the same curve as the names below them, over the same
+     distance, so the slab dissolves as one thing. A hairline that ended
+     sooner would draw an edge across the row at the point where the
+     names were still fading, which is exactly the line the fade exists
+     to avoid. */
   background-image:
-    linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
-    linear-gradient(90deg, transparent, var(--glass-line) 10%, var(--glass-line) 90%, transparent),
+    linear-gradient(90deg,
+      transparent 0,
+      var(--glass-line) var(--tick-fade),
+      var(--glass-line) calc(100% - var(--tick-fade)),
+      transparent 100%),
+    linear-gradient(90deg,
+      transparent 0,
+      var(--glass-line) var(--tick-fade),
+      var(--glass-line) calc(100% - var(--tick-fade)),
+      transparent 100%),
     linear-gradient(var(--tick-glass), var(--tick-glass));
   background-size: 100% 1px, 100% 1px, 100% 100%;
   background-position: 0 0, 0 100%, 0 0;
@@ -403,11 +422,39 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
    behind this row is the ambient canvas, which moves: an overlay in the
    colour of the page would show as a flat patch over a moving background.
    A mask takes the names out where they should be hidden and leaves the
-   glass itself whole. */
+   glass itself whole.
+
+   The ramp is not straight. A single stop between transparent and opaque
+   fades at one speed for the whole run, which reads as a name sliding
+   in from off screen: by the time it clears the mask it is already at
+   full strength. These stops hold a name back for most of the run and
+   then bring it up quickly, so a name stays a suggestion at the edge,
+   firms up as it comes, and is gone again on the far side. It arrives
+   out of the background rather than out of the margin. */
 .tick-row {
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--tick-fade), #000 calc(100% - var(--tick-fade)), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 var(--tick-fade), #000 calc(100% - var(--tick-fade)), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg,
+    transparent 0,
+    rgb(0 0 0 / 0.18) calc(var(--tick-fade) * 0.28),
+    rgb(0 0 0 / 0.46) calc(var(--tick-fade) * 0.52),
+    rgb(0 0 0 / 0.78) calc(var(--tick-fade) * 0.76),
+    #000 var(--tick-fade),
+    #000 calc(100% - var(--tick-fade)),
+    rgb(0 0 0 / 0.78) calc(100% - var(--tick-fade) * 0.76),
+    rgb(0 0 0 / 0.46) calc(100% - var(--tick-fade) * 0.52),
+    rgb(0 0 0 / 0.18) calc(100% - var(--tick-fade) * 0.28),
+    transparent 100%);
+  mask-image: linear-gradient(90deg,
+    transparent 0,
+    rgb(0 0 0 / 0.18) calc(var(--tick-fade) * 0.28),
+    rgb(0 0 0 / 0.46) calc(var(--tick-fade) * 0.52),
+    rgb(0 0 0 / 0.78) calc(var(--tick-fade) * 0.76),
+    #000 var(--tick-fade),
+    #000 calc(100% - var(--tick-fade)),
+    rgb(0 0 0 / 0.78) calc(100% - var(--tick-fade) * 0.76),
+    rgb(0 0 0 / 0.46) calc(100% - var(--tick-fade) * 0.52),
+    rgb(0 0 0 / 0.18) calc(100% - var(--tick-fade) * 0.28),
+    transparent 100%);
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
