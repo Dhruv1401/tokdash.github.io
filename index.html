@@ -82,6 +82,8 @@
   <link rel="stylesheet" href="/static/landing/motion.css" />
   <link rel="stylesheet" href="/static/landing/companion.css" />
   <link rel="stylesheet" href="/static/landing/lander.css" />
+  <!-- The supported-tools instrument, which takes over the tool grid below. -->
+  <link rel="stylesheet" href="/static/landing/tool-orbits.css" />
 </head>
 
 <body>
@@ -435,7 +437,8 @@
         <p class="text-muted mt-3" data-i18n="tools.sub">Tokdash unifies usage across twenty-four AI coding tools, letting you switch agents without losing the bill.</p>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-10 max-w-3xl mx-auto reveal">
+      <div class="tool-field reveal" id="toolField">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto" id="toolGrid">
         <a href="https://openai.com/codex/" target="_blank" rel="noopener" class="tool-pill"><img class="tool-logo" src="/static/icons/agents/codex.png" alt="Codex logo" loading="lazy" onerror="this.style.display='none'">Codex</a>
         <a href="https://www.claude.com/product/claude-code" target="_blank" rel="noopener" class="tool-pill"><img class="tool-logo" src="/static/icons/agents/claude.svg" alt="Claude Code logo" loading="lazy" onerror="this.style.display='none'">Claude Code</a>
         <a href="https://opencode.ai/" target="_blank" rel="noopener" class="tool-pill"><img class="tool-logo" src="/static/icons/agents/opencode.png" alt="OpenCode logo" loading="lazy" onerror="this.style.display='none'">OpenCode</a>
@@ -1104,6 +1107,11 @@
   <script src="/static/landing/chrome.js"></script>
   <script src="/static/landing/hero.js"></script>
   <script src="/static/landing/scroll-effects.js"></script>
+
+  <!-- Supported-tools instrument: builds the orbits out of the tool links.
+       Before the reveal engine, which has a case for the tool grid below and
+       would otherwise take the links apart before they are placed. -->
+  <script src="/static/landing/tool-orbits.js"></script>
   <script src="/static/landing/reveal.js"></script>
   <script src="/static/landing/i18n.js"></script>
 
