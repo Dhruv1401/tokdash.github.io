@@ -224,8 +224,8 @@
     Every orbit is a circle in the <b>one tilted plane</b>, so the discs are
     concentric and cannot cross. The numbers are fixed rather than eyeballed:
     orbits sit 60px apart in radius, the closest a mark on one orbit ever comes
-    to a mark on the next is <b>50px</b> on screen, and the widest a mark ever
-    draws is <b>40px</b>. Marks on one orbit are evenly spaced and turn
+    to a mark on the next is <b>48px</b> on screen, and the widest a mark ever
+    draws is <b>30px</b>. Marks on one orbit are evenly spaced and turn
     together, so their spacing never changes either — and no amount of
     fiddling with the speeds can produce a collision.
   </figcaption>
@@ -268,21 +268,26 @@
   //     concentric ellipses of half-width r and half-height r*cos(28deg).
   //     Concentric ellipses never cross, whatever the phases or the speeds.
   //   * Radii step by exactly 60, so marks on neighbouring orbits stay a
-  //     fixed distance apart as both turn: 53px in the plane, 50px measured on
-  //     screen once the mild perspective is counted, against 40px for the
+  //     fixed distance apart as both turn: 53px in the plane, 48px measured on
+  //     screen once the mild perspective is counted, against 30px for the
   //     widest a mark ever draws at the top of its depth pulse.
   //   * Marks on a single orbit are evenly spaced and share one rotation, so
   //     the gap between neighbours on an orbit never changes either: the
   //     tightest is 160px, on the innermost pair.
   //
-  // The periods fall off a little with radius, the way a real orrery does,
-  // but nowhere near Kepler's r^1.5 -- the outer marks would crawl if it did.
+  // The periods rise in proportion to the radius, which is the one relation
+  // that makes the whole disc read as one system: every mark then covers the
+  // same distance per second, about 26px, so a tool never looks like it is
+  // racing around the outer orbits while the inner ones crawl. It also
+  // happens to be what Kepler's third law asks for -- fast in the middle,
+  // slow at the rim -- arrived at from the direction of how fast the marks
+  // actually look like they are travelling.
   var ORBITS = [
-    { r:  80, period: 12, count: 2 },
-    { r: 140, period: 17, count: 3 },
-    { r: 200, period: 22, count: 5 },
-    { r: 260, period: 27, count: 6 },
-    { r: 320, period: 32, count: 8 }
+    { r:  80, period: 19, count: 2 },
+    { r: 140, period: 34, count: 3 },
+    { r: 200, period: 48, count: 5 },
+    { r: 260, period: 63, count: 6 },
+    { r: 320, period: 77, count: 8 }
   ];
 
   var LOGOS = '../static/icons/agents/';

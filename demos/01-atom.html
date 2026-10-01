@@ -226,7 +226,7 @@
     one wholly inside the next — so no two marks can ever land on the same
     spot, at any phase or at any relative speed. The shells are set by
     measurement, not by eye: the closest two marks ever come on screen is
-    <b>80px</b>, and the widest a mark ever draws is <b>38px</b>. Point at a
+    <b>80px</b>, and the widest a mark ever draws is <b>30px</b>. Point at a
     mark and its shell lights up.
   </figcaption>
 </figure>
@@ -290,16 +290,18 @@
   //   outer  330 at   0deg -> half-height 330
   //
   // measured, the gaps between neighbouring shells in the plane are 74px and
-  // 80px against a mark that never draws wider than 38px on screen, and the
-  // closest any two marks ever come, counted on screen, is 80px. Nothing here
-  // can overlap anything else.
+  // 80px, and the closest any two marks ever come on screen is 80px against a
+  // mark that never draws wider than 30px. Nothing here can overlap anything
+  // else.
   //
   // The counts follow the circumference so the spacing on a shell comes out
-  // even, and the periods shorten toward the middle the way shells do.
+  // even. The periods rise in proportion to the radius, so every mark covers
+  // about the same ground per second and a tool never looks like it is racing
+  // round the outer shell while the inner ones crawl.
   var ORBITS = [
-    { r: 130, tilt: 124, period: 15, count: 6  },
-    { r: 250, tilt: 54,  period: 23, count: 8  },
-    { r: 330, tilt: 0,   period: 33, count: 10 }
+    { r: 130, tilt: 124, period: 31, count: 6  },
+    { r: 250, tilt: 54,  period: 60, count: 8  },
+    { r: 330, tilt: 0,   period: 79, count: 10 }
   ];
 
   var LOGOS = '../static/icons/agents/';
