@@ -1,0 +1,380 @@
+/* The supported-tools atom.
+   ---------------------------------------------------------------------------
+   Twenty-five tools as electrons on three orbital shells around one nucleus,
+   the way a Bohr diagram draws an atom. This is the calm one of the three
+   designs, and the reason is worth setting out before anything else.
+
+   Rings on different axes cross, and crossing means marks sweeping through
+   the same points on independent cycles. Nothing can rescue that: two shells
+   on crossing paths have marks passing through the crossing points on their
+   own cycles, and with independent periods those passes come arbitrarily
+   close sooner or later. So the shells here nest instead, and a nest cannot
+   collide. Each shell is a circle tipped about the one axis lying in the
+   page, so it projects to an ellipse of half-width r and half-height r cos t:
+
+     inner  130 at 124deg  ->  half-height  73
+     middle 250 at  54deg  ->  half-height 147
+     outer  330 at   0deg  ->  half-height 330
+
+   and each is wholly inside the next. Not touching is not enough -- the rings
+   never touch in three dimensions either, at different radii -- because the
+   projection is what anyone sees, so the projection has to be clean. The
+   measured gaps between neighbouring shells in the plane are 64px and 79px
+   against a chip that never draws wider than 34px, and the closest two marks
+   on one shell ever come is 73px on the innermost, the tightest of the three.
+
+   So the guarantee here is structural, not searched: there are no phases to
+   get wrong, because no choice of phases can break it. Every mark is at an
+   even angle on a fixed radius, so the spacing on a shell is a property of
+   the geometry and not of when you happen to look.
+
+   The marks face the viewer, which is not free here. A mark rides three
+   turned layers -- its shell's inclination, the shell's turn, and its own
+   place on the shell -- so left alone every logo would lie down in the
+   shell's plane and turn with the shell. One transform on an inner element
+   subtracts exactly those, in the reverse of the order they nest in; see
+   .tool-face.
+
+   Colours are the site's own tokens, so the atom reads in the light theme and
+   the dark one without a second palette. */
+
+@property --spin {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+
+/* The depth pulse, as a number rather than as a keyframe on a transform.
+   The marks on a shell brighten and grow as they come round to the near side,
+   which is a quarter of the way round, and the delay that puts each mark at
+   its brightest at its own near side is half a period back from that. Keeping
+   it a number is what lets the grow under the pointer multiply into it, so one
+   transform serves both -- and keeping the two apart matters, because an
+   animated property cannot be overridden by a plain declaration without
+   !important, and a jump to full size under the pointer is not a hover. */
+@property --pulse {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --grow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.tool-field { margin: 40px auto 0; }
+
+/* The picture is laid out once, at its natural 700px, and then scaled down as
+   a single piece by a factor the window measures: nothing is re-laid-out, so
+   no mark changes its place relative to another and the nest stays nested.
+   The 20px on each side is the room the outermost shell and its marks need,
+   and the 44px under it is room for the name pill below the lowest mark, which
+   is the one thing that hangs over the edge.
+
+   The box is sized and clipped, and the script adds .is-instrument only once
+   it has actually built the atom. Until then the field is an ordinary block
+   around the grid, because a fixed-height clipped box is exactly wrong for the
+   grid: on a phone the grid is a tall two-column list, and a box sized for a
+   picture would cut the bottom of it off. */
+.tool-field.is-instrument {
+  --fit: min(1, calc((100vw - 48px) / 740px), calc((100vh - 220px) / 740px));
+  position: relative;
+  width: calc(740px * var(--fit));
+  height: calc(740px * var(--fit) + 44px);
+  overflow: hidden;
+}
+
+/* The stage. The vanishing point lives here, so everything inside shares one
+   and a mark on the back of a shell really is further away rather than merely
+   drawn smaller. The perspective is long on purpose: enough for the near side
+   of a shell to swell a little, gentle enough that the numbers describing the
+   arrangement still describe what lands on screen. */
+.tool-plane {
+  position: absolute; left: 50%; top: 20px;
+  width: 700px; height: 700px;
+  transform: translateX(-50%) scale(var(--fit));
+  transform-origin: top center;
+  perspective: 3600px;
+  perspective-origin: 50% 50%;
+}
+
+/* Only the marks are anything you can point at. A transformed element is
+   hit-tested across its whole projected quad rather than only where it paints,
+   so every empty wrapper in here -- three shells, and above all the turning
+   layers, whose planes cut straight through the marks riding them -- would
+   swallow the pointer from the marks on their far side. Reading a name is the
+   only way to find out what a mark is, so the structure steps aside and the
+   marks take the pointer back. */
+.tool-field,
+.tool-plane, .tool-shell, .tool-spin, .tool-slot,
+.tool-ring, .tool-axis, .tool-core, .tool-disc {
+  pointer-events: none;
+}
+.tool-mark { pointer-events: auto; }
+
+/* ---- The panel ---- */
+.tool-disc {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--color-primary) 7%, transparent),
+    color-mix(in srgb, var(--color-primary) 3%, transparent) 46%,
+    transparent 78%);
+}
+
+/* ---- The nucleus ----
+   One bright core with the Tokdash mark in it, wrapped in two soft haloes: a
+   tight one for its own light, a wide one that bleeds into the space around
+   it. It does not turn, and it does not need to: it is the one thing in the
+   picture that is not going anywhere.
+
+   The innermost shell's marks pass 130px from the centre and the core is 38,
+   so nothing here reaches them; the wide halo is allowed to come out under
+   that shell, because light under a mark reads as light and the shell passing
+   through the glow is most of the effect. */
+.tool-core {
+  position: absolute; left: 50%; top: 50%;
+  width: 76px; height: 76px; margin: -38px 0 0 -38px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 44%,
+    color-mix(in srgb, var(--color-secondary) 88%, #fff),
+    color-mix(in srgb, var(--color-primary) 80%, transparent) 46%,
+    color-mix(in srgb, var(--color-primary) 26%, transparent) 78%,
+    transparent 100%);
+  box-shadow: 0 0 44px color-mix(in srgb, var(--color-primary) 32%, transparent);
+  animation: tool-breathe 7s ease-in-out infinite;
+}
+.tool-core img {
+  width: 32px; height: 32px; object-fit: contain; position: relative; z-index: 1;
+  filter: brightness(0) invert(1);
+}
+.tool-core::before, .tool-core::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  border-radius: 50%; z-index: -1;
+}
+.tool-core::before {
+  width: 116px; height: 116px; margin: -58px 0 0 -58px;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--color-primary) 30%, transparent),
+    color-mix(in srgb, var(--color-primary) 9%, transparent) 58%,
+    transparent 78%);
+}
+.tool-core::after {
+  width: 200px; height: 200px; margin: -100px 0 0 -100px;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--color-primary) 17%, transparent),
+    color-mix(in srgb, var(--color-primary) 5%, transparent) 52%,
+    transparent 76%);
+  animation: tool-swell 11s ease-in-out infinite;
+}
+@keyframes tool-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+@keyframes tool-swell {
+  0%, 100% { transform: scale(0.9); opacity: 0.6; }
+  50%      { transform: scale(1.08); opacity: 1; }
+}
+
+/* ---- The axes ----
+   The x and y lines through the nucleus. They are what turn three hoops into
+   a set of axes rather than three decorative circles, and they stay faint
+   enough never to compete with the marks riding them. */
+.tool-axis {
+  position: absolute; left: 50%; top: 0;
+  width: 1px; height: 100%; margin-left: -0.5px;
+  background: linear-gradient(180deg, transparent,
+    color-mix(in srgb, var(--color-primary) 12%, transparent) 24%,
+    color-mix(in srgb, var(--color-primary) 12%, transparent) 76%,
+    transparent);
+}
+.tool-axis.is-x {
+  left: 0; top: 50%;
+  width: 100%; height: 1px; margin: -0.5px 0 0 0;
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--color-primary) 12%, transparent) 24%,
+    color-mix(in srgb, var(--color-primary) 12%, transparent) 76%,
+    transparent);
+}
+
+/* ---- One shell ----
+   A plain circle outline in a plane tipped about x, so it foreshortens into
+   an ellipse on screen. It never moves: only the marks on it do. */
+.tool-shell {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt));
+}
+.tool-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: calc(var(--r) * 2px); height: calc(var(--r) * 2px);
+  margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-radius: 50%;
+  transition: border-color var(--t-med) ease, box-shadow var(--t-med) ease;
+}
+/* Pointing at a mark lights the shell it rides, so it is obvious which shell a
+   tool is on rather than which of three circles it happens to be nearest. */
+.tool-shell.is-lit .tool-ring {
+  border-color: color-mix(in srgb, var(--color-primary) 62%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+/* The turn. The angle lives in a custom property rather than in the transform
+   because the marks have to read it as a number to subtract it from their own:
+   the layer turns by it, and every mark on that shell turns back by exactly
+   as much, so the logos stay square to the page while the shell carries them
+   round. Each shell has its own layer and its own period, so each inherits
+   its own angle. */
+.tool-spin {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  transform: rotate(var(--spin));
+  animation: tool-spin var(--period, 60s) linear infinite;
+}
+@keyframes tool-spin { to { --spin: 360deg; } }
+
+.tool-slot {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+}
+
+/* ---- A mark ----
+   The anchor carries no rotation of its own. It is only a box: it sits on the
+   shell, it gives the mark its size and its hit area, and everything about how
+   a mark is turned lives on .tool-face inside it. */
+.tool-mark {
+  position: absolute; left: 0; top: 0;
+  width: var(--w, 34px); height: var(--h, 34px);
+  /* The fallbacks are load-bearing: an undefined custom property inside calc()
+     invalidates the whole declaration, so without them the negative margin
+     that centres the mark on its slot is dropped for every mark that does not
+     set its own size, and each one sits a half-chip off its own shell. */
+  margin: calc(var(--h, 34px) / -2) 0 0 calc(var(--w, 34px) / -2);
+  text-decoration: none;
+  border-radius: 10px;
+  /* preserve-3d, and nothing on this element that would take it away. A
+     grouping property -- opacity, a filter, an overflow, a clip -- forces the
+     used value of transform-style back to flat, and a flat mark renders its
+     face in the shell's own plane, so the correction below would be squashed
+     into a 2D projection instead of applied in three dimensions. That is a
+     silent failure: the numbers all look right and every logo lies down in
+     its shell. So the depth shading and the depth scale both live on
+     .tool-face, one level in. */
+  transform-style: preserve-3d;
+}
+html.js .tool-mark { cursor: pointer; }
+.tool-mark:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+
+/* The face: the correction, and the depth shading that goes with it. */
+.tool-face {
+  position: absolute; inset: 0;
+  /* The correction. Three ancestors turn this mark -- its shell's
+     inclination about x, the shell's turn, and its own place on the shell --
+     and left alone the logo would lie down in the shell's plane and turn with
+     it. This subtracts exactly those, in the reverse of the order the
+     ancestors nest in, so the logo inside is drawn square to the page and
+     upright at every phase of every turn. --spin is the shell's own angle,
+     already running; --a is this mark's place on it; --tilt is the shell's
+     inclination. The scale is last and inside the correction, because a 2D
+     scale has no z component and does not commute with the inverse: left
+     outside, it would leave every logo a few degrees out of square. */
+  transform:
+    rotateZ(calc(-1 * (var(--a) + var(--spin))))
+    rotateX(calc(-1 * var(--tilt)))
+    scale(calc(var(--pulse) * var(--grow)));
+  /* Opacity and the grow, and never the transform itself. It is re-resolved on
+     every frame of the turn, because it reads --spin; a transition on a
+     property that changes every frame never finishes, it is retargeted every
+     frame, and the logo spends the whole turn interpolating towards the
+     correction instead of sitting on it. */
+  opacity: calc(0.46 + 0.54 * var(--pulse));
+  transition: opacity var(--t-med) ease, --grow var(--t-med) ease;
+}
+
+/* A mark on a shell tipped away from the page is further away at the back of
+   its turn than at the front, and says so by being fainter and smaller. The
+   outer shell lies in the plane of the page and never changes depth, so its
+   marks are left alone rather than pulsed for a depth that is not there. */
+.tool-shell.is-tilted .tool-face {
+  animation: tool-depth var(--period) var(--delay, 0s) linear infinite;
+}
+@keyframes tool-depth {
+  0%, 100% { --pulse: 0.8; }
+  50%      { --pulse: 1; }
+}
+.tool-mark:hover .tool-face, .tool-mark:focus-visible .tool-face {
+  opacity: 1;
+  --grow: 1.12;
+}
+
+/* White-backed, so every mark stays readable -- dark monochrome glyphs
+   included -- in both themes. The one wordmark in the set is given a wider
+   chip by the script so it is letterboxed by its own shape rather than crushed
+   into a square. */
+.tool-mark .tool-logo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: inherit;
+  background: #fff;
+  padding: 5px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+  transition: box-shadow var(--t-med) ease;
+}
+.tool-mark:hover .tool-logo,
+.tool-mark:focus-visible .tool-logo {
+  box-shadow: 0 0 0 2px var(--color-primary), inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+}
+
+/* The name shows only for the mark under the pointer, so the atom stays an
+   atom. It sits inside the corrected face, which is flat, so it is drawn in
+   that face's plane -- square to the page, upright, whatever the shell is
+   doing -- and outside the pulse, so a name never comes and goes with depth. */
+.tool-name {
+  position: absolute; left: 50%; top: calc(100% + 9px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--color-text);
+  background: var(--glass-strong);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 4px 11px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.tool-mark:hover .tool-name,
+.tool-mark:focus-visible .tool-name { opacity: 1; }
+
+/* Pointing at a mark stops the turn, so its name can be read: a mark on a
+   moving shell is out from under the pointer in a fraction of a second, and
+   without this the names flash on and off and there is no such thing as
+   reading one. Everything stops together -- the three shells, the depth
+   pulses, the core -- and the rest of the atom goes back, so what you stop to
+   look at is the diagram rather than a frozen half of one. */
+.tool-plane.is-pointed .tool-spin,
+.tool-plane.is-pointed .tool-core,
+.tool-plane.is-pointed .tool-core::after { animation-play-state: paused !important; }
+.tool-plane.is-pointed .tool-mark:not(:hover):not(:focus-visible) .tool-face {
+  opacity: calc((0.46 + 0.54 * var(--pulse)) * 0.34);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Standing still, every mark sits at full size and full strength: the atom
+     reads as a diagram of where the marks live rather than as a thing that
+     has stopped. The depth pulse is a moving thing, so it goes with the rest
+     -- leaving it running would put the marks back at half strength for
+     whoever asked not to be shown anything moving. The face is named the same
+     way it is animated, because a media query adds no specificity of its own
+     and a plainer selector here would simply lose. */
+  .tool-spin, .tool-core, .tool-core::after,
+  .tool-shell.is-tilted .tool-face { animation: none; }
+  .tool-face { opacity: 1; --pulse: 1; }
+}
