@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokdash — design 2 · solar</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --ink: #e8edf9;
+    --muted: #8695b8;
+    --line: rgba(154, 184, 240, 0.24);
+    --glow: rgba(120, 158, 255, 0.6);
+    --mark: 26px;
+    /* How far the system is tipped back. Enough for the orbits to read as
+       ellipses; past about 40 the far edge collapses into the centre and it
+       stops looking like a disc. */
+    --tilt: 28deg;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 780px at 50% 44%, rgba(58, 42, 116, 0.34), transparent 66%),
+      var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 26px; padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; max-width: 620px; }
+  h1 { margin: 0 0 10px; font-size: 15px; font-weight: 600;
+       letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  p { margin: 0; color: var(--muted); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- The stage ----
+     A long, deliberately gentle perspective. It is enough to make the near
+     edge of an orbit very slightly larger than the far edge, which is what
+     stops the disc reading as a flat drawing, and weak enough that the maths
+     below still describes what actually lands on screen. The perspective
+     origin sits at the centre of the system, so marks are pushed away from
+     the middle symmetrically instead of all sliding one way. */
+  .stage { perspective: 3600px; perspective-origin: 50% 50%; }
+
+  .system {
+    position: relative;
+    width: 680px; height: 680px;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--tilt));
+  }
+
+  /* The disc the orbits are drawn on. Barely there, but without it the
+     system floats in a void and the orbits have nothing to be flat against. */
+  .plane {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side,
+      rgba(112, 140, 255, 0.13), rgba(96, 122, 235, 0.05) 58%, transparent 78%);
+  }
+
+  /* ---- One orbit ----
+     A plain circle, tipped with everything else. It never moves: the marks on
+     it do. */
+  .orbit { position: absolute; inset: 0; transform-style: preserve-3d; }
+
+  .ring {
+    position: absolute; left: 50%; top: 50%;
+    width: calc(var(--r) * 2px); height: calc(var(--r) * 2px);
+    margin: calc(var(--r) * -1px) 0 0 calc(var(--r) * -1px);
+    border: 1px solid rgba(154, 184, 240, 0.16);
+    border-radius: 50%;
+    transition: border-color 220ms ease, box-shadow 220ms ease;
+  }
+  /* The two arcs, split at the disc's widest line: the near arc is brighter
+     than the far one, so each orbit has a front and a back without either
+     being a different shape. */
+  .ring::before, .ring::after {
+    content: ''; position: absolute; inset: 0;
+    border: 1px solid transparent; border-radius: 50%;
+    transition: border-color 220ms ease;
+  }
+  .ring::before { clip-path: inset(0 0 50% 0); border-top-color: rgba(154, 184, 240, 0.07); }
+  .ring::after  { clip-path: inset(50% 0 0 0); border-bottom-color: rgba(186, 210, 255, 0.34); }
+
+  /* Pointing at a mark lights the orbit it rides, so it is obvious which
+     shell a tool belongs to rather than which circle it happens to be near. */
+  .orbit.is-lit .ring {
+    border-color: rgba(186, 210, 255, 0.5);
+    box-shadow: 0 0 18px rgba(104, 146, 255, 0.32);
+  }
+  .orbit.is-lit .ring::before { border-top-color: rgba(154, 184, 240, 0.2); }
+  .orbit.is-lit .ring::after  { border-bottom-color: rgba(214, 230, 255, 0.8); }
+
+  /* The spin layer carries the marks and turns about z. The marks sit at even
+     angles on a fixed radius, so every one of them moves the same amount and
+     the spacing between them never changes. */
+  .spin {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    animation: spin var(--period) linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .slot {
+    position: absolute; left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 1px));
+  }
+
+  /* A mark is white-backed so every logo stays readable, dark monochrome
+     glyphs included. Its own depth animation is most of the illusion: round
+     the back of the disc a mark fades and shrinks, and it comes up to full
+     size and brightness at the near edge. The delay is set per mark so its
+     bright moment lands exactly when it is closest to the viewer. */
+  .mark {
+    position: absolute; left: 0; top: 0;
+    width: var(--mark); height: var(--mark);
+    margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+    border-radius: 9px; background: #fff; padding: 3px;
+    display: block; text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    animation: depth var(--period) linear infinite;
+  }
+  .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  @keyframes depth {
+    0%, 100% { opacity: 0.2; transform: scale(0.58); }
+    50%      { opacity: 1;   transform: scale(1.16); }
+  }
+
+  /* The name shows only for the mark under the pointer, so the field stays a
+     field. It rides under the mark and points back at it. */
+  .mark .tag {
+    position: absolute; left: 50%; top: calc(100% + 9px);
+    transform: translateX(-50%);
+    white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: var(--ink); background: rgba(10, 15, 30, 0.94);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; opacity: 0; transition: opacity 140ms ease;
+    pointer-events: none;
+  }
+  .mark:hover .tag, .mark:focus-visible .tag { opacity: 1; }
+  .mark:hover, .mark:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--glow); }
+
+  /* ---- The sun ---- */
+  .sun {
+    position: absolute; left: 50%; top: 50%;
+    width: 104px; height: 104px; margin: -52px 0 0 -52px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 44%,
+      #ffe6b4, #ffb45a 44%, #c9762c 74%, #7a3d16 92%, rgba(122, 61, 22, 0) 100%);
+    box-shadow: 0 0 60px rgba(255, 184, 92, 0.5), 0 0 140px rgba(255, 164, 72, 0.22);
+    animation: breathe 8s ease-in-out infinite;
+  }
+  .sun img { width: 38px; height: 38px; object-fit: contain; position: relative; }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+  /* Two rings of light breathing out of the sun at their own rates, so the
+     middle of the system has weather instead of being one flat blob. */
+  .corona {
+    position: absolute; left: 50%; top: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: pulse var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+  .corona.c1 {
+    width: 168px; height: 168px; margin: -84px 0 0 -84px;
+    --dur: 5.5s; --delay: -1s;
+    background: radial-gradient(closest-side,
+      transparent 63%, rgba(255, 196, 116, 0.3) 74%, transparent 85%);
+  }
+  .corona.c2 {
+    width: 236px; height: 236px; margin: -118px 0 0 -118px;
+    --dur: 8s; --delay: -3.5s;
+    background: radial-gradient(closest-side,
+      transparent 68%, rgba(255, 176, 96, 0.18) 78%, transparent 88%);
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.94); opacity: 0.55; }
+    50%      { transform: scale(1.05); opacity: 1; }
+  }
+
+  figcaption { max-width: 680px; text-align: center; font-size: 13.5px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spin, .mark, .sun, .corona { animation: none; }
+    /* Standing still, every mark sits at full size and full strength: the
+       system reads as a diagram of where the marks live rather than as a
+       thing that has stopped. */
+    .mark { opacity: 1; transform: scale(1); }
+    .corona { opacity: 0.8; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design 2 · solar</h1>
+  <p>The same twenty-four tools, but on one tipped disc instead of three rings
+     round a point — an orrery rather than an atom.</p>
+</header>
+
+<figure style="margin:0">
+  <div class="stage">
+    <div class="system" id="system">
+      <div class="plane"></div>
+      <div class="corona c2"></div>
+      <div class="corona c1"></div>
+      <div class="sun"><img src="../static/icons/logo.png" alt=""></div>
+    </div>
+  </div>
+  <figcaption>
+    Every orbit is a circle in the <b>one tilted plane</b>, so the discs are
+    concentric and cannot cross. The numbers are fixed rather than eyeballed:
+    orbits sit 60px apart in radius, the closest a mark on one orbit ever comes
+    to a mark on the next is <b>50px</b> on screen, and the widest a mark ever
+    draws is <b>40px</b>. Marks on one orbit are evenly spaced and turn
+    together, so their spacing never changes either — and no amount of
+    fiddling with the speeds can produce a collision.
+  </figcaption>
+</figure>
+
+<script>
+(function () {
+  var TOOLS = [
+    ['Codex', 'codex.png'],
+    ['Claude Code', 'claude.svg'],
+    ['OpenCode', 'opencode.png'],
+    ['Gemini CLI', 'gemini.svg'],
+    ['Antigravity', 'antigravity.png'],
+    ['OpenClaw', 'openclaw.png'],
+    ['Kimi CLI', 'kimi.png'],
+    ['MiMo Code', 'mimo.svg'],
+    ['Grok Build', 'grok.png'],
+    ['Pi', 'pi.png'],
+    ['Copilot CLI', 'copilot.svg'],
+    ['Hermes', 'hermes.png'],
+    ['DeepSeek Harness', 'dsh.svg'],
+    ['Reasonix', 'reasonix.svg'],
+    ['ZCode', 'zcode.png'],
+    ['WorkBuddy', 'workbuddy.png'],
+    ['Qoder', 'qoder.png'],
+    ['omp', 'omp.png'],
+    ['Kilo Code', 'kilocode.png'],
+    ['Cline', 'cline.png'],
+    ['Zed', 'zed.svg'],
+    ['Qwen Code', 'qwen_code.svg'],
+    ['Crush', 'crush.png'],
+    ['Muse Code', 'muse.svg']
+  ];
+
+  // Radius, seconds per revolution, and how many marks ride each orbit.
+  //
+  // Why this cannot collide:
+  //
+  //   * All five orbits are circles in one plane, so on screen they are
+  //     concentric ellipses of half-width r and half-height r*cos(28deg).
+  //     Concentric ellipses never cross, whatever the phases or the speeds.
+  //   * Radii step by exactly 60, so marks on neighbouring orbits stay a
+  //     fixed distance apart as both turn: 53px in the plane, 50px measured on
+  //     screen once the mild perspective is counted, against 40px for the
+  //     widest a mark ever draws at the top of its depth pulse.
+  //   * Marks on a single orbit are evenly spaced and share one rotation, so
+  //     the gap between neighbours on an orbit never changes either: the
+  //     tightest is 160px, on the innermost pair.
+  //
+  // The periods fall off a little with radius, the way a real orrery does,
+  // but nowhere near Kepler's r^1.5 -- the outer marks would crawl if it did.
+  var ORBITS = [
+    { r:  80, period: 12, count: 2 },
+    { r: 140, period: 17, count: 3 },
+    { r: 200, period: 22, count: 5 },
+    { r: 260, period: 27, count: 6 },
+    { r: 320, period: 32, count: 8 }
+  ];
+
+  var LOGOS = '../static/icons/agents/';
+  var system = document.getElementById('system');
+  var n = 0;
+
+  ORBITS.forEach(function (o) {
+    var orbit = document.createElement('div');
+    orbit.className = 'orbit';
+    orbit.style.setProperty('--r', o.r);
+
+    var ring = document.createElement('div');
+    ring.className = 'ring';
+    orbit.appendChild(ring);
+
+    var spin = document.createElement('div');
+    spin.className = 'spin';
+    spin.style.setProperty('--period', o.period + 's');
+
+    for (var k = 0; k < o.count; k++) {
+      var angle = (360 / o.count) * k;
+      var tool = TOOLS[n];
+      n++;
+
+      var slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.style.setProperty('--a', angle + 'deg');
+
+      var a = document.createElement('a');
+      a.className = 'mark';
+      a.href = '#';
+      a.dataset.name = tool[0];
+      // Brightest at the near edge of the disc, which in the plane of the
+      // disc is a quarter of the way round. The depth keyframe peaks half a
+      // cycle in, so the delay shifts back by half the period.
+      var peak = ((90 - angle) / 360) * o.period;
+      a.style.animationDelay = (peak - o.period / 2) + 's';
+
+      var img = document.createElement('img');
+      img.src = LOGOS + tool[1];
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = function () { this.style.display = 'none'; };
+      a.appendChild(img);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = tool[0];
+      a.appendChild(tag);
+
+      function light(on) { orbit.classList[on ? 'add' : 'remove']('is-lit'); }
+      a.addEventListener('pointerenter', function () { light(true); });
+      a.addEventListener('pointerleave', function () { light(false); });
+      a.addEventListener('focus', function () { light(true); });
+      a.addEventListener('blur', function () { light(false); });
+
+      slot.appendChild(a);
+      spin.appendChild(slot);
+    }
+
+    orbit.appendChild(spin);
+    system.appendChild(orbit);
+  });
+
+  if (n !== 24) console.warn('expected 24 marks, placed ' + n);
+})();
+</script>
+</body>
+</html>
