@@ -1613,7 +1613,8 @@
   // Which machine a request was addressed to. The dashboard builds remote URLs
   // from the server registry, so host matching is the whole routing table.
   function serverForUrl(url) {
-    return FLEET_BY_HOST.get(url.host) || SERVER_FLEET[0];
+    if (url.origin === window.location.origin) return SERVER_FLEET[0];
+    return FLEET_BY_HOST.get(url.host) || null;
   }
 
   // Each machine last refreshed at its own minute; the Servers tab shows the
@@ -1628,6 +1629,9 @@
   async function dispatch(input, init) {
     const url = parseUrl(input);
     const server = serverForUrl(url);
+    if (!server) {
+      return jsonResponse({ detail: `Unknown host: ${url.host}` }, 502);
+    }
     const path = localPath(url.pathname);
     const method = (init && init.method) || (input instanceof Request ? input.method : "GET");
 
