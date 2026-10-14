@@ -1760,6 +1760,13 @@
   const origFetch = window.fetch.bind(window);
   window.fetch = async function (input, init) {
     try {
+      const url = parseUrl(input);
+      const isSameOrigin = url.origin === window.location.origin;
+      const isFleetHost = FLEET_BY_HOST.has(url.host);
+      const isTokdashPath = url.pathname === "/health" || url.pathname.startsWith("/api/");
+      if (!isSameOrigin && !isFleetHost && !isTokdashPath) {
+        return origFetch(input, init);
+      }
       const handled = await dispatch(input, init);
       if (handled) return handled;
     } catch (err) {
