@@ -1097,7 +1097,7 @@
         agent_ms += summary.active_ms_sum;
       }
       if (!session_count) continue;
-      allIntervals.push(...intervals);
+      for (const iv of intervals) allIntervals.push(iv);
       by_tool[key] = {
         tool_label: TOOL_LABELS[key],
         session_count,
