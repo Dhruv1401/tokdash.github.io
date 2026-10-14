@@ -95,6 +95,7 @@ const seededRegistry = window.localStorage.getItem("tokdash-servers");
 window.localStorage.setItem("tokdash-servers", JSON.stringify([
   { id: "legacy", baseUrl: "https://visitor.example" },
   { id: "routes", routes: [{ url: "bad-url" }, { url: "https://visitor.example/proxy/" }] },
+  { id: "string-route", routes: ["https://string-route.example/prefix/"] },
   { id: "localhost", routes: [{ url: "http://localhost:9999" }] },
   null,
 ]));
@@ -103,6 +104,7 @@ for (const url of [
   "https://visitor.example/api/usage?period=week",
   "https://visitor.example/proxy/health",
   "https://visitor.example/proxy/api/usage?period=week",
+  "https://string-route.example/prefix/api/usage?period=week",
   "http://localhost:9999/api/usage?period=week",
 ]) {
   const before = networkCalls.length;

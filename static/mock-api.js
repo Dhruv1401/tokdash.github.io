@@ -1628,7 +1628,9 @@
       for (const host of registry) {
         const addresses = [host?.baseUrl];
         if (Array.isArray(host?.routes)) {
-          for (const route of host.routes) addresses.push(route?.url);
+          for (const route of host.routes) {
+            addresses.push(typeof route === "string" ? route : route?.url);
+          }
         }
         for (const address of addresses) {
           if (typeof address !== "string" || !address) continue;
