@@ -1617,6 +1617,38 @@
     return FLEET_BY_HOST.get(url.host) || null;
   }
 
+  // A visitor-added machine is still part of the demo registry, but it has no
+  // synthetic dataset. Reject its Tokdash routes instead of reading real usage
+  // or inventing a second copy of Local. A third-party /api/ path alone is not
+  // evidence that a request belongs to the dashboard.
+  function isRegisteredServerRequest(url) {
+    try {
+      const registry = JSON.parse(window.localStorage.getItem("tokdash-servers") || "[]");
+      if (!Array.isArray(registry)) return false;
+      for (const host of registry) {
+        const addresses = [host?.baseUrl];
+        if (Array.isArray(host?.routes)) {
+          for (const route of host.routes) addresses.push(route?.url);
+        }
+        for (const address of addresses) {
+          if (typeof address !== "string" || !address) continue;
+          let route;
+          try { route = new URL(address); } catch (_error) { continue; }
+          if (route.protocol !== "http:" && route.protocol !== "https:") continue;
+          if (route.origin !== url.origin) continue;
+          const prefix = route.pathname.replace(/\/+$/, "");
+          if (url.pathname === `${prefix}/health` || url.pathname.startsWith(`${prefix}/api/`)) {
+            return true;
+          }
+        }
+      }
+    } catch (_error) {
+      // Storage can be disabled or contain an old/malformed registry. It must
+      // never turn unrelated network requests into synthetic failures.
+    }
+    return false;
+  }
+
   // Each machine last refreshed at its own minute; the Servers tab shows the
   // per-card time and names the stalest server in the combined header.
   function stampForServer(payload, server) {
@@ -1763,8 +1795,7 @@
       const url = parseUrl(input);
       const isSameOrigin = url.origin === window.location.origin;
       const isFleetHost = FLEET_BY_HOST.has(url.host);
-      const isTokdashPath = url.pathname === "/health" || url.pathname.startsWith("/api/");
-      if (!isSameOrigin && !isFleetHost && !isTokdashPath) {
+      if (!isSameOrigin && !isFleetHost && !isRegisteredServerRequest(url)) {
         return origFetch(input, init);
       }
       const handled = await dispatch(input, init);
