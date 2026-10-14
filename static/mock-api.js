@@ -1097,7 +1097,7 @@
         agent_ms += summary.active_ms_sum;
       }
       if (!session_count) continue;
-      allIntervals.push(...intervals);
+      for (const iv of intervals) allIntervals.push(iv);
       by_tool[key] = {
         tool_label: TOOL_LABELS[key],
         session_count,
@@ -1613,7 +1613,42 @@
   // Which machine a request was addressed to. The dashboard builds remote URLs
   // from the server registry, so host matching is the whole routing table.
   function serverForUrl(url) {
-    return FLEET_BY_HOST.get(url.host) || SERVER_FLEET[0];
+    if (url.origin === window.location.origin) return SERVER_FLEET[0];
+    return FLEET_BY_HOST.get(url.host) || null;
+  }
+
+  // A visitor-added machine is still part of the demo registry, but it has no
+  // synthetic dataset. Reject its Tokdash routes instead of reading real usage
+  // or inventing a second copy of Local. A third-party /api/ path alone is not
+  // evidence that a request belongs to the dashboard.
+  function isRegisteredServerRequest(url) {
+    try {
+      const registry = JSON.parse(window.localStorage.getItem("tokdash-servers") || "[]");
+      if (!Array.isArray(registry)) return false;
+      for (const host of registry) {
+        const addresses = [host?.baseUrl];
+        if (Array.isArray(host?.routes)) {
+          for (const route of host.routes) {
+            addresses.push(typeof route === "string" ? route : route?.url);
+          }
+        }
+        for (const address of addresses) {
+          if (typeof address !== "string" || !address) continue;
+          let route;
+          try { route = new URL(address); } catch (_error) { continue; }
+          if (route.protocol !== "http:" && route.protocol !== "https:") continue;
+          if (route.origin !== url.origin) continue;
+          const prefix = route.pathname.replace(/\/+$/, "");
+          if (url.pathname === `${prefix}/health` || url.pathname.startsWith(`${prefix}/api/`)) {
+            return true;
+          }
+        }
+      }
+    } catch (_error) {
+      // Storage can be disabled or contain an old/malformed registry. It must
+      // never turn unrelated network requests into synthetic failures.
+    }
+    return false;
   }
 
   // Each machine last refreshed at its own minute; the Servers tab shows the
@@ -1628,6 +1663,9 @@
   async function dispatch(input, init) {
     const url = parseUrl(input);
     const server = serverForUrl(url);
+    if (!server) {
+      return jsonResponse({ detail: `Unknown host: ${url.host}` }, 502);
+    }
     const path = localPath(url.pathname);
     const method = (init && init.method) || (input instanceof Request ? input.method : "GET");
 
@@ -1756,6 +1794,12 @@
   const origFetch = window.fetch.bind(window);
   window.fetch = async function (input, init) {
     try {
+      const url = parseUrl(input);
+      const isSameOrigin = url.origin === window.location.origin;
+      const isFleetHost = FLEET_BY_HOST.has(url.host);
+      if (!isSameOrigin && !isFleetHost && !isRegisteredServerRequest(url)) {
+        return origFetch(input, init);
+      }
       const handled = await dispatch(input, init);
       if (handled) return handled;
     } catch (err) {

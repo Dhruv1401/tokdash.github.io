@@ -43,7 +43,9 @@ Codex, Claude Code, OpenCode, Gemini CLI, Kimi CLI, ZCode, and
 - Browse the read-only demo pricing snapshot.
 
 The demo registry is seeded once, into `localStorage`, and never overwrites servers you add
-yourself — clear site data to get the three-machine fleet back.
+yourself — clear site data to get the three-machine fleet back. Registered servers outside
+the demo fleet have no synthetic dataset and return an error; they are never given Local's
+totals or queried for real usage. Unrelated third-party requests pass through unchanged.
 
 ## Local preview
 
