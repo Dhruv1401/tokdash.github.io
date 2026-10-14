@@ -360,7 +360,7 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
      swallows a third of it on a large one. */
   --tick-fade: clamp(72px, 12vw, 200px);
   position: relative;
-  margin-top: 40px;
+  margin-top: 24px;
   /* Break out of the centred column so the names run edge to edge. The
      negative margin pulls it back by half the difference between the
      window and the column, which is what centres the overflow. */
@@ -506,7 +506,7 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
 }
 /* Wordmarks carry the name themselves, so those print no label beside them
    and are allowed their own width rather than being cropped to a square. */
-.tick-logo.is-wordmark { width: auto; height: 24px; max-width: 112px; padding: 3px 6px; }
+.tick-logo.is-wordmark { width: 112px; height: 24px; padding: 3px 6px; }
 .tick-item:hover .tick-logo { transform: scale(1.08); }
 .tick-item::after {
   /* The separator travels with the name rather than sitting on the row, so
@@ -535,28 +535,53 @@ html.dark .cmd { background: #0D1322; border: 1px solid rgba(255,255,255,0.16); 
   to { transform: translate3d(-50%, 0, 0); }
 }
 
+.tools-section { padding-top: 16px; padding-bottom: 32px; }
+.ticker-control {
+  display: none; align-items: center; gap: 6px; margin-top: 14px;
+  padding: 5px 10px; border: 1px solid var(--color-border); border-radius: 999px;
+  color: var(--color-muted); background: transparent; font-size: 12px; cursor: pointer;
+}
+html.js.can-animate .ticker-control { display: inline-flex; }
+.ticker-control:hover { color: var(--color-text); }
+.ticker-control:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.ticker-control[aria-pressed='true'] { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+.ticker.is-paused .tick-track { animation-play-state: paused; }
+/* Keyboard focus reveals the real links. Pointer focus keeps the row in
+   place until the click, so a link never moves away during pointerdown. */
+.ticker.is-keyboard { width: auto; margin-left: auto; margin-right: auto; }
+.ticker.is-keyboard .tick-row { -webkit-mask-image: none; mask-image: none; overflow: visible; }
+.ticker.is-keyboard .tick-track { animation: none; transform: none; width: auto; flex-wrap: wrap; justify-content: center; gap: 14px 24px; }
+.ticker.is-keyboard .tick-item { margin-right: 0; }
+.ticker.is-keyboard .tick-item::after { display: none; }
+.ticker.is-keyboard .tick-item[aria-hidden='true'] { display: none; }
+
 /* Reduced motion, no JavaScript, or a device the capability gate turned down:
    the names stand still and wrap into a plain list. A row that cannot move
    is not a row, so the two copies collapse to one and the track becomes an
    ordinary centred wrap. */
 @media (prefers-reduced-motion: reduce) {
+  html.js.can-animate .ticker-control { display: none; }
   .ticker { width: auto; margin-left: auto; margin-right: auto; }
   .tick-row {
     -webkit-mask-image: none; mask-image: none;
   }
-  .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+  .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; gap: 14px 24px; }
   .tick-item { margin-right: 0; }
+  .tick-item::after { display: none; }
   .tick-item[aria-hidden='true'] { display: none; }
 }
 /* html.js is added by the first script on the page. Without it there is no
    class to gate on, so the names must not wait on an animation that was
    never going to be allowed to run anyway. */
-html:not(.js) .ticker .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+html:not(.js) .ticker .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; gap: 14px 24px; }
 html:not(.js) .tick-row { -webkit-mask-image: none; mask-image: none; }
 html:not(.js) .ticker .tick-item[aria-hidden='true'] { display: none; }
 /* The page's capability gate has already made this call in JS: a metered or
    memory-constrained connection, two cores or 2GB. The verdict is read off
    <html> rather than asked a second time here. */
-html:not(.can-animate) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+html:not(.can-animate) .ticker { width: auto; margin-left: auto; margin-right: auto; }
+html:not(.can-animate) .tick-track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; gap: 14px 24px; }
 html:not(.can-animate) .tick-row { -webkit-mask-image: none; mask-image: none; }
 html:not(.can-animate) .tick-item[aria-hidden='true'] { display: none; }
+html:not(.can-animate) .tick-item { margin-right: 0; }
+html:not(.can-animate) .tick-item::after { display: none; }

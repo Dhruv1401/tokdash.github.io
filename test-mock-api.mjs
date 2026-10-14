@@ -5,14 +5,20 @@ import { readFileSync } from "node:fs";
 const window = globalThis;
 window.location = { origin: "http://localhost:8123", pathname: "/demo/" };
 window.TOKDASH_BASE_PATH = "";
-const origFetch = (input) => {
-  // Pass-through fetch: only the site-root pricing snapshot is requested in tests.
+const storage = new Map();
+window.localStorage = {
+  getItem: (key) => storage.get(key) ?? null,
+  setItem: (key, value) => storage.set(key, String(value)),
+};
+const networkCalls = [];
+const origFetch = (input, init) => {
+  networkCalls.push({ input, init });
   const url = String(input instanceof Request ? input.url : input);
   if (url.endsWith("/pricing_db.json")) {
     const text = readFileSync(new URL("./pricing_db.json", import.meta.url), "utf8");
     return new Response(text, { headers: { "Content-Type": "application/json" } });
   }
-  return new Response("{}", { headers: { "Content-Type": "application/json" } });
+  return new Response('{"networkSentinel":true}', { headers: { "Content-Type": "application/json" } });
 };
 window.fetch = origFetch;
 
@@ -60,6 +66,83 @@ assert(typeof active.comparison.active_ms_sum_pct === "number" || active.compari
 assert(active.active_gap_cap_ms === 300000, "active-time gap cap 300s");
 const activeToday = await get("/api/active-time?period=today");
 assert(activeToday.active_ms_sum > 0, "active-time today has agent time");
+for (const period of ["year", "1y", "all"]) {
+  const response = await fetchMock(`/api/active-time?period=${period}`);
+  const payload = await response.json();
+  assert(response.status === 200 && payload.active_ms > 0
+    && payload.active_ms_sum >= payload.active_ms, `active-time:${period} returns runtime figures`);
+}
+
+// Fetch ownership: endpoint names on a foreign origin are not enough to make
+// them Tokdash requests. Preserve the original input and options on pass-through.
+for (const input of [
+  "https://example.com/api/usage",
+  "https://api.github.com/api/repos",
+  "https://example.com/health",
+  new URL("https://example.com/api/usage"),
+  new Request("https://example.com/api/usage", { method: "POST", body: "third-party" }),
+]) {
+  const options = { cache: "no-store", headers: { "X-Test": "pass-through" } };
+  const before = networkCalls.length;
+  const response = await fetchMock(input, options);
+  const payload = await response.json();
+  assert(payload.networkSentinel === true && networkCalls.length === before + 1
+    && networkCalls[before].input === input && networkCalls[before].init === options,
+    `third-party ${input.constructor.name} request reaches original fetch unchanged`);
+}
+
+const seededRegistry = window.localStorage.getItem("tokdash-servers");
+window.localStorage.setItem("tokdash-servers", JSON.stringify([
+  { id: "legacy", baseUrl: "https://visitor.example" },
+  { id: "routes", routes: [{ url: "bad-url" }, { url: "https://visitor.example/proxy/" }] },
+  { id: "string-route", routes: ["https://string-route.example/prefix/"] },
+  { id: "localhost", routes: [{ url: "http://localhost:9999" }] },
+  null,
+]));
+for (const url of [
+  "https://visitor.example/health",
+  "https://visitor.example/api/usage?period=week",
+  "https://visitor.example/proxy/health",
+  "https://visitor.example/proxy/api/usage?period=week",
+  "https://string-route.example/prefix/api/usage?period=week",
+  "http://localhost:9999/api/usage?period=week",
+]) {
+  const before = networkCalls.length;
+  const response = await fetchMock(url);
+  const payload = await response.json();
+  assert(response.status === 502 && payload.detail.startsWith("Unknown host:")
+    && payload.total_tokens === undefined && networkCalls.length === before,
+    `registered extra server rejects synthetic usage without a network request: ${url}`);
+}
+// A prefix must not claim sibling paths or unrelated assets on that origin.
+window.localStorage.setItem("tokdash-servers", JSON.stringify([
+  { routes: [{ url: "https://visitor.example/proxy" }] },
+]));
+for (const url of [
+  "https://visitor.example/api/usage",
+  "https://visitor.example/proxy-other/api/usage",
+  "https://visitor.example/proxy/assets.json",
+]) {
+  assert((await (await fetchMock(url)).json()).networkSentinel === true,
+    `registered prefix leaves unrelated requests alone: ${url}`);
+}
+for (const registry of ["invalid-json", "{}", "null"]) {
+  window.localStorage.setItem("tokdash-servers", registry);
+  assert((await (await fetchMock("https://example.com/api/usage")).json()).networkSentinel === true,
+    `malformed registry does not intercept third-party fetch: ${registry}`);
+}
+const workingStorage = window.localStorage;
+window.localStorage = { getItem() { throw new Error("Storage disabled"); } };
+assert((await (await fetchMock("https://example.com/health")).json()).networkSentinel === true,
+  "disabled storage does not intercept third-party fetch");
+window.localStorage = workingStorage;
+window.localStorage.setItem("tokdash-servers", seededRegistry);
+for (const server of demo.servers) {
+  const before = networkCalls.length;
+  const payload = await (await fetchMock(`${server.baseUrl}/api/usage?period=week`)).json();
+  assert(payload.total_tokens > 0 && networkCalls.length === before,
+    `seeded fleet remains synthetic: ${server.id}`);
+}
 
 // /api/sessions for every session tool. The list comes from the mock itself, so a
 // harness added upstream has to be mirrored in mock-api.js before this file can

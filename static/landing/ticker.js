@@ -1,81 +1,71 @@
-// ---- Tools ticker: slow down under the pointer instead of stopping ----
-// The drift itself is a plain CSS animation, because that is what keeps
-// the loop seamless and costs nothing while it runs. What CSS cannot do
-// is change the rate of that animation part way through without starting
-// it over, and starting it over drops the row sideways mid sweep.
-//
-// So the rate is retimed through the Web Animations API instead. It has
-// a playbackRate that can be changed on a running animation, and changing
-// it leaves the animation exactly where it was: the row stays where it
-// has drifted to and simply starts taking longer to get from there to
-// the next place.
-//
-// The change is eased rather than applied in one step, so the row settles
-// into the slower pace instead of dropping into it. Only the frames of
-// that settle are requested, and the loop stops as soon as the rate has
-// arrived, so a row that is left alone costs nothing.
+// The CSS loop carries the motion. JS only eases pointer speed, provides a
+// pause toggle, and reveals a static list while keyboard users follow links.
 (function () {
-  // A fifth of the drift speed. Enough to hold a name still enough to aim
-  // at it, still moving enough that the row does not look seized.
   var SLOW = 0.2;
-  // Roughly the length of one of the page's own transitions, so the row
-  // settles at the same pace the rest of the site changes state.
   var SETTLE_MS = 320;
+  var keyboard = true;
 
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function init() {
+    var section = document.getElementById('tools');
+    if (!section || !canAnimate) return;
+    var ticker = section.querySelector('.ticker');
+    var row = section.querySelector('.tick-row');
+    var track = section.querySelector('.tick-track');
+    var button = section.querySelector('.ticker-control');
+    var frame = 0;
 
-  function drive(row, track) {
-    var anims = track.getAnimations ? track.getAnimations() : [];
-    var drift = null;
-    for (var i = 0; i < anims.length; i++) {
-      if (anims[i].animationName === 'tick-drift') { drift = anims[i]; break; }
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Tab') keyboard = true;
+    });
+    document.addEventListener('pointerdown', function () { keyboard = false; });
+
+    function drift() {
+      var animations = track.getAnimations ? track.getAnimations() : [];
+      for (var i = 0; i < animations.length; i++) {
+        if (animations[i].animationName === 'tick-drift') return animations[i];
+      }
+      return null;
     }
-    // Nothing to retime means one of the fallbacks already decided this
-    // row should stand still: reduced motion, no script, or a device the
-    // capability gate turned down. Leave those alone.
-    if (!drift) return;
 
-    var from = 1, to = 1, frame = 0, started = 0;
+    function cancelSettle() {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    }
 
     function settle(target) {
-      if (target === to && !frame) return;
-      from = drift.playbackRate;
-      to = target;
-      if (frame) cancelAnimationFrame(frame);
-      started = 0;
+      cancelSettle();
+      var animation = drift();
+      if (!animation || animation.playbackRate === target) return;
+      var from = animation.playbackRate;
+      var started = null;
       frame = requestAnimationFrame(function tick(now) {
-        if (!started) started = now;
-        var t = (now - started) / SETTLE_MS;
-        if (t >= 1) {
-          drift.playbackRate = to;
-          frame = 0;
-          return;
-        }
-        drift.playbackRate = from + (to - from) * easeOut(t);
-        frame = requestAnimationFrame(tick);
+        if (started === null) started = now;
+        var t = Math.min(1, (now - started) / SETTLE_MS);
+        animation.playbackRate = from + (target - from) * (1 - Math.pow(1 - t, 3));
+        frame = t < 1 ? requestAnimationFrame(tick) : 0;
       });
     }
 
     row.addEventListener('pointerenter', function () { settle(SLOW); });
     row.addEventListener('pointerleave', function () { settle(1); });
-    // A row reached by keyboard gets the same treatment, so the two ways
-    // of arriving at a name do not behave differently.
-    row.addEventListener('focusin', function () { settle(SLOW); });
-    row.addEventListener('focusout', function () { settle(1); });
+    row.addEventListener('focusin', function (event) {
+      if (!keyboard) return;
+      cancelSettle();
+      ticker.classList.add('is-keyboard');
+      row.scrollLeft = 0;
+      event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    row.addEventListener('focusout', function (event) {
+      if (event.relatedTarget && row.contains(event.relatedTarget)) return;
+      ticker.classList.remove('is-keyboard');
+      settle(row.matches(':hover') ? SLOW : 1);
+    });
+    button.addEventListener('click', function () {
+      var paused = ticker.classList.toggle('is-paused');
+      button.setAttribute('aria-pressed', String(paused));
+    });
   }
 
-  function init() {
-    if (!canAnimate) return;
-    var rows = document.querySelectorAll('.tick-row');
-    for (var i = 0; i < rows.length; i++) {
-      var track = rows[i].querySelector('.tick-track');
-      if (track) drive(rows[i], track);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
